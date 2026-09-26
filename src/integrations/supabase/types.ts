@@ -125,6 +125,33 @@ export type Database = {
         }
         Relationships: []
       }
+      client_reviews: {
+        Row: {
+          client_name: string
+          comment: string
+          created_at: string
+          id: string
+          is_published: boolean
+          rating: number
+        }
+        Insert: {
+          client_name: string
+          comment: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          rating?: number
+        }
+        Update: {
+          client_name?: string
+          comment?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          rating?: number
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           created_at: string
@@ -169,6 +196,93 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_send_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          message_id: string | null
+          metadata: Json | null
+          recipient_email: string
+          status: string
+          template_name: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email: string
+          status: string
+          template_name: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string
+          status?: string
+          template_name?: string
+        }
+        Relationships: []
+      }
+      email_send_state: {
+        Row: {
+          auth_email_ttl_minutes: number
+          batch_size: number
+          id: number
+          retry_after_until: string | null
+          send_delay_ms: number
+          transactional_email_ttl_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          auth_email_ttl_minutes?: number
+          batch_size?: number
+          id?: number
+          retry_after_until?: string | null
+          send_delay_ms?: number
+          transactional_email_ttl_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          auth_email_ttl_minutes?: number
+          batch_size?: number
+          id?: number
+          retry_after_until?: string | null
+          send_delay_ms?: number
+          transactional_email_ttl_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_unsubscribe_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
       }
       invoices: {
         Row: {
@@ -275,6 +389,51 @@ export type Database = {
           },
         ]
       }
+      open_requests: {
+        Row: {
+          answers: Json | null
+          attachments: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields: Json
+          id: string
+          status: string
+          submitted_at: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          attachments?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id: string
+          status?: string
+          submitted_at?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          attachments?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string
@@ -319,6 +478,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_requests: {
+        Row: {
+          amount_sar: number
+          amount_usd: number
+          client_name: string | null
+          created_at: string
+          description: string | null
+          exchange_rate: number
+          id: string
+          paid_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_sar?: number
+          amount_usd?: number
+          client_name?: string | null
+          created_at?: string
+          description?: string | null
+          exchange_rate?: number
+          id: string
+          paid_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_sar?: number
+          amount_usd?: number
+          client_name?: string | null
+          created_at?: string
+          description?: string | null
+          exchange_rate?: number
+          id?: string
+          paid_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      promissory_notes: {
+        Row: {
+          amount: number
+          amount_in_words: string | null
+          contract_id: string | null
+          created_at: string
+          debtor_name: string | null
+          debtor_national_id: string | null
+          due_date: string
+          id: string
+          issue_city: string
+          payment_city: string
+          signature_data: string | null
+          signed_at: string | null
+          status: string
+          submission_id: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          amount_in_words?: string | null
+          contract_id?: string | null
+          created_at?: string
+          debtor_name?: string | null
+          debtor_national_id?: string | null
+          due_date?: string
+          id: string
+          issue_city?: string
+          payment_city?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          status?: string
+          submission_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          amount_in_words?: string | null
+          contract_id?: string | null
+          created_at?: string
+          debtor_name?: string | null
+          debtor_national_id?: string | null
+          due_date?: string
+          id?: string
+          issue_city?: string
+          payment_city?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          status?: string
+          submission_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       request_history: {
         Row: {
@@ -402,6 +654,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suppressed_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          metadata: Json | null
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          metadata?: Json | null
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string
+        }
+        Relationships: []
+      }
+      webauthn_challenges: {
+        Row: {
+          challenge: string
+          created_at: string
+          expires_at: string
+          id: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          challenge: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          challenge?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      webauthn_credentials: {
+        Row: {
+          backed_up: boolean | null
+          counter: number
+          created_at: string
+          credential_id: string
+          device_name: string | null
+          device_type: string | null
+          id: string
+          last_used_at: string | null
+          public_key: string
+          transports: Json | null
+          user_id: string
+        }
+        Insert: {
+          backed_up?: boolean | null
+          counter?: number
+          created_at?: string
+          credential_id: string
+          device_name?: string | null
+          device_type?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key: string
+          transports?: Json | null
+          user_id: string
+        }
+        Update: {
+          backed_up?: boolean | null
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          device_name?: string | null
+          device_type?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key?: string
+          transports?: Json | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
