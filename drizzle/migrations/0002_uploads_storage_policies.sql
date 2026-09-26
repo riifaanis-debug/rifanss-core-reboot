@@ -1,0 +1,2 @@
+CREATE POLICY "Anyone can view uploads" ON storage.objects FOR SELECT USING (bucket_id = 'uploads');
+CREATE POLICY "Anyone can upload files to uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'uploads');

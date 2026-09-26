@@ -15,6 +15,13 @@
       "when": 1790384555237,
       "tag": "0001_rifans_remaining_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790384605809,
+      "tag": "0002_uploads_storage_policies",
+      "breakpoints": true
     }
   ]
 }
