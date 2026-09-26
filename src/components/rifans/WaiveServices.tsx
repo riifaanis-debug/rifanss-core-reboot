@@ -212,6 +212,7 @@ const WaiveServices: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </Section>
 
       <Section id="scheduling-services" className="relative !px-0 !max-w-none mb-12">
