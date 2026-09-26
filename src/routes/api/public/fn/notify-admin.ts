@@ -18,7 +18,10 @@ export const Route = createFileRoute("/api/public/fn/notify-admin")({
           const { requestData, userData } = (await request.json()) as any;
 
           const ADMIN_EMAIL = process.env["ADMIN_EMAIL"];
-          if (!ADMIN_EMAIL) throw new Error("ADMIN_EMAIL is not configured");
+          if (!ADMIN_EMAIL) {
+            console.warn("[notify-admin] skipped: ADMIN_EMAIL not configured");
+            return new Response(JSON.stringify({ success: true, skipped: true, reason: "admin_email_not_configured" }), { status: 200, headers: { "Content-Type": "application/json" } });
+          }
 
           const fullName = userData?.fullName || userData?.full_name || "غير محدد";
           const phone = userData?.phone || "غير محدد";
