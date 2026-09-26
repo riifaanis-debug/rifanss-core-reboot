@@ -13,7 +13,6 @@ import { formatAmount } from '../../lib/formatNumber';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import Logo from './Logo';
-import PayPalPayButton from './PayPalPayButton';
 
 interface InvoicePageProps {
   submissionId: string;
@@ -340,13 +339,6 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
 
         </div>
 
-        {/* سداد إلكتروني (Payment Action) */}
-        {!isPaid && (
-          <div className="mt-4 bg-white rounded-2xl border border-gold/30 shadow-md p-4 space-y-3">
-            <h3 className="text-xs sm:text-sm font-bold text-brand text-center">خيارات السداد الإلكتروني المباشر</h3>
-            <PayPalPayButton kind="invoice" recordId={invoice.id} label="سداد الفاتورة إلكترونياً" />
-          </div>
-        )}
       </main>
 
       {/* ══════════════════════════════════════════════════════════════

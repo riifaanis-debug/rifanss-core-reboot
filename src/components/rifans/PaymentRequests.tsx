@@ -3,7 +3,6 @@ import { CreditCard, Loader2, Send, CheckCircle, Clock, Search, User } from 'luc
 import { supabase } from '@/integrations/supabase/client';
 import { formatAmount } from '../../lib/formatNumber';
 import { getAdminUsers } from '../../lib/api';
-import PayPalPayButton from './PayPalPayButton';
 
 const FALLBACK_RATE = 3.75; // SAR per 1 USD
 
@@ -341,13 +340,11 @@ export const CustomerPaymentRequests: React.FC<CustomerPaymentRequestsProps> = (
             </div>
           </div>
 
-          {/* Status / Pay */}
-          {r.status === 'paid' ? (
+          {/* Status */}
+          {r.status === 'paid' && (
             <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[12px] font-bold">
               <CheckCircle size={16} /> تم السداد
             </div>
-          ) : (
-            <PayPalPayButton kind="payment_request" recordId={r.id} label="سداد الفاتورة" />
           )}
 
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/5 flex justify-between text-[10px] text-muted">
