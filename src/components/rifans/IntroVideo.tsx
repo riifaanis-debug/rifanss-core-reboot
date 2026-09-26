@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import introVideoAsset from '@/assets/intro.mp4.asset.json';
 
 const IntroVideo: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -8,7 +9,8 @@ const IntroVideo: React.FC = () => {
       <div className="max-w-[520px] mx-auto">
         <video
           ref={videoRef}
-          src="/videos/intro.mp4"
+          src={introVideoAsset.url}
+
           autoPlay
           muted
           loop
