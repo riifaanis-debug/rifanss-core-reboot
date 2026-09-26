@@ -271,6 +271,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [newEmployee, setNewEmployee] = useState({ name: '', role: 'أخصائي معالجة وجدولة', email: '', phone: '', nationalId: '' });
 
+  const [contractsSubTab, setContractsSubTab] = useState<'clients' | 'employees'>('clients');
+
   // Employee contracts
   const [employeeContracts] = useState([
     { id: 'EC-2024-001', employeeName: 'عبدالله السبيعي', employeeId: 'EMP-101', role: 'مدير العمليات', contractType: 'عقد عمل محدد المدة (سنتين)', startDate: '2023-01-15', endDate: '2025-01-14', status: 'ساري وموثق قوى', salary: '18,500 ر.س' },
@@ -613,8 +615,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       contractsSent: contracts.length,
       pendingSignature: contracts.filter(c => !c.signed_at).length,
       signedContracts: contracts.filter(c => !!c.signed_at).length,
+      totalRevenue: adminInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + Number(inv.amount || 0), 0),
     };
-  }, [users, submissions, contracts]);
+  }, [users, submissions, contracts, adminInvoices]);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -2066,7 +2069,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
 
   const renderMobileDocuments = () => {
-    const items: Array<{ kind: string; date: string; open: () => void; badge: JSX.Element; title: string; sub: string; }> = [];
+    const items: Array<{ kind: string; date: string; open: () => void; badge: React.JSX.Element; title: string; sub: string; }> = [];
     if (mobileDocFilter === 'all' || mobileDocFilter === 'contracts') {
       contracts.forEach(c => items.push({
         kind: 'عقد', date: c.created_at, title: c.user_name || 'عميل', sub: `رقم العقد: ${String(c.id).slice(0,10)}`,
@@ -3913,8 +3916,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 {activeTab === 'settings' && renderSettings()}
                 {activeTab === 'promissory_notes' && renderPromissoryNotes()}
                 {activeTab === 'payments' && <AdminPaymentRequests />}
-                {activeTab === 'document_request' && renderDocumentRequestModal()}
-                {activeTab === 'open_request' && <OpenRequestBuilder onClose={() => setActiveTab('home')} onRefresh={fetchAllData} />}
+                {activeTab === 'document_request' && renderDocumentRequest()}
+                {activeTab === 'open_request' && <OpenRequestBuilder clients={users} onCreated={fetchAllData} />}
               </div>
             </div>
           )}

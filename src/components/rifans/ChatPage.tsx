@@ -85,7 +85,7 @@ const VoiceRecorder: React.FC<{ onSend: (blob: Blob) => void; onCancel: () => vo
   const [duration, setDuration] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   useEffect(() => {
     let stream: MediaStream;
