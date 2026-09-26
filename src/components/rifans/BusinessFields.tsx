@@ -269,7 +269,7 @@ export const BusinessFields: React.FC = () => {
               return (
                 <div
                   key={slide.id}
-                  ref={(el) => (cardRefs.current[idx] = el)}
+                  ref={(el) => { cardRefs.current[idx] = el; }}
                   onClick={() => handleCardClick(slide.route)}
                   role="button"
                   tabIndex={0}

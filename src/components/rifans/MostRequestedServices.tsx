@@ -291,7 +291,7 @@ export const MostRequestedServices: React.FC = () => {
             return (
               <div
                 key={card.id}
-                ref={(el) => (cardRefs.current[idx] = el)}
+                ref={(el) => { cardRefs.current[idx] = el; }}
                 onClick={() => handleCardClick(card)}
                 role="button"
                 tabIndex={0}
