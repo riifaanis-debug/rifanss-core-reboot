@@ -306,7 +306,7 @@ export const DynamicServiceForm: React.FC<DynamicServiceFormProps> = ({
       for (const att of attachments) {
         if (att.file) {
           try {
-            await uploadDocument(att.file, att.type || 'مرفق خدمة');
+            await uploadDocument(att.file);
             uploadedDocNames.push(att.file.name);
           } catch (uploadErr) {
             console.warn('Doc upload note:', uploadErr);

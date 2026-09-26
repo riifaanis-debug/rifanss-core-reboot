@@ -349,7 +349,7 @@ export const Vision2030Section: React.FC = () => {
               return (
                 <div
                   key={pillar.id}
-                  ref={(el) => (cardRefs.current[idx] = el)}
+                  ref={(el) => { cardRefs.current[idx] = el; }}
                   onClick={() => handleCardClick(idx)}
                   role="button"
                   tabIndex={0}

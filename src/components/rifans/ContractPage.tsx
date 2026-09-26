@@ -168,11 +168,7 @@ const ContractPage: React.FC<ContractPageProps> = ({ submissionId, onClose }) =>
       await submitSignature(submissionId, signatureBase64);
       setIsSuccess(true);
       setIsAlreadySigned(true);
-      notifyAdminContractSigned(
-        submissionId,
-        `${submission?.data?.firstName || ''} ${submission?.data?.lastName || ''}`.trim() || 'عميل',
-        submission?.data?.phone || submission?.data?.mobile || ''
-      );
+      notifyAdminContractSigned(submissionId);
       setTimeout(() => {
         onClose();
       }, 2500);

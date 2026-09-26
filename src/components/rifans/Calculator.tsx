@@ -63,7 +63,7 @@ const Calculator: React.FC = () => {
 
     let status = '';
     let statusColor = '';
-    let icon = null;
+    let icon: React.ReactNode = null;
     let advice = '';
 
     if (actualDbr <= 30) {

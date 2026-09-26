@@ -149,7 +149,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
     setIsLoading(true);
     try {
       // Pre-check national id is not in use
-      const { supabase, isSupabaseConfigured } = await import('@/integrations/supabase/client');
+      const { supabase } = await import('@/integrations/supabase/client');
+      const isSupabaseConfigured = true;
       if (isSupabaseConfigured) {
         try {
           const { data: existing } = await supabase

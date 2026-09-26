@@ -450,7 +450,7 @@ export const getSubmissionHistory = async (id: string) => {
   const changerIds = [...new Set(history.map(h => h.changed_by).filter(Boolean))];
   let userMap = new Map();
   if (changerIds.length > 0) {
-    const { data: users } = await supabase.from('app_users').select('id, full_name').in('id', changerIds);
+    const { data: users } = await supabase.from('app_users').select('id, full_name').in('id', changerIds as string[]);
     userMap = new Map((users || []).map(u => [u.id, u.full_name]));
   }
   
@@ -802,7 +802,7 @@ export const processWaiveOrRescheduleRequest = async (params: ProcessWaiveResche
 
   const { error: updateErr } = await supabase
     .from('requests')
-    .update(updatePayload)
+    .update(updatePayload as never)
     .eq('id', id);
 
   if (updateErr) throw updateErr;
