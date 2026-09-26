@@ -14,7 +14,6 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as ApiPublicFnCheckDomainVerificationRouteImport } from './routes/api/public/fn/check-domain-verification'
 import { Route as ApiPublicFnHubspotSyncRouteImport } from './routes/api/public/fn/hubspot-sync'
 import { Route as ApiPublicFnNotifyAdminRouteImport } from './routes/api/public/fn/notify-admin'
-import { Route as ApiPublicFnPaypalOrderRouteImport } from './routes/api/public/fn/paypal-order'
 import { Route as ApiPublicFnSendExemptionRequestRouteImport } from './routes/api/public/fn/send-exemption-request'
 import { Route as ApiPublicFnSendOtpRouteImport } from './routes/api/public/fn/send-otp'
 import { Route as ApiPublicFnVerifyLoginRouteImport } from './routes/api/public/fn/verify-login'
@@ -45,11 +44,6 @@ const ApiPublicFnHubspotSyncRoute = ApiPublicFnHubspotSyncRouteImport.update({
 const ApiPublicFnNotifyAdminRoute = ApiPublicFnNotifyAdminRouteImport.update({
   id: '/api/public/fn/notify-admin',
   path: '/api/public/fn/notify-admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicFnPaypalOrderRoute = ApiPublicFnPaypalOrderRouteImport.update({
-  id: '/api/public/fn/paypal-order',
-  path: '/api/public/fn/paypal-order',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFnSendExemptionRequestRoute =
@@ -85,7 +79,6 @@ export interface FileRoutesByFullPath {
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
-  '/api/public/fn/paypal-order': typeof ApiPublicFnPaypalOrderRoute
   '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
   '/api/public/fn/send-otp': typeof ApiPublicFnSendOtpRoute
   '/api/public/fn/verify-login': typeof ApiPublicFnVerifyLoginRoute
@@ -98,7 +91,6 @@ export interface FileRoutesByTo {
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
-  '/api/public/fn/paypal-order': typeof ApiPublicFnPaypalOrderRoute
   '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
   '/api/public/fn/send-otp': typeof ApiPublicFnSendOtpRoute
   '/api/public/fn/verify-login': typeof ApiPublicFnVerifyLoginRoute
@@ -112,7 +104,6 @@ export interface FileRoutesById {
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
-  '/api/public/fn/paypal-order': typeof ApiPublicFnPaypalOrderRoute
   '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
   '/api/public/fn/send-otp': typeof ApiPublicFnSendOtpRoute
   '/api/public/fn/verify-login': typeof ApiPublicFnVerifyLoginRoute
@@ -127,7 +118,6 @@ export interface FileRouteTypes {
     | '/api/public/fn/check-domain-verification'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
-    | '/api/public/fn/paypal-order'
     | '/api/public/fn/send-exemption-request'
     | '/api/public/fn/send-otp'
     | '/api/public/fn/verify-login'
@@ -140,7 +130,6 @@ export interface FileRouteTypes {
     | '/api/public/fn/check-domain-verification'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
-    | '/api/public/fn/paypal-order'
     | '/api/public/fn/send-exemption-request'
     | '/api/public/fn/send-otp'
     | '/api/public/fn/verify-login'
@@ -153,7 +142,6 @@ export interface FileRouteTypes {
     | '/api/public/fn/check-domain-verification'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
-    | '/api/public/fn/paypal-order'
     | '/api/public/fn/send-exemption-request'
     | '/api/public/fn/send-otp'
     | '/api/public/fn/verify-login'
@@ -167,7 +155,6 @@ export interface RootRouteChildren {
   ApiPublicFnCheckDomainVerificationRoute: typeof ApiPublicFnCheckDomainVerificationRoute
   ApiPublicFnHubspotSyncRoute: typeof ApiPublicFnHubspotSyncRoute
   ApiPublicFnNotifyAdminRoute: typeof ApiPublicFnNotifyAdminRoute
-  ApiPublicFnPaypalOrderRoute: typeof ApiPublicFnPaypalOrderRoute
   ApiPublicFnSendExemptionRequestRoute: typeof ApiPublicFnSendExemptionRequestRoute
   ApiPublicFnSendOtpRoute: typeof ApiPublicFnSendOtpRoute
   ApiPublicFnVerifyLoginRoute: typeof ApiPublicFnVerifyLoginRoute
@@ -210,13 +197,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/fn/notify-admin'
       fullPath: '/api/public/fn/notify-admin'
       preLoaderRoute: typeof ApiPublicFnNotifyAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/fn/paypal-order': {
-      id: '/api/public/fn/paypal-order'
-      path: '/api/public/fn/paypal-order'
-      fullPath: '/api/public/fn/paypal-order'
-      preLoaderRoute: typeof ApiPublicFnPaypalOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/fn/send-exemption-request': {
@@ -264,7 +244,6 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicFnCheckDomainVerificationRoute,
   ApiPublicFnHubspotSyncRoute: ApiPublicFnHubspotSyncRoute,
   ApiPublicFnNotifyAdminRoute: ApiPublicFnNotifyAdminRoute,
-  ApiPublicFnPaypalOrderRoute: ApiPublicFnPaypalOrderRoute,
   ApiPublicFnSendExemptionRequestRoute: ApiPublicFnSendExemptionRequestRoute,
   ApiPublicFnSendOtpRoute: ApiPublicFnSendOtpRoute,
   ApiPublicFnVerifyLoginRoute: ApiPublicFnVerifyLoginRoute,
