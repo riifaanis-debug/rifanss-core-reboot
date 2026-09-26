@@ -341,11 +341,13 @@ export const updateProfile = async (profileData: any) => {
 export const uploadDocument = async (file: File) => {
   const ext = file.name.split('.').pop() || 'pdf';
   const fileName = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
-  const { data, error } = await supabase.storage.from('uploads').upload(fileName, file);
+  const { error } = await supabase.storage.from('uploads').upload(fileName, file);
   if (error) throw error;
-  const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
-  return { fileName: file.name, filePath: urlData.publicUrl };
+  // The uploads bucket is private; files are served through the app's public file endpoint.
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return { fileName: file.name, filePath: `${origin}/api/public/uploads/${fileName}` };
 };
+
 
 // ---- ADMIN ----
 export const getAdminSubmissions = async () => {

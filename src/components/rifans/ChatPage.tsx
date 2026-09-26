@@ -30,7 +30,7 @@ const AttachmentBubble: React.FC<{ url: string; type: string; isMine: boolean }>
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const fullUrl = url.startsWith('http') ? url : `${SUPABASE_URL}/storage/v1/object/public/uploads/${url}`;
+  const fullUrl = url.startsWith('http') ? url : `/api/public/uploads/${url}`;
 
   if (type === 'image') {
     return (
