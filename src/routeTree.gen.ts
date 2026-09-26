@@ -11,6 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as ApiPublicFnCheckDomainVerificationRouteImport } from './routes/api/public/fn/check-domain-verification'
+import { Route as ApiPublicFnHubspotSyncRouteImport } from './routes/api/public/fn/hubspot-sync'
+import { Route as ApiPublicFnNotifyAdminRouteImport } from './routes/api/public/fn/notify-admin'
+import { Route as ApiPublicFnPaypalOrderRouteImport } from './routes/api/public/fn/paypal-order'
+import { Route as ApiPublicFnSendExemptionRequestRouteImport } from './routes/api/public/fn/send-exemption-request'
+import { Route as ApiPublicFnSendOtpRouteImport } from './routes/api/public/fn/send-otp'
+import { Route as ApiPublicFnVerifyLoginRouteImport } from './routes/api/public/fn/verify-login'
+import { Route as ApiPublicFnVerifyOtpRouteImport } from './routes/api/public/fn/verify-otp'
 import { Route as ApiPublicUploadsSplatRouteImport } from './routes/api/public/uploads.$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +31,48 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFnCheckDomainVerificationRoute =
+  ApiPublicFnCheckDomainVerificationRouteImport.update({
+    id: '/api/public/fn/check-domain-verification',
+    path: '/api/public/fn/check-domain-verification',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicFnHubspotSyncRoute = ApiPublicFnHubspotSyncRouteImport.update({
+  id: '/api/public/fn/hubspot-sync',
+  path: '/api/public/fn/hubspot-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFnNotifyAdminRoute = ApiPublicFnNotifyAdminRouteImport.update({
+  id: '/api/public/fn/notify-admin',
+  path: '/api/public/fn/notify-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFnPaypalOrderRoute = ApiPublicFnPaypalOrderRouteImport.update({
+  id: '/api/public/fn/paypal-order',
+  path: '/api/public/fn/paypal-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFnSendExemptionRequestRoute =
+  ApiPublicFnSendExemptionRequestRouteImport.update({
+    id: '/api/public/fn/send-exemption-request',
+    path: '/api/public/fn/send-exemption-request',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicFnSendOtpRoute = ApiPublicFnSendOtpRouteImport.update({
+  id: '/api/public/fn/send-otp',
+  path: '/api/public/fn/send-otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFnVerifyLoginRoute = ApiPublicFnVerifyLoginRouteImport.update({
+  id: '/api/public/fn/verify-login',
+  path: '/api/public/fn/verify-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFnVerifyOtpRoute = ApiPublicFnVerifyOtpRouteImport.update({
+  id: '/api/public/fn/verify-otp',
+  path: '/api/public/fn/verify-otp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicUploadsSplatRoute = ApiPublicUploadsSplatRouteImport.update({
   id: '/api/public/uploads/$',
   path: '/api/public/uploads/$',
@@ -32,30 +82,96 @@ const ApiPublicUploadsSplatRoute = ApiPublicUploadsSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
+  '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
+  '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
+  '/api/public/fn/paypal-order': typeof ApiPublicFnPaypalOrderRoute
+  '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
+  '/api/public/fn/send-otp': typeof ApiPublicFnSendOtpRoute
+  '/api/public/fn/verify-login': typeof ApiPublicFnVerifyLoginRoute
+  '/api/public/fn/verify-otp': typeof ApiPublicFnVerifyOtpRoute
   '/api/public/uploads/$': typeof ApiPublicUploadsSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
+  '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
+  '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
+  '/api/public/fn/paypal-order': typeof ApiPublicFnPaypalOrderRoute
+  '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
+  '/api/public/fn/send-otp': typeof ApiPublicFnSendOtpRoute
+  '/api/public/fn/verify-login': typeof ApiPublicFnVerifyLoginRoute
+  '/api/public/fn/verify-otp': typeof ApiPublicFnVerifyOtpRoute
   '/api/public/uploads/$': typeof ApiPublicUploadsSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
+  '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
+  '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
+  '/api/public/fn/paypal-order': typeof ApiPublicFnPaypalOrderRoute
+  '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
+  '/api/public/fn/send-otp': typeof ApiPublicFnSendOtpRoute
+  '/api/public/fn/verify-login': typeof ApiPublicFnVerifyLoginRoute
+  '/api/public/fn/verify-otp': typeof ApiPublicFnVerifyOtpRoute
   '/api/public/uploads/$': typeof ApiPublicUploadsSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/api/public/uploads/$'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/api/public/fn/check-domain-verification'
+    | '/api/public/fn/hubspot-sync'
+    | '/api/public/fn/notify-admin'
+    | '/api/public/fn/paypal-order'
+    | '/api/public/fn/send-exemption-request'
+    | '/api/public/fn/send-otp'
+    | '/api/public/fn/verify-login'
+    | '/api/public/fn/verify-otp'
+    | '/api/public/uploads/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/api/public/uploads/$'
-  id: '__root__' | '/' | '/$' | '/api/public/uploads/$'
+  to:
+    | '/'
+    | '/$'
+    | '/api/public/fn/check-domain-verification'
+    | '/api/public/fn/hubspot-sync'
+    | '/api/public/fn/notify-admin'
+    | '/api/public/fn/paypal-order'
+    | '/api/public/fn/send-exemption-request'
+    | '/api/public/fn/send-otp'
+    | '/api/public/fn/verify-login'
+    | '/api/public/fn/verify-otp'
+    | '/api/public/uploads/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/api/public/fn/check-domain-verification'
+    | '/api/public/fn/hubspot-sync'
+    | '/api/public/fn/notify-admin'
+    | '/api/public/fn/paypal-order'
+    | '/api/public/fn/send-exemption-request'
+    | '/api/public/fn/send-otp'
+    | '/api/public/fn/verify-login'
+    | '/api/public/fn/verify-otp'
+    | '/api/public/uploads/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  ApiPublicFnCheckDomainVerificationRoute: typeof ApiPublicFnCheckDomainVerificationRoute
+  ApiPublicFnHubspotSyncRoute: typeof ApiPublicFnHubspotSyncRoute
+  ApiPublicFnNotifyAdminRoute: typeof ApiPublicFnNotifyAdminRoute
+  ApiPublicFnPaypalOrderRoute: typeof ApiPublicFnPaypalOrderRoute
+  ApiPublicFnSendExemptionRequestRoute: typeof ApiPublicFnSendExemptionRequestRoute
+  ApiPublicFnSendOtpRoute: typeof ApiPublicFnSendOtpRoute
+  ApiPublicFnVerifyLoginRoute: typeof ApiPublicFnVerifyLoginRoute
+  ApiPublicFnVerifyOtpRoute: typeof ApiPublicFnVerifyOtpRoute
   ApiPublicUploadsSplatRoute: typeof ApiPublicUploadsSplatRoute
 }
 
@@ -75,6 +191,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/fn/check-domain-verification': {
+      id: '/api/public/fn/check-domain-verification'
+      path: '/api/public/fn/check-domain-verification'
+      fullPath: '/api/public/fn/check-domain-verification'
+      preLoaderRoute: typeof ApiPublicFnCheckDomainVerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/hubspot-sync': {
+      id: '/api/public/fn/hubspot-sync'
+      path: '/api/public/fn/hubspot-sync'
+      fullPath: '/api/public/fn/hubspot-sync'
+      preLoaderRoute: typeof ApiPublicFnHubspotSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/notify-admin': {
+      id: '/api/public/fn/notify-admin'
+      path: '/api/public/fn/notify-admin'
+      fullPath: '/api/public/fn/notify-admin'
+      preLoaderRoute: typeof ApiPublicFnNotifyAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/paypal-order': {
+      id: '/api/public/fn/paypal-order'
+      path: '/api/public/fn/paypal-order'
+      fullPath: '/api/public/fn/paypal-order'
+      preLoaderRoute: typeof ApiPublicFnPaypalOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/send-exemption-request': {
+      id: '/api/public/fn/send-exemption-request'
+      path: '/api/public/fn/send-exemption-request'
+      fullPath: '/api/public/fn/send-exemption-request'
+      preLoaderRoute: typeof ApiPublicFnSendExemptionRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/send-otp': {
+      id: '/api/public/fn/send-otp'
+      path: '/api/public/fn/send-otp'
+      fullPath: '/api/public/fn/send-otp'
+      preLoaderRoute: typeof ApiPublicFnSendOtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/verify-login': {
+      id: '/api/public/fn/verify-login'
+      path: '/api/public/fn/verify-login'
+      fullPath: '/api/public/fn/verify-login'
+      preLoaderRoute: typeof ApiPublicFnVerifyLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/verify-otp': {
+      id: '/api/public/fn/verify-otp'
+      path: '/api/public/fn/verify-otp'
+      fullPath: '/api/public/fn/verify-otp'
+      preLoaderRoute: typeof ApiPublicFnVerifyOtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/uploads/$': {
       id: '/api/public/uploads/$'
       path: '/api/public/uploads/$'
@@ -88,6 +260,15 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  ApiPublicFnCheckDomainVerificationRoute:
+    ApiPublicFnCheckDomainVerificationRoute,
+  ApiPublicFnHubspotSyncRoute: ApiPublicFnHubspotSyncRoute,
+  ApiPublicFnNotifyAdminRoute: ApiPublicFnNotifyAdminRoute,
+  ApiPublicFnPaypalOrderRoute: ApiPublicFnPaypalOrderRoute,
+  ApiPublicFnSendExemptionRequestRoute: ApiPublicFnSendExemptionRequestRoute,
+  ApiPublicFnSendOtpRoute: ApiPublicFnSendOtpRoute,
+  ApiPublicFnVerifyLoginRoute: ApiPublicFnVerifyLoginRoute,
+  ApiPublicFnVerifyOtpRoute: ApiPublicFnVerifyOtpRoute,
   ApiPublicUploadsSplatRoute: ApiPublicUploadsSplatRoute,
 }
 export const routeTree = rootRouteImport
