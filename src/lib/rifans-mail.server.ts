@@ -16,8 +16,14 @@ export async function sendMail(opts: {
 }) {
   const lovableKey = process.env["LOVABLE_API_KEY"];
   const resendKey = process.env["RESEND_API_KEY"];
-  if (!lovableKey) throw new Error("LOVABLE_API_KEY is not configured");
-  if (!resendKey) throw new Error("RESEND_API_KEY is not configured");
+  if (!lovableKey || !resendKey) {
+    console.warn(`[mail] skipped (email service not configured): "${opts.subject}" -> ${opts.to}`);
+    return { skipped: true, reason: "email_not_configured" } as any;
+  }
+  if (!opts.to) {
+    console.warn(`[mail] skipped (no recipient): "${opts.subject}"`);
+    return { skipped: true, reason: "no_recipient" } as any;
+  }
 
   const body: Record<string, unknown> = {
     from: opts.from || "ريفانس المالية <onboarding@resend.dev>",

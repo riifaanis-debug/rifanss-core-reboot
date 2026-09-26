@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/public/fn/paypal-order")({
         try {
           const { base, clientId, clientSecret } = paypalConfig();
           if (!clientId || !clientSecret) {
-            return json({ error: "PayPal credentials are not configured" }, 500);
+            return json({ error: "الدفع الإلكتروني غير مفعّل حاليًا", reason: "paypal_not_configured" }, 503);
           }
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

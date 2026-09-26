@@ -145,8 +145,10 @@ export const Route = createFileRoute("/api/public/fn/hubspot-sync")({
         try {
           const LOVABLE_API_KEY = process.env["LOVABLE_API_KEY"];
           const HUBSPOT_API_KEY = process.env["HUBSPOT_API_KEY"];
-          if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-          if (!HUBSPOT_API_KEY) throw new Error("HUBSPOT_API_KEY is not configured");
+          if (!LOVABLE_API_KEY || !HUBSPOT_API_KEY) {
+            console.warn("[hubspot-sync] skipped: HubSpot not configured");
+            return json({ success: true, skipped: true, reason: "hubspot_not_configured" });
+          }
 
           const body = (await request.json()) as SyncBody;
           if (!body?.action || !body?.contact) {
