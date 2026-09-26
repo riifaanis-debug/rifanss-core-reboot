@@ -55,7 +55,7 @@ export const ProductRequestForm: React.FC<Props> = ({ productId }) => {
   });
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [paid, setPaid] = useState(false); // marks user pressed "I paid"
-  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'transfer'>('paypal');
+  const [paymentMethod, setPaymentMethod] = useState<'transfer'>('transfer');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasSignature, setHasSignature] = useState(false);
@@ -546,21 +546,6 @@ export const ProductRequestForm: React.FC<Props> = ({ productId }) => {
                 اختر طريقة الدفع
               </div>
               <div className="space-y-2.5">
-                <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${paymentMethod === 'paypal' ? 'border-gold bg-gold/10' : 'border-gray-200 dark:border-white/10'}`}>
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="radio"
-                      name="pm"
-                      checked={paymentMethod === 'paypal'}
-                      onChange={() => setPaymentMethod('paypal')}
-                      className="accent-gold w-4 h-4"
-                    />
-                    <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                      الدفع الإلكتروني عبر PayPal
-                    </span>
-                  </div>
-                  <CreditCard size={18} className="text-gold" />
-                </label>
                 <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${paymentMethod === 'transfer' ? 'border-gold bg-gold/10' : 'border-gray-200 dark:border-white/10'}`}>
                   <div className="flex items-center gap-2.5">
                     <input
@@ -579,29 +564,7 @@ export const ProductRequestForm: React.FC<Props> = ({ productId }) => {
               </div>
             </div>
 
-            {paymentMethod === 'paypal' ? (
-              <form
-                action="https://www.paypal.com/cgi-bin/webscr"
-                method="post"
-                target="_blank"
-                className="rounded-xl border border-gold/30 bg-white dark:bg-[#12031a] p-4 text-right"
-              >
-                <input type="hidden" name="cmd" value="_xclick" />
-                <input type="hidden" name="hosted_button_id" value="7JC8Q2G4NFSP4" />
-                <input type="hidden" name="item_name" value={`رسوم خدمة: ${product.name}`} />
-                <input type="hidden" name="amount" value={(INITIAL_FEE_SAR / 3.75).toFixed(2)} />
-                <input type="hidden" name="currency_code" value="USD" />
-                <p className="text-[13px] text-gray-600 dark:text-gray-400 mb-3">
-                  اضغط للدفع الآمن عبر PayPal — سيتم فتح نافذة دفع جديدة.
-                </p>
-                <button
-                  type="submit"
-                  className="w-full h-[52px] rounded-xl bg-[#003087] text-white text-[14px] font-bold active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <CreditCard size={16} /> سداد الرسوم — <span className="font-mono">{formatAmount(INITIAL_FEE_SAR)}</span> ر.س
-                </button>
-              </form>
-            ) : (
+            {(
               <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.03] p-4 text-right text-[13px] text-gray-700 dark:text-gray-300 leading-[26px]">
                 <div className="font-bold text-[#180020] dark:text-gold mb-1">
                   بيانات التحويل البنكي

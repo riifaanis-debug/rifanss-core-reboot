@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Section, SectionHeader, Button, StripContainer } from './Shared';
 import { ProductItem } from '../../types';
 import { Check, Star, Zap, TrendingUp, FileText, Home, PhoneCall, FileSearch, Crown, X, ShieldCheck } from 'lucide-react';
-import CheckoutModal from './CheckoutModal';
 
 const PRODUCTS: ProductItem[] = [
   {
@@ -223,13 +222,6 @@ const Products: React.FC = () => {
         </div>
       )}
 
-      {/* Checkout Modal */}
-      {checkoutProduct && (
-        <CheckoutModal 
-          product={checkoutProduct} 
-          onClose={() => setCheckoutProduct(null)} 
-        />
-      )}
     </>
   );
 };
