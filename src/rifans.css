@@ -1,0 +1,664 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Native Mobile App Experience & Viewport Stabilization */
+html {
+  touch-action: pan-y manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior-x: none;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-anchor: none !important;
+  scroll-behavior: auto !important;
+}
+
+body {
+  touch-action: pan-y manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior-x: none;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  min-height: 100%;
+  -webkit-overflow-scrolling: touch;
+  -webkit-touch-callout: none;
+  overflow-anchor: none !important;
+  scroll-behavior: auto !important;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  min-height: 100%;
+  overflow-anchor: none !important;
+}
+
+/* Prevent double-tap zoom while keeping smooth vertical touch scrolling */
+button,
+a,
+input,
+select,
+textarea,
+label {
+  touch-action: pan-y manipulation;
+}
+
+/* Inputs stay selectable without horizontal expansion during typing */
+input,
+textarea,
+select {
+  -webkit-user-select: text;
+  user-select: text;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 280 78% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 280 78% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 280 78% 9%;
+
+    --primary: 280 78% 9%;
+    --primary-foreground: 43 38% 60%;
+
+    --secondary: 43 38% 95%;
+    --secondary-foreground: 280 78% 9%;
+
+    --muted: 43 10% 55%;
+    --muted-foreground: 43 10% 45%;
+
+    --accent: 43 38% 60%;
+    --accent-foreground: 280 78% 9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 43 30% 85%;
+    --input: 43 30% 85%;
+    --ring: 43 38% 60%;
+
+    --radius: 0.5rem;
+
+    /* Brand tokens */
+    --brand: 280 78% 9%;
+    --gold: 43 38% 60%;
+    --gold-light: 43 40% 80%;
+    --page: 40 33% 97%;
+
+    --sidebar-background: 280 78% 6%;
+    --sidebar-foreground: 43 38% 90%;
+    --sidebar-primary: 43 38% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 280 60% 12%;
+    --sidebar-accent-foreground: 43 38% 90%;
+    --sidebar-border: 280 40% 15%;
+    --sidebar-ring: 43 38% 60%;
+  }
+
+  .dark {
+    --background: 280 80% 3%;
+    --foreground: 43 38% 90%;
+
+    --card: 280 70% 5%;
+    --card-foreground: 43 38% 90%;
+
+    --popover: 280 70% 5%;
+    --popover-foreground: 43 38% 90%;
+
+    --primary: 43 38% 90%;
+    --primary-foreground: 280 78% 9%;
+
+    --secondary: 280 50% 12%;
+    --secondary-foreground: 43 38% 90%;
+
+    --muted: 280 30% 20%;
+    --muted-foreground: 43 10% 65%;
+
+    --accent: 280 50% 12%;
+    --accent-foreground: 43 38% 90%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 280 30% 15%;
+    --input: 280 30% 15%;
+    --ring: 43 38% 60%;
+
+    --brand: 280 78% 9%;
+    --gold: 43 38% 60%;
+    --gold-light: 43 40% 75%;
+    --page: 280 80% 2%;
+
+    --sidebar-background: 280 78% 4%;
+    --sidebar-foreground: 43 38% 90%;
+    --sidebar-primary: 43 38% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 280 60% 8%;
+    --sidebar-accent-foreground: 43 38% 90%;
+    --sidebar-border: 280 40% 10%;
+    --sidebar-ring: 43 38% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  /* ==========================================================================
+     Unified Corporate Typography System (CompanyIntro Standardization)
+     - Headings (h1, h2): 16px mobile, 24px sm, 30px md, font-black, leading-snug
+     - Subheadings (h3): 14px mobile, 18px sm, 20px md, font-bold, leading-snug
+     - Subheadings (h4): 13.5px mobile, 16px sm, 18px md, font-bold, leading-snug
+     - Body Text (p): 13px mobile, 16px sm, 18px md, font-medium, leading-relaxed (1.625)
+     ========================================================================== */
+  h1, h2 {
+    font-size: 16px;
+    line-height: 1.375;
+    font-weight: 900;
+  }
+  @media (min-width: 640px) {
+    h1, h2 {
+      font-size: 24px;
+    }
+  }
+  @media (min-width: 768px) {
+    h1, h2 {
+      font-size: 30px;
+    }
+  }
+
+  h3 {
+    font-size: 14px;
+    line-height: 1.375;
+    font-weight: 700;
+  }
+  @media (min-width: 640px) {
+    h3 {
+      font-size: 18px;
+    }
+  }
+  @media (min-width: 768px) {
+    h3 {
+      font-size: 20px;
+    }
+  }
+
+  h4 {
+    font-size: 13.5px;
+    line-height: 1.375;
+    font-weight: 700;
+  }
+  @media (min-width: 640px) {
+    h4 {
+      font-size: 16px;
+    }
+  }
+  @media (min-width: 768px) {
+    h4 {
+      font-size: 18px;
+    }
+  }
+
+  p {
+    font-size: 13px;
+    line-height: 1.625;
+    font-weight: 500;
+  }
+  @media (min-width: 640px) {
+    p {
+      font-size: 16px;
+    }
+  }
+  @media (min-width: 768px) {
+    p {
+      font-size: 18px;
+    }
+  }
+
+  /* ==========================================================================
+     Mandatory Mobile Typography & Spacing Standard (< 640px)
+     - حجم العنوان الأول: 16px (line-height: 1.375)
+     - حجم العنوان الثاني: 14px (line-height: 1.375)
+     - حجم النص: 13px (line-height: 1.625)
+     - تباعد الأسطر: 1.375 للعناوين / 1.625 للنص
+     - الهوامش الجانبية: 16px (من اليمين واليسار)
+     ========================================================================== */
+  @media (max-width: 639.98px) {
+    .mobile-title-1 {
+      font-size: 16px !important;
+      line-height: 1.375 !important;
+    }
+    .mobile-title-2 {
+      font-size: 14px !important;
+      line-height: 1.375 !important;
+    }
+    .mobile-body-text {
+      font-size: 13px !important;
+      line-height: 1.625 !important;
+    }
+  }
+
+  html {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 500;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    @apply bg-background text-foreground;
+  }
+
+  body {
+    font-family: 'Tajawal', sans-serif;
+    font-weight: 500;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    @apply bg-background text-foreground;
+  }
+
+  /* ==========================================================================
+     Universal Arabic Typography & Word-Spacing Stabilization
+     Ensures natural, coherent spacing between Arabic words across all pages,
+     cards, dialogs, modals, and screen sizes (especially mobile 375px - 430px).
+     ========================================================================== */
+
+  /* Global word-spacing and letter-spacing reset for all text containers */
+  [dir="rtl"],
+  [dir="rtl"] *,
+  :lang(ar),
+  :lang(ar) *,
+  p, h1, h2, h3, h4, h5, h6, span, div, li, a, button, label {
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+  }
+
+  /* Completely neutralize text-justify: prevent browser forced stretching of spaces */
+  .text-justify,
+  [class*="text-justify"],
+  [dir="rtl"] .text-justify,
+  [style*="text-align: justify"],
+  [style*="text-align:justify"] {
+    text-align: right !important;
+    text-justify: none !important;
+    word-spacing: normal !important;
+    letter-spacing: normal !important;
+  }
+
+  /* Responsive and readable line-height and text break behavior */
+  p, div, li, span {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #root {
+    min-height: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* App-like touch interaction: eliminate tap delay and prevent double-tap & pinch zoom */
+  input, textarea, select, button, a {
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+/* Unified typography: Tajawal base with full support for Cairo and Mono */
+@layer utilities {
+  html, body, button, input, select, textarea, label, table, th, td,
+  h1, h2, h3, h4, h5, h6, p, span, div, a, li,
+  .font-tajawal, .font-sans {
+    font-family: 'Tajawal', sans-serif;
+  }
+  .font-cairo, .font-cairo * {
+    font-family: 'Cairo', sans-serif !important;
+  }
+  .font-mono, .font-mono * {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  }
+  .font-thin, .font-extralight, .font-light, .font-normal {
+    font-weight: 400 !important;
+  }
+  .font-medium {
+    font-weight: 500 !important;
+  }
+  .font-semibold {
+    font-weight: 600 !important;
+  }
+  .font-bold, .font-extrabold, .font-black {
+    font-weight: 700 !important;
+  }
+
+  /* Prevent letter-spacing distortion on Arabic script */
+  [dir="rtl"] .tracking-tighter,
+  [dir="rtl"] .tracking-tight,
+  [dir="rtl"] .tracking-normal,
+  [dir="rtl"] .tracking-wide,
+  [dir="rtl"] .tracking-wider,
+  [dir="rtl"] .tracking-widest {
+    letter-spacing: normal !important;
+  }
+}
+
+@layer utilities {
+  .bg-card-gradient {
+    background: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(40 33% 97%) 100%);
+  }
+  .bg-story-gradient {
+    background: linear-gradient(135deg, hsl(40 40% 97%) 0%, hsl(43 40% 92%) 100%);
+  }
+  .overflow-x-clip {
+    overflow-x: clip !important;
+  }
+}
+
+@keyframes cards-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-cards-marquee {
+  animation: cards-marquee 22s linear infinite;
+  will-change: transform;
+}
+
+
+@media print {
+  .print-hidden {
+    display: none !important;
+  }
+  .print-container {
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  /* Promissory note: single A4 page with 1cm margins (WYSIWYG, single page) */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  html, body {
+    width: 210mm !important;
+    min-height: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  /* Single-page promissory note mode */
+  body:has(.promissory-print-wrap) {
+    height: 297mm !important;
+    overflow: hidden !important;
+  }
+
+  .promissory-print-wrap {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 190mm !important;
+    height: 277mm !important;
+    overflow: hidden !important;
+  }
+  .promissory-sheet {
+    box-shadow: none !important;
+    width: 190mm !important;
+    max-width: 190mm !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    /* Auto-fit: scale set at print-time by JS via --print-scale (default 1) */
+    transform: scale(var(--print-scale, 1));
+    transform-origin: top right;
+    line-height: 1 !important;
+  }
+  .promissory-sheet * {
+    line-height: 1 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  /* Hide everything outside the sheet during print to prevent stray pages */
+  body * { visibility: hidden !important; }
+  .promissory-print-wrap, .promissory-print-wrap * { visibility: visible !important; }
+  .invoice-container, .invoice-container * { visibility: visible !important; }
+
+  /* Dedicated Official Contract Print Area */
+  body.is-printing-contract,
+  body:has(#rifans-official-print-area) {
+    width: 210mm !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #rifans-official-print-area,
+  #rifans-official-print-area * {
+    visibility: visible !important;
+  }
+
+  #rifans-official-print-area {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 210mm !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    z-index: 9999999 !important;
+  }
+
+  .contract-a4-page {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box !important;
+    padding: 12mm 15mm 12mm 15mm !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+  }
+
+  .contract-a4-page tr,
+  .contract-a4-page table,
+  .contract-a4-page h3 {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .contract-a4-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+  .invoice-container {
+    position: absolute !important;
+    inset: 0 !important;
+    margin: 0 auto !important;
+    width: 210mm !important;
+    zoom: 0.75;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .invoice-container * {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .invoice-container table { width: 100%; font-size: 10px; }
+  .invoice-container h1, .invoice-container h2, .invoice-container h3 {
+    font-size: 14px; margin: 5px 0;
+  }
+  .invoice-container img { max-width: 100%; height: auto; }
+}
+
+/* Continuous horizontal slide animation for Most Requested Services */
+@keyframes continuousSlideTrack {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-continuous-slide {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: continuousSlideTrack 49s linear infinite;
+}
+
+.animate-continuous-slide:hover {
+  animation-play-state: paused;
+}
+
+/* ========================================================================= */
+/* UNIFIED IMAGE WRAPPER & SLIDE SYSTEM                                      */
+/* Enforces exactly 16px corner radius, zero double edges, zero background leakage */
+/* ========================================================================= */
+.image-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  clip-path: inset(0 round 16px) !important;
+  -webkit-clip-path: inset(0 round 16px) !important;
+  transform: translateZ(0);
+  isolation: isolate;
+}
+
+.image-wrapper::before,
+.image-wrapper::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.image-wrapper img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: inherit !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.image-wrapper img::before,
+.image-wrapper img::after {
+  display: none !important;
+  content: none !important;
+}
+
+.slide {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.slide::before,
+.slide::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+a.image-link,
+a:has(> .image-wrapper),
+a:has(> .slide) {
+  display: block !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
