@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Shared';
 import { Loader2, ShieldCheck, ArrowRight, RefreshCw } from 'lucide-react';
@@ -35,7 +36,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVeri
     setIsSending(true);
     setError('');
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('send-otp', {
+      const { data, error: fnError } = await invokeFunction('send-otp', {
         body: { email, userId },
       });
 
@@ -102,7 +103,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVeri
         return;
       }
 
-      const { data, error: fnError } = await supabase.functions.invoke('verify-otp', {
+      const { data, error: fnError } = await invokeFunction('verify-otp', {
         body: { email, code, userId },
       });
 

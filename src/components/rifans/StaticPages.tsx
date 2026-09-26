@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 
 import React, { useEffect } from 'react';
 import { 
@@ -457,7 +458,7 @@ export const Contact: React.FC = () => {
 
       // Send email notification to admin
       try {
-        await supabase.functions.invoke('notify-admin', {
+        await invokeFunction('notify-admin', {
           body: {
             requestData: { id: Date.now().toString(), type: 'contact', details: formData.message, data: formData },
             userData: { fullName: formData.name, email: formData.email },

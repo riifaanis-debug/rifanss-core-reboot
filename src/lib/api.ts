@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import { supabase } from '@/integrations/supabase/client';
 
 // Helper to get current user ID from localStorage
@@ -526,7 +527,7 @@ export const notifyAdminContractSigned = async (submissionId: string, contractPd
 
   const files = contractPdfFile ? [contractPdfFile] : [];
 
-  await supabase.functions.invoke('notify-admin', {
+  await invokeFunction('notify-admin', {
     body: {
       requestData: {
         id: submissionId,

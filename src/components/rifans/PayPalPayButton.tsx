@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
@@ -18,7 +19,7 @@ const PayPalPayButton: React.FC<Props> = ({ kind, recordId, label = 'سداد ا
     try {
       const returnUrl = `${window.location.origin}/#/pay/return`;
       const cancelUrl = `${window.location.origin}/#/pay/cancel`;
-      const { data, error: fnError } = await supabase.functions.invoke('paypal-order', {
+      const { data, error: fnError } = await invokeFunction('paypal-order', {
         body: { action: 'create', kind, record_id: recordId, return_url: returnUrl, cancel_url: cancelUrl },
       });
       if (fnError) throw new Error(fnError.message);

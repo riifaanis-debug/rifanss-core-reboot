@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
@@ -22,7 +23,7 @@ const DomainVerificationCheck: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('check-domain-verification', {
+      const { data, error } = await invokeFunction('check-domain-verification', {
         body: {},
       });
       if (error) throw error;
