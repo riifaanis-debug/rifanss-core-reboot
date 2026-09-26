@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Trash2, ArrowRight, CheckCircle, AlertCircle, Lock, Calendar, Hash, ShieldCheck, LogIn } from 'lucide-react';
 import { Button } from './Shared';
@@ -424,7 +425,7 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
 
       // Send email notification to admin via edge function
       try {
-        await supabase.functions.invoke('notify-admin', {
+        await invokeFunction('notify-admin', {
           body: {
             requestData: {
               id: result?.id || requestId,

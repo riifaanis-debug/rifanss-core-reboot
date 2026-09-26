@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useEffect, useState } from 'react';
 import { FileText, Send, Loader2, Paperclip, CheckCircle2, Clock } from 'lucide-react';
 import { getMyOpenRequests, submitOpenRequestAnswers, OpenRequestRecord, OpenRequestField } from '../../lib/openRequestsApi';
@@ -183,7 +184,7 @@ const CustomerOpenRequests: React.FC<CustomerOpenRequestsProps> = ({ userData, t
           }, {}),
           files: attachments,
         };
-        await supabase.functions.invoke('send-exemption-request', {
+        await invokeFunction('send-exemption-request', {
           body: { requestData: payload, userData },
         });
       } catch (e) {
@@ -192,7 +193,7 @@ const CustomerOpenRequests: React.FC<CustomerOpenRequestsProps> = ({ userData, t
 
       // Sync to HubSpot: upsert contact + create deal
       try {
-        await supabase.functions.invoke('hubspot-sync', {
+        await invokeFunction('hubspot-sync', {
           body: {
             action: 'both',
             contact: {

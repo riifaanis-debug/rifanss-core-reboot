@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 // Client shim that mirrors the previous `supabase.functions.invoke` signature,
 // routed to the app's own server routes.
 export async function invokeFunction<T = any>(

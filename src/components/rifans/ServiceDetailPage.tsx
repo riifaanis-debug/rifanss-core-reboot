@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { PageLayout } from './StaticPages';
@@ -537,7 +538,7 @@ const ServiceRequestForm: React.FC<{
       const result = await submitRequest(requestDataObj);
 
       try {
-        await supabase.functions.invoke('notify-admin', {
+        await invokeFunction('notify-admin', {
           body: {
             requestData: {
               id: result?.id || Date.now().toString(),

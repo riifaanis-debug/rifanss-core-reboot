@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useState, useEffect } from 'react';
 import { Section, SectionHeader, Card } from './Shared';
 import { TrendingUp, AlertTriangle, CheckCircle, Info } from 'lucide-react';
@@ -301,7 +302,7 @@ const Calculator: React.FC = () => {
                      });
                      // Send email notification
                      try {
-                       await supabase.functions.invoke('notify-admin', {
+                       await invokeFunction('notify-admin', {
                          body: {
                            requestData: {
                              id: reqResult?.id || Date.now().toString(),

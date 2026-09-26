@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
@@ -265,7 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Sync new contact to HubSpot (fire-and-forget)
       try {
-        supabase.functions.invoke('hubspot-sync', {
+        invokeFunction('hubspot-sync', {
           body: {
             action: 'upsert_contact',
             contact: {
@@ -468,7 +469,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      supabase.functions.invoke('hubspot-sync', {
+      invokeFunction('hubspot-sync', {
         body: {
           action: 'upsert_contact',
           contact: {
@@ -503,7 +504,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       // Use server-side edge function for secure bcrypt password verification
-      const { data, error } = await supabase.functions.invoke('verify-login', {
+      const { data, error } = await invokeFunction('verify-login', {
         body: { email, password },
       });
 

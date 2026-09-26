@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
@@ -26,7 +27,7 @@ const PaymentReturnPage: React.FC<Props> = ({ cancelled = false }) => {
 
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('paypal-order', {
+        const { data, error } = await invokeFunction('paypal-order', {
           body: { action: 'capture', order_id: orderId },
         });
         if (error) throw new Error(error.message);

@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from './Shared';
@@ -88,7 +89,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
         }
 
         const { supabase } = await import('@/integrations/supabase/client');
-        const { data, error: fnErr } = await supabase.functions.invoke('verify-login', {
+        const { data, error: fnErr } = await invokeFunction('verify-login', {
           body: { username: u, email: u, password: p },
         });
         if (!fnErr && data?.success && data?.user) {

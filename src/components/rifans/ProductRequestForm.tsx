@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useEffect, useRef, useState } from 'react';
 import { PageLayout } from './StaticPages';
 import { Button } from './Shared';
@@ -243,7 +244,7 @@ export const ProductRequestForm: React.FC<Props> = ({ productId }) => {
 
       // Notify admin
       try {
-        await supabase.functions.invoke('notify-admin', {
+        await invokeFunction('notify-admin', {
           body: {
             requestData: {
               id,

@@ -1,3 +1,4 @@
+import { invokeFunction } from "@/lib/functions";
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,7 +103,7 @@ const ProfileCompletionModal: React.FC = () => {
 
       // Send admin notification for new client
       try {
-        await supabase.functions.invoke('notify-admin', {
+        await invokeFunction('notify-admin', {
           body: {
             requestData: {
               id: user.id,
