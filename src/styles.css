@@ -2,6 +2,7 @@
 @source "../src";
 @import "tw-animate-css";
 @import "./rifans.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
