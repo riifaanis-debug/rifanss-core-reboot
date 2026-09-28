@@ -24,11 +24,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showOtp, setShowOtp] = useState(false);
-  const [pendingUser, setPendingUser] = useState<{ id: string; email: string; role: string } | null>(null);
-  const [pendingRegistration, setPendingRegistration] = useState<{ nationalId: string; mobile: string; email: string } | null>(null);
+  const [otpFlow, setOtpFlow] = useState<{ mode: 'register' | 'login'; nationalId: string; mobile: string; email?: string } | null>(null);
 
-  const { lookupUserByNationalId, registerNewUser, loginWithEmail, loginWithGoogle, loginWithApple, login } = useAuth();
+  const { loginWithEmail, loginWithGoogle, loginWithApple, login } = useAuth();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -94,127 +92,59 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
       return;
     }
 
+    if (!/^[0-9]{10}$/.test(formData.nationalId)) return setError('رقم الهوية يجب أن يتكون من 10 أرقام');
+    if (!/^05[0-9]{8}$/.test(formData.mobile)) return setError('رقم الجوال يجب أن يتكون من 10 أرقام ويبدأ بـ 05');
+
     if (mode === 'login') {
-      if (!/^[0-9]{10}$/.test(formData.nationalId)) return setError('رقم الهوية يجب أن يتكون من 10 أرقام');
-      if (!/^05[0-9]{8}$/.test(formData.mobile)) return setError('رقم الجوال يجب أن يتكون من 10 أرقام ويبدأ بـ 05');
-      setIsLoading(true);
-      try {
-        const u = await lookupUserByNationalId(formData.nationalId, formData.mobile);
-        if (u.phone && u.phone !== formData.mobile) {
-          setError('رقم الجوال غير مطابق للحساب المسجل');
-          setIsLoading(false);
-          return;
-        }
-        login({
-          user: { id: u.id, email: u.email, phone: formData.mobile, national_id: formData.nationalId, role: (u.role || 'user') as 'admin' | 'user' },
-          token: `session-${u.id}`,
-        });
-        const hasPending = !!sessionStorage.getItem('pending_service_request');
-        const redirectPath = sessionStorage.getItem('redirect_after_auth');
-        if (redirectPath) {
-          sessionStorage.removeItem('redirect_after_auth');
-          window.location.hash = redirectPath;
-        } else if (!hasPending) {
-          window.location.hash = u.role === 'admin' ? '#/admin' : '#/dashboard';
-        }
-        onClose();
-      } catch (err: any) {
-        setError(err.message || 'تعذّر تسجيل الدخول');
-      } finally {
-        setIsLoading(false);
-      }
+      // Sign-in requires an email OTP sent to the address on file
+      setOtpFlow({ mode: 'login', nationalId: formData.nationalId, mobile: formData.mobile });
       return;
     }
 
-    // register
-    if (!/^[0-9]{10}$/.test(formData.nationalId)) return setError('رقم الهوية يجب أن يتكون من 10 أرقام');
-    if (!/^05[0-9]{8}$/.test(formData.mobile)) return setError('رقم الجوال يجب أن يتكون من 10 أرقام ويبدأ بـ 05');
+    // register — account is created on the server only after OTP verification
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return setError('يرجى إدخال بريد إلكتروني صحيح');
-
-    // Send OTP first WITHOUT creating the account; only create after verification
-    setIsLoading(true);
-    try {
-      // Pre-check national id is not in use
-      const { supabase } = await import('@/integrations/supabase/client');
-      const isSupabaseConfigured = true;
-      if (isSupabaseConfigured) {
-        try {
-          const { data: existing } = await supabase
-            .from('app_users')
-            .select('id')
-            .eq('national_id', formData.nationalId)
-            .limit(1);
-          if (existing && existing.length > 0) {
-            setError('يوجد حساب مسجل بهذه الهوية. يرجى تسجيل الدخول.');
-            setIsLoading(false);
-            return;
-          }
-        } catch {
-          // ignore error if Supabase query fails
-        }
-      }
-
-      setPendingRegistration({
-        nationalId: formData.nationalId,
-        mobile: formData.mobile,
-        email: formData.email.toLowerCase().trim(),
-      });
-      setPendingUser({ id: 'pending', email: formData.email.toLowerCase().trim(), role: 'user' });
-      setShowOtp(true);
-    } catch (err: any) {
-      setError(err.message || 'تعذّر إنشاء الحساب');
-    } finally {
-      setIsLoading(false);
-    }
+    setOtpFlow({
+      mode: 'register',
+      nationalId: formData.nationalId,
+      mobile: formData.mobile,
+      email: formData.email.toLowerCase().trim(),
+    });
   };
 
-  if (showOtp && pendingUser) {
+  if (otpFlow) {
     return (
       <OtpVerification
-        email={pendingUser.email}
-        userId={pendingUser.id}
-        onVerified={async () => {
-          try {
-            if (pendingRegistration) {
-              const newUser = await registerNewUser(
-                pendingRegistration.nationalId,
-                pendingRegistration.mobile,
-                pendingRegistration.email,
-              );
-              login({ user: newUser, token: `session-${newUser.id}` });
-              const hasPending = !!sessionStorage.getItem('pending_service_request');
-              const redirectPath = sessionStorage.getItem('redirect_after_auth');
-              if (redirectPath) {
-                sessionStorage.removeItem('redirect_after_auth');
-                window.location.hash = redirectPath;
-              } else if (!hasPending) {
-                window.location.hash = '#/dashboard';
-              }
-            } else {
-              login({
-                user: { id: pendingUser.id, email: pendingUser.email, role: pendingUser.role as 'admin' | 'user' },
-                token: `session-${pendingUser.id}`,
-              });
-              const hasPending = !!sessionStorage.getItem('pending_service_request');
-              const redirectPath = sessionStorage.getItem('redirect_after_auth');
-              if (redirectPath) {
-                sessionStorage.removeItem('redirect_after_auth');
-                window.location.hash = redirectPath;
-              } else if (!hasPending) {
-                window.location.hash = pendingUser.role === 'admin' ? '#/admin' : '#/dashboard';
-              }
-            }
-            onClose();
-          } catch (err: any) {
-            setError(err.message || 'فشل إكمال العملية');
-            setShowOtp(false);
+        mode={otpFlow.mode}
+        nationalId={otpFlow.nationalId}
+        phone={otpFlow.mobile}
+        email={otpFlow.email}
+        onVerified={async (u: any) => {
+          login({ user: u, token: `session-${u.id}` });
+          if (otpFlow.mode === 'register') {
+            invokeFunction('hubspot-sync', {
+              body: {
+                action: 'upsert_contact',
+                contact: {
+                  email: u.email,
+                  phone: u.phone,
+                  firstname: u.fullName,
+                  national_id: u.national_id,
+                  file_number: u.file_number,
+                },
+              },
+            });
           }
+          const hasPending = !!sessionStorage.getItem('pending_service_request');
+          const redirectPath = sessionStorage.getItem('redirect_after_auth');
+          if (redirectPath) {
+            sessionStorage.removeItem('redirect_after_auth');
+            window.location.hash = redirectPath;
+          } else if (!hasPending) {
+            window.location.hash = u.role === 'admin' ? '#/admin' : '#/dashboard';
+          }
+          onClose();
         }}
-        onCancel={() => {
-          setShowOtp(false);
-          setPendingUser(null);
-          setPendingRegistration(null);
-        }}
+        onCancel={() => setOtpFlow(null)}
       />
     );
   }
