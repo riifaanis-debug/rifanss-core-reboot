@@ -206,19 +206,14 @@ const ContractPage: React.FC<ContractPageProps> = ({ submissionId, onClose }) =>
     );
   }
 
-  const isRescheduling = submission?.type === 'rescheduling_request' || submission?.type === 'scheduling_request';
-  const isSeizedAmounts = submission?.type === 'seized_amounts_request';
-  const contractTitle = isRescheduling
-    ? 'عقد تفويض ومتابعة طلب جدولة منتجات تمويلية'
-    : isSeizedAmounts
-    ? 'عقد تفويض ومتابعة طلب إتاحة النسبة النظامية'
-    : 'عقد تفويض ومتابعة طلب إعفاء تمويلي';
-
-  const clientFullName = [submission?.data?.firstName, submission?.data?.middleName, submission?.data?.lastName].filter(Boolean).join(' ') || 'العميل الكريم';
-  const clientNationalId = submission?.data?.nationalId || submission?.data?.userNationalId || '---';
-  const clientMobile = submission?.data?.mobile || submission?.data?.phone || '---';
-  const targetBank = submission?.data?.bank || (isRescheduling ? 'الجهات التمويلية والبنوك' : 'البنك الأهلي السعودي');
-  const contractDateFormatted = new Date(submission?.timestamp || Date.now()).toLocaleDateString('ar-SA');
+  /* المصدر الوحيد لنص العقد وبياناته */
+  const norm = normalizeContract(getContractPayload());
+  const contractTitle = norm.content.title;
+  const clientFullName = norm.clientName;
+  const clientNationalId = norm.nationalId;
+  const clientMobile = norm.mobile;
+  const targetBank = norm.bank;
+  const contractDateFormatted = norm.contractDate;
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] flex flex-col font-['Tajawal'] text-right" dir="rtl">
