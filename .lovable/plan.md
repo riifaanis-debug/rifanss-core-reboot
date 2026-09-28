@@ -35,7 +35,7 @@ The look, wording and steps stay the same for customers and the admin. No keys a
 
 ## 5. Removing the bypass routes
 - Delete the two old functions that created a customer without a code.
-- Delete the leftover browser-only customer records.
+- Remove only the old in-browser storage code and fallbacks (localStorage and the offline store). No customer record or other data is deleted from the database.
 - Review every endpoint and every direct database call in the code to confirm none allows creating, changing, deleting or reading a customer record outside the rules above.
 - Endpoints that should not be open to the public (admin alerts, HubSpot sync, fee waiver (exemption) requests) will require a session.
 
