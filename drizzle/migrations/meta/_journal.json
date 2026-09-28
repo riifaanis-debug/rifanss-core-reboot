@@ -43,6 +43,13 @@
       "when": 1790568755016,
       "tag": "0005_chat_admin_alias",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790593147768,
+      "tag": "0006_add_request_result_fields",
+      "breakpoints": true
     }
   ]
 }
