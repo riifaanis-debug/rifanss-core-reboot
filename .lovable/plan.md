@@ -70,3 +70,8 @@ The admin should see everything, and each customer only their own data. I'll del
 - Endpoints under `/api/public/fn` that act for a user will check the bearer token server-side. `send-otp` and `verify-otp` stay public but have rate limits.
 - Storage: new upload path is `{app_user_id}/...`. `storage.objects` policies check folder = own id, or admin. The public uploads route checks the bearer token and ownership, or admin.
 - Existing browser queries keep working with no UI change, because the database rules now enforce access. I'll only touch calls that relied on reading other people's rows.
+
+## Additional requirements
+- A session link can be issued only inside the server's code check, and only after a correct code, or after the admin password is checked on the server. No other endpoint can issue one.
+- The admin keys never reach the browser. They don't appear in the site's bundle, in network replies, or in the console. The bundle will be searched to confirm.
+- Manual tests from outside the site call the database, storage and endpoints directly. They run as an anonymous visitor, customer 1, customer 2 and the admin.
