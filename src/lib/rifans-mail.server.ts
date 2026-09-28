@@ -26,7 +26,7 @@ export async function sendMail(opts: {
   }
 
   const body: Record<string, unknown> = {
-    from: opts.from || "ريفانس المالية <onboarding@resend.dev>",
+    from: opts.from || "ريفانس المالية <no-reply@rifanss.com>",
     to: [opts.to],
     subject: opts.subject,
     html: opts.html,
