@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { X } from 'lucide-react';
 
 const ProfileCompletionModal: React.FC = () => {
-  const { user, login, token, logout } = useAuth();
+  const { user, updateLocalUser, token, logout } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
