@@ -72,13 +72,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
       try {
 
 
-        const { supabase } = await import('@/integrations/supabase/client');
         const { data, error: fnErr } = await invokeFunction('verify-login', {
           body: { username: u, email: u, password: p },
         });
-        if (!fnErr && data?.success && data?.user) {
-          login({ user: data.user, token: `session-${data.user.id}` });
-          window.location.hash = '#/admin';
+        if (!fnErr && data?.success && data?.token_hash) {
+          const profile = await login({ token_hash: data.token_hash });
+          window.location.hash = profile?.role === 'admin' ? '#/admin' : '#/dashboard';
           onClose();
           return;
         }
@@ -118,8 +117,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
         nationalId={otpFlow.nationalId}
         phone={otpFlow.mobile}
         email={otpFlow.email}
-        onVerified={async (u: any) => {
-          login({ user: u, token: `session-${u.id}` });
+        onVerified={async (result: any) => {
+          const u: any = await login({ token_hash: result?.token_hash });
           if (otpFlow.mode === 'register') {
             invokeFunction('hubspot-sync', {
               body: {

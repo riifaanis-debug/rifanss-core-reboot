@@ -109,12 +109,16 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ mode, nationalId, pho
         body: { mode, nationalId, phone, email, code },
       });
 
-      if (!data?.success || !data?.user) {
+      if (!data?.success || !data?.token_hash) {
         setError(data?.error || 'رمز التحقق غير صحيح');
         return;
       }
 
-      await onVerified(data.user);
+      try {
+        await onVerified(data);
+      } catch (e: any) {
+        setError(e?.message || 'تعذّر تسجيل الدخول، يرجى المحاولة لاحقًا');
+      }
     } catch {
       setError('تعذّر الاتصال بخادم التحقق، يرجى المحاولة لاحقًا');
     } finally {
