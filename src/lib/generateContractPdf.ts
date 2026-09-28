@@ -33,14 +33,14 @@ export const cleanArabicFileName = (name?: string, fallbackId?: string): string 
 
   if (!result || result === 'contract' || result === 'عقد' || result.startsWith('عقد-')) {
     if (numericId) {
-      return `عقد ريفانيس المالية - ${numericId}.pdf`;
+      return `عقد ريفانس المالية - ${numericId}.pdf`;
     }
-    return `عقد ريفانيس المالية.pdf`;
+    return `عقد ريفانس المالية.pdf`;
   }
 
   // If name does not include company name, add it
   if (!result.includes('ريفانيس') && !result.includes('ريفانس')) {
-    return `عقد ريفانيس المالية - ${result}.pdf`;
+    return `عقد ريفانس المالية - ${result}.pdf`;
   }
 
   return `${result}.pdf`;

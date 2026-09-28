@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AdminPaymentRequests } from './PaymentRequests';
 import ChatPage from './ChatPage';
+import ContractPage from './ContractPage';
 import OpenRequestBuilder from './OpenRequestBuilder';
 import WaiveAndReschedulingManagement from './WaiveAndReschedulingManagement';
 import { Button, Card } from './Shared';
@@ -569,33 +570,82 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     }
   };
 
+  /* منع التكرار: إذا وُجد مستند نشط للطلب يُعرض الحالي، أو يُصدر بديل مع حفظ السابق وسبب الاستبدال */
+  const [isIssuingDoc, setIsIssuingDoc] = useState(false);
+  const handleExistingDoc = async (
+    kind: 'invoice' | 'note',
+    userId: string,
+    submissionId: string,
+  ): Promise<boolean> => {
+    const api = await import('../../lib/api');
+    const existing: any = kind === 'invoice'
+      ? await api.getActiveInvoice(submissionId)
+      : await api.getActivePromissoryNote(submissionId);
+    if (!existing) return false;
+    const label = kind === 'invoice' ? 'فاتورة' : 'سند لأمر';
+    const wantsReplace = window.confirm(
+      `يوجد ${label} نشط لهذا الطلب برقم ${existing.id}.\n\nاضغط «موافق» لإصدار ${label} بديل (يُحفظ السابق بحالة مستبدل)، أو «إلغاء» لعرض المستند الحالي.`,
+    );
+    if (!wantsReplace) {
+      window.open(kind === 'invoice' ? `#/invoice/${submissionId}` : `#/promissory/${existing.id}`, '_blank');
+      return true;
+    }
+    const reason = window.prompt(`اذكر سبب إصدار ${label} بديل:`);
+    if (!reason || !reason.trim()) { alert('يجب ذكر سبب الاستبدال.'); return true; }
+    if (!(await ensureRequestResult(submissionId))) return true;
+    setIsIssuingDoc(true);
+    try {
+      if (kind === 'invoice') {
+        await api.replaceInvoice(userId, submissionId, reason.trim());
+        fetchSubmissions();
+        window.open(`#/invoice/${submissionId}`, '_blank');
+      } else {
+        const res = await api.replacePromissoryNote(userId, submissionId, reason.trim());
+        setPromissoryNotes(await getAdminPromissoryNotes());
+        window.open(`#/promissory/${res.id}`, '_blank');
+      }
+    } catch (err) {
+      alert((err as any)?.message || 'تعذر إصدار المستند البديل');
+    } finally {
+      setIsIssuingDoc(false);
+    }
+    return true;
+  };
+
   const sendInvoice = async (userId: string, submissionId: string) => {
+    if (isIssuingDoc) return;
+    if (await handleExistingDoc('invoice', userId, submissionId)) return;
     if (!(await ensureRequestResult(submissionId))) return;
     setPendingInvoiceData({ userId, submissionId });
     setIsConfirmingSendInvoice(true);
   };
 
   const sendPromissory = async (userId: string, submissionId: string) => {
+    if (isIssuingDoc) return;
+    if (await handleExistingDoc('note', userId, submissionId)) return;
     if (!(await ensureRequestResult(submissionId))) return;
     setPendingPromissoryData({ userId, submissionId });
     setIsConfirmingSendPromissory(true);
   };
 
   const handleConfirmSendPromissory = async () => {
-    if (!pendingPromissoryData) return;
+    if (!pendingPromissoryData || isIssuingDoc) return;
     const { userId, submissionId } = pendingPromissoryData;
+    setIsIssuingDoc(true);
     try {
-      const noteId = await apiSendPromissoryNote(userId, submissionId);
+      const res = await apiSendPromissoryNote(userId, submissionId);
       setIsConfirmingSendPromissory(false);
       setPendingPromissoryData(null);
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
       const notes = await getAdminPromissoryNotes();
       setPromissoryNotes(notes);
-      window.open(`#/promissory/${noteId}`, '_blank');
+      window.open(`#/promissory/${res.id}`, '_blank');
     } catch (err) {
       console.error(err);
       alert((err as any)?.message || 'حدث خطأ في إرسال سند الأمر');
+    } finally {
+      setIsIssuingDoc(false);
     }
   };
 
@@ -618,19 +668,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   };
 
   const handleConfirmSendInvoice = async () => {
-    if (!pendingInvoiceData) return;
+    if (!pendingInvoiceData || isIssuingDoc) return;
     const { userId, submissionId } = pendingInvoiceData;
-    
+    setIsIssuingDoc(true);
     try {
-      await apiSendInvoice(userId, submissionId);
+      const res = await apiSendInvoice(userId, submissionId);
       setIsConfirmingSendInvoice(false);
       setPendingInvoiceData(null);
+      if (res.existing) window.open(`#/invoice/${submissionId}`, '_blank');
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
       fetchSubmissions();
     } catch (err) {
       console.error(err);
       alert((err as any)?.message || 'حدث خطأ في إرسال الفاتورة');
+    } finally {
+      setIsIssuingDoc(false);
     }
   };
 
@@ -4511,349 +4564,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       {selectedUser && renderClientFile(selectedUser)}
 
 
-      {/* Contract View Modal */}
-      <AnimatePresence>
-        {selectedContract && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-0 sm:p-4 print-container">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand/40 backdrop-blur-md" 
-              onClick={() => setSelectedContract(null)} 
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full sm:w-[95%] max-w-5xl h-full sm:h-[92vh] bg-white dark:bg-[#12031a] rounded-none sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
-            >
-              <div className="p-3 sm:p-5 border-b border-gold/10 flex items-center justify-between bg-brand text-white shrink-0">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center text-gold border border-white/10">
-                    <PenTool size={16} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm sm:text-lg font-bold">عرض العقد: {selectedContract.file_number}</h2>
-                    <p className="text-[8px] sm:text-[10px] text-gold/80">{selectedContract.user_name}</p>
-                  </div>
-                </div>
-                <button onClick={() => setSelectedContract(null)} className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
-                  <X size={14} />
-                </button>
-              </div>
-              <div className="p-2 sm:p-6 flex-1 overflow-y-auto custom-scrollbar print-container">
-                {(() => {
-                  const sub = submissions.find(s => s.id === selectedContract.submission_id);
-                  if (!sub) return (
-                    <div className="flex flex-col items-center justify-center p-12 text-muted">
-                      <AlertCircle size={40} className="mb-4 opacity-20" />
-                      <p>تعذر تحميل بيانات العقد الكاملة</p>
-                    </div>
-                  );
-
-                  const isRescheduling = sub.type === 'rescheduling_request' || sub.type === 'scheduling_request';
-                  const products = Array.isArray(sub.data?.products) 
-                    ? sub.data.products 
-                    : (typeof sub.data?.products === 'string' ? safeParse(sub.data.products, []) : []);
-                  const totalDebt = products.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
-                  const scopeItems = isRescheduling
-                    ? [
-                        'الاطلاع على المستندات والبيانات المالية',
-                        'التواصل مع البنوك والجهات التمويلية',
-                        'رفع الطلبات ومتابعتها، وإعداد المذكرات النظامية والحضور النظامي عند الحاجة.',
-                      ]
-                    : [
-                        'الاطلاع على التقارير الطبية والمستندات الرسمية',
-                        'التواصل مع البنوك والجهات التمويلية',
-                        'رفع الطلبات ومتابعتها، وإعداد المذكرات القانونية والحضور النظامي عند الحاجة.',
-                      ];
-                  const acknowledgmentItems = [
-                    'صحة جميع البيانات والمستندات المقدمة منه.',
-                    'صحة احتساب الأتعاب وفق النسبة المتفق عليها.',
-                    'التنازل عن أي دفوع أو منازعات تتعلق بسند الأمر متى ما تم إصداره عبر منصة نافذ وفق أحكام هذا العقد.',
-                    'عدم الطعن أو الاعتراض على التنفيذ أمام محكمة التنفيذ إلا في الحدود التي يجيزها النظام.',
-                  ];
-
-                  return (
-                    <div ref={contractContentRef} className="bg-white dark:bg-white/5 rounded-xl border border-gold/10 p-4 sm:p-12 shadow-inner relative font-['Tajawal'] min-h-[800px]">
-                      {/* Official Watermark */}
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] select-none rotate-[-35deg]">
-                        <span className="text-[80px] font-black text-[#22042C]">RIFANS FINANCIAL</span>
-                      </div>
-                      
-                      {!selectedContract.signed_at && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.05] select-none rotate-[-45deg] z-0">
-                          <span className="text-[120px] font-black text-rose-600 border-8 border-rose-600 px-8 py-4 rounded-3xl">مسودة</span>
-                        </div>
-                      )}
-
-                      {/* Document Header */}
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 relative border-b-4 border-[#22042C] pb-4">
-                        <div className="text-right">
-                          <div className="space-y-1">
-                            <p className="text-[20px] font-black text-[#22042C]">شركة ريفانس المالية</p>
-                            <div className="mt-4 space-y-1">
-                              <p className="text-[16px] font-black text-[#22042C] bg-gold/10 px-3 py-1 rounded-lg inline-block">
-                                {isRescheduling ? 'عقد تفويض ومتابعة طلب جدولة منتجات تمويلية' : 'عقد تفويض ومتابعة طلب إعفاء تمويلي'}
-                              </p>
-                              <div className="flex flex-col gap-1 mt-2">
-                                <p className="text-[11px] font-bold text-[#22042C]">رقم ملف العميل: <span className="font-mono text-gold">{sub.id}</span></p>
-                                <p className="text-[11px] font-bold text-[#22042C]">رقم العقد الموحد: <span className="font-mono text-gold">{selectedContract.file_number}</span></p>
-                                <p className="text-[11px] font-bold text-[#22042C]">تاريخ الإصدار: {new Date(sub.timestamp).toLocaleDateString('ar-SA')}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="shrink-0">
-                          <img src={rifansLogo} alt="شعار ريفانس" className="h-24 sm:h-28 w-auto object-contain" />
-                        </div>
-                      </div>
-
-                      {/* Contract Body */}
-                      <div className="space-y-4 text-right dir-rtl relative text-[10px] leading-[1.6] text-[#22042C] dark:text-gray-200">
-                        {/* Parties Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-gray-200 dark:border-white/10 rounded-lg p-3 bg-gray-50/30 dark:bg-white/5">
-                          <div className="space-y-0.5">
-                            <h3 className="font-black text-gold border-b border-gold/30 pb-0.5 mb-1.5 text-[10.5px]">• الطرف الأول</h3>
-                            <p><strong>الاسم:</strong> شركة ريفانس المالية</p>
-                            <p><strong>الرقم الوطني الموحد:</strong> 7038821125</p>
-                            <p><strong>ويمثلها:</strong> AZZAH ALOBIDI بصفة المدير العام</p>
-                          </div>
-                          <div className="space-y-0.5">
-                            <h3 className="font-black text-gold border-b border-gold/30 pb-0.5 mb-1.5 text-[10.5px]">• الطرف الثاني</h3>
-                            <p><strong>اسم العميل:</strong> {sub.data?.firstName} {sub.data?.middleName} {sub.data?.lastName}</p>
-                            <p><strong>رقم الهوية:</strong> {sub.data?.nationalId || sub.data?.userNationalId || '---'}</p>
-                            <p><strong>رقم الجوال:</strong> {sub.data?.mobile}</p>
-                          </div>
-                        </div>
-
-                        <section>
-                          <h3 className="font-black mb-0.5 text-gold text-[10.5px]">التمهيد:</h3>
-                          <p className="text-right opacity-90">
-                            {isRescheduling 
-                              ? 'حيث إن الطرف الثاني لديه التزامات مالية قائمة لدى البنوك والجهات التمويلية، وحيث إن الطرف الأول يعد من الجهات المتخصصة ذات الخبرة والكفاءة المهنية العالية في مجال المنازعات المصرفية والتمويلية، ويضم نخبة من اللجان القانونية المؤهلة القادرة على دراسة الطلبات وتدقيق المستندات ومتابعة الإجراءات بشكل رسمي ونظامي...'
-                              : 'حيث إن الطرف الثاني قد تقدم وأفاد بأن لديه عجزاً طبياً مثبتاً بموجب تقارير رسمية صادرة من الجهات الطبية المختصة؛ وحيث إن الطرف الأول يُعد من الجهات المتخصصة ذات الخبرة والكفاءة المهنية العالية في مجال المنازعات المصرفية والتمويلية، ويضم نخبة من اللجان القانونية المؤهلة القادرة على دراسة الطلبات، وتدقيق المستندات والتقارير الطبية، ومتابعة الإجراءات بشكل رسمي ونظامي مع البنوك والمصارف والجهات التمويلية والهيئات الطبية وكافة الجهات التنظيمية ذات العلاقة؛ وحيث إن الطرف الثاني قد أبدى رغبته الصريحة في التقدم بطلب إعفاء من جميع التزاماته التمويلية القائمة لدى البنوك والمصارف؛ وحيث إن الطرف الأول قد أثبت جدارته المهنية من خلال ما يملكه من لجان متخصصة وخبرات عملية في إدارة طلبات العملاء المقدمة إلى الجهات التمويلية، وما حققه من نتائج إيجابية تسهم في حفظ حقوق العملاء وتحقيق مصالحهم؛ وحيث إن هذا التمهيد يُعد جزءاً لا يتجزأ من هذا العقد ومكملاً ومفسراً لبنوده؛ فقد اتفق الطرفان، وهما بكامل الأهلية المعتبرة شرعاً ونظاماً، على إبرام هذا العقد وفقاً لما يلي:'
-                            }
-                          </p>
-                        </section>
-
-                        <div className="space-y-6">
-                          <h2 className="text-right text-[14px] font-black text-[#22042C] border-b-2 border-gold pb-1 inline-block">بنود العقد التفصيلية</h2>
-                          
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (1): حجية التعامل الإلكتروني</h3>
-                            <p className="pr-2">يقر الطرفان بموافقتهما على إبرام هذا العقد واستخدام الوسائل الإلكترونية (البريد الإلكتروني، الرسائل النصية OTP) لتوثيقه، وتعد هذه الوسائل حجة ملزمة وقائمة بذاتها وفقاً لنظام التعاملات الإلكترونية السعودي، ولها ذات الحجية القانونية للتوقيع اليدوي أمام كافة الجهات الرسمية والقضائية.</p>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (2): موضوع العقد والتفويض</h3>
-                            <p className="mb-1.5">
-                              {isRescheduling 
-                                ? `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب إعادة جدولة المنتجات التمويلية الخاصة به لدى ${sub.data?.bank || 'الجهات التمويلية والبنوك'}، وذلك فيما يتعلق بمنتجات التمويل الموضحة أدناه:`
-                                : `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب الإعفاء المقدم من الطرف الثاني لدى ${sub.data?.bank || 'البنك الأهلي السعودي'}، وذلك فيما يتعلق بمنتجات التمويل الموضحة أدناه:`
-                              }
-                            </p>
-                            
-                            <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 p-3 rounded-lg space-y-2 text-[10px]">
-                              <p><strong>اسم الجهة التمويلية:</strong> {sub.data?.bank || 'الجهة المالية'}</p>
-                              {(() => {
-                                const products = Array.isArray(sub.data?.products) 
-                                  ? sub.data.products 
-                                  : (typeof sub.data?.products === 'string' ? safeParse(sub.data.products, []) : []);
-                                return products.map((product: any, idx: number) => (
-                                  <div key={idx} className="space-y-1 border-t border-gray-50 dark:border-white/5 pt-1 first:border-0 first:pt-0">
-                                    <p><strong>نوع المنتج:</strong> {product.type}</p>
-                                    <p><strong>رقم الحساب:</strong> {product.accountNumber || product.account_number}</p>
-                                    <p><strong>المبلغ:</strong> {formatAmount(product.amount)} ريال سعودي</p>
-                                  </div>
-                                ));
-                              })()}
-                              <p className="font-black text-brand dark:text-gold pt-1 text-[11px] border-t-2 border-brand/10">إجمالي المديونية: {formatAmount(totalDebt)} ريال سعودي</p>
-                            </div>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (3): نطاق التفويض</h3>
-                            <div className="pr-2">
-                              <p className="mb-0.5">يشمل التفويض الممنوح للطرف الأول الصلاحيات التالية :</p>
-                              <PdfBulletList items={scopeItems} className="space-y-0.5 pr-2" />
-                            </div>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (4): التزامات الطرف الأول</h3>
-                            <p className="pr-2">يلتزم الطرف الأول بالمحافظة على سرية بيانات الطرف الثاني، وبذل أقصى درجات العناية المهنية ، ورفع الطلبات بصيغة رسمية تعزز فرص القبول ، وإبلاغ الطرف الثاني بالمستجدات دورياً.</p>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (5): التزامات الطرف الثاني</h3>
-                            <p className="pr-2">يلتزم الطرف الثاني بتقديم كافة المستندات والبيانات الصحيحة ، التعاون مع الطرف الأول لاستكمال النواقص ، والالتزام بسداد الأتعاب المستحقة وفقاً لأحكام العقد.</p>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (6): المستحقات المالية والأتعاب</h3>
-                            <p>
-                              {isRescheduling
-                                ? 'لا تستحق أتعاب الطرف الأول لمجرد تقديم الطلب أو متابعته، وإنما تستحق عند الموافقة الفعلية على إعادة الجدولة وإتمامها للمنتجات المشمولة بالعقد وثبوت ذلك بمستند صادر من الجهة التمويلية، وتكون الأتعاب 1% من إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً.'
-                                : 'لا تستحق أتعاب الطرف الأول لمجرد تقديم الطلب أو متابعته، وإنما تستحق عند صدور قرار الإعفاء وثبوته بمستند صادر من الجهة المختصة، وتكون الأتعاب 4% من المبلغ المعفى فعلياً.'
-                              }
-                            </p>
-                            <p className="mt-1 font-black text-[#dc2626] text-[9px]">"وفي حال عدم قبول الطلب، لا يحق للطرف الأول المطالبة بأي أتعاب"</p>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (7): مدة العقد</h3>
-                            <p className="pr-2">يبدأ العمل بهذا العقد من تاريخ توقيعه ، ويستمر سارياً حتى قبول طلب الإعفاء ، ما لم يتم إنهاؤه باتفاق مكتوب بين الطرفين أو وفقاً للأنظمة.</p>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (8): سند لأمر وإقرار دين واجب النفاذ</h3>
-                            <p className="mb-1.5">
-                              يُصدر سند لأمر مستقل عن هذا العقد بقيمة الأتعاب المستحقة فعلياً بعد تسجيل نتيجة الطلب، ولا يُعد هذا العقد بذاته سنداً لأمر.
-                            </p>
-                            <div className="bg-brand/5 dark:bg-white/5 p-2 rounded-lg border border-brand/10 dark:border-white/10 space-y-0.5 text-[9px]">
-                              <p><strong>• رقم السند:</strong> {sub.id}</p>
-                              <p><strong>• قيمة السند:</strong> {isRescheduling ? 'تمثل نسبة (1%) من إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً' : 'تمثل نسبة (4%) من المبلغ المعفى فعلياً'}</p>
-                              <p><strong>• تاريخ الاستحقاق:</strong> {isRescheduling ? 'فور ثبوت إتمام إعادة الجدولة بمستند صادر من الجهة التمويلية' : 'فور ثبوت الإعفاء بمستند صادر من الجهة المختصة'}</p>
-                            </div>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (9): أحكام عامة</h3>
-                            <p className="pr-2">يخضع العقد لأنظمة المملكة العربية السعودية. لا يُعد أي تعديل نافذاً إلا إذا كان مكتوباً وموقعاً من الطرفين.</p>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (10): الإقرار والتنازل عن الدفوع</h3>
-                            <p className="pr-2">يُقر الطرف الثاني إقراراً صريحاً ونهائياً بما يلي:</p>
-                            <PdfNumberedList items={acknowledgmentItems} className="space-y-0.5 pr-2" />
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (11): الإقرار والقبول النهائي</h3>
-                            <p className="pr-2">يُقر الطرف الثاني بما يلي: اطلاعه الكامل على العقد وفهمه لآثاره، صحة التفويض الممنوح، صحة احتساب الأتعاب، وأن هذا الإقرار حجة قاطعة وملزمة أمام جميع الجهات القضائية والتنفيذية.</p>
-                          </section>
-
-                          <section>
-                            <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (12): التفويض</h3>
-                            <div className="pr-2 space-y-2 text-right leading-relaxed">
-                              <p>أقر أنا الموقع أدناه وبكامل أهليتي المعتبرة شرعاً ونظاماً بأنني قد فوضت شركة ريفانس المالية ، سجل تجاري رقم 7038821125 تفويضاً كاملاً غير مشروط بمراجعة كافة الجهات الحكومية والخاصة والجهات التمويلية (البنوك والمصارف وشركات التمويل) وشركة المعلومات الائتمانية (سمة)، وذلك للاطلاع على كافة بياناتي الائتمانية والتمويلية والطبية.</p>
-                              <p>كما يشمل هذا التفويض حق تقديم طلبات الإعفاء من المديونيات ، أو طلبات إعادة الجدولة ، أو تسوية الالتزامات واستلام خطابات المخالصة أو قرارات الإعفاء ، ومتابعة كافة الإجراءات المتعلقة بملفي لدى البنك المركزي السعودي وكافة اللجان القضائية والرقابية.</p>
-                              <p>ويعد هذا التفويض سارياً من تاريخ توقيعه وحتى انتهاء الغرض الذي أعد من أجله أو قيامي بإلغائه رسمياً عبر القنوات المعتمدة لدى الشركة، مع التزامي بكافة النتائج والآثار القانونية المترتبة على هذا التفويض.</p>
-                            </div>
-                          </section>
-                        </div>
-
-                        {/* Signatures Section */}
-                        <div className="mt-8 pt-4 border-t-2 border-[#22042C] grid grid-cols-2 gap-6 relative">
-                          <div className="text-right space-y-2">
-                            <p className="font-black text-[10px] text-[#22042C] dark:text-white underline underline-offset-2">ختم وتوقيع الطرف الأول</p>
-                            <div className="h-36 flex items-center justify-center relative overflow-hidden">
-                              <img src={rifansStampImg} alt="First Party Stamp" className="h-full w-auto object-contain mix-blend-multiply" />
-                            </div>
-                          </div>
-                          <div className="text-right space-y-2">
-                            <p className="font-black text-[10px] text-[#22042C] dark:text-white underline underline-offset-2">توقيع الطرف الثاني (العميل)</p>
-                            <div className="h-28 bg-gray-50/50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/10 flex items-center justify-center relative overflow-hidden">
-                              {selectedContract.signed_at ? (
-                                <div className="flex flex-col items-center gap-1">
-                                  {selectedContract.signature_data ? (
-                                    <img src={selectedContract.signature_data} alt="توقيع العميل" className="h-16 object-contain" />
-                                  ) : (
-                                    <CheckCircle className="text-green-500" size={20} />
-                                  )}
-                                  <span className="text-[7px] text-muted font-bold">
-                                    {sub.data?.firstName} {sub.data?.middleName} {sub.data?.lastName}
-                                  </span>
-                                  <span className="text-[6px] text-muted">
-                                    {new Date(selectedContract.signed_at).toLocaleString('ar-SA')}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center gap-1 text-muted/40">
-                                  <PenTool size={20} />
-                                  <span className="text-[9px] font-bold italic">بانتظار التوقيع...</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Footer Notice */}
-                        <div className="mt-6 text-right border-t border-gray-100 dark:border-white/10 pt-3">
-                          <p className="text-[8px] text-muted font-bold">هذه الوثيقة صادرة عن النظام الإلكتروني لشركة ريفانس المالية وهي ملزمة قانوناً بمجرد التوقيع عليها.</p>
-                          <div className="flex justify-between items-center text-[7px] text-gray-400 mt-1.5">
-                            <span>رقم المرجع: {sub.id}</span>
-                            <span className="font-bold">رقم العقد: {selectedContract.file_number}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-              <div className="p-3 sm:p-5 border-t border-gold/10 bg-gray-50 dark:bg-black/20 flex items-center justify-end gap-2 print-hidden">
-                <Button variant="outline" onClick={() => setSelectedContract(null)} className="text-[10px] sm:text-xs h-7 sm:h-9">إغلاق</Button>
-                <Button 
-                  variant="outline" 
-                  onClick={async () => {
-                    if (!contractContentRef.current || !selectedContract) return;
-                    try {
-                      const sub = submissions.find(s => s.id === selectedContract.submission_id) || { data: {} };
-                      const products = Array.isArray(sub.data?.products)
-                        ? sub.data.products
-                        : (typeof sub.data?.products === 'string' ? safeParse(sub.data.products, []) : []);
-                      const totalDebt = products.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
-                      const isRescheduling = selectedContract.type === 'rescheduling_request' || sub.type === 'rescheduling_request';
-                      const isSeizedAmounts = selectedContract.type === 'seized_amounts_request' || sub.type === 'seized_amounts_request';
-
-                      (contractContentRef.current as any).__contractData = {
-                        submissionId: selectedContract.file_number || selectedContract.id,
-                        submission: sub,
-                        selectedContract,
-                        isRescheduling,
-                        isSeizedAmounts,
-                        contractTitle: isRescheduling
-                          ? 'عقد تفويض ومتابعة طلب جدولة منتجات تمويلية'
-                          : (isSeizedAmounts ? 'عقد تفويض ومتابعة طلب إتاحة النسبة النظامية' : 'عقد تفويض ومتابعة طلب إعفاء تمويلي'),
-                        products,
-                        totalDebt,
-                        clientName: [sub.data?.firstName, sub.data?.middleName, sub.data?.lastName].filter(Boolean).join(' ') || 'العميل الكريم',
-                        nationalId: sub.data?.nationalId || sub.data?.userNationalId || '---',
-                        mobile: sub.data?.mobile || sub.data?.phone || '---',
-                        bank: sub.data?.bank || 'الجهة المالية',
-                        signatureData: selectedContract.signature_data || null,
-                        signedAt: selectedContract.signed_at || null,
-                        isAlreadySigned: !!selectedContract.signed_at,
-                        contractDate: new Date(selectedContract.created_at || Date.now()).toLocaleDateString('ar-SA'),
-                      };
-
-                      const { printContractPdf } = await import('../../lib/generateContractPdf');
-                      await printContractPdf(contractContentRef.current);
-                    } catch (err) {
-                      console.error('Print failed:', err);
-                      window.print();
-                    }
-                  }} 
-                  className="text-[10px] sm:text-xs h-7 sm:h-9 border-gold/30 text-brand dark:text-gold gap-1.5 hover:bg-gold/5"
-                >
-                  <Printer size={12} />
-                  طباعة العقد
-                </Button>
-                <Button 
-                  disabled={isDownloading}
-                  onClick={handleDownloadPdf} 
-                  className="bg-brand text-gold gap-1.5 text-[10px] sm:text-xs h-7 sm:h-9 shadow-lg shadow-brand/20"
-                >
-                  <Download size={12} />
-                  {isDownloading ? 'جاري التحميل...' : 'تحميل العقد'}
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Contract View — نفس مصدر عقد العميل (شاشة/طباعة/PDF) */}
+      {selectedContract && (
+        <div className="fixed inset-0 z-[120] overflow-y-auto bg-white">
+          <ContractPage submissionId={selectedContract.submission_id} onClose={() => setSelectedContract(null)} />
+        </div>
+      )}
 
       {/* Confirmation Modal for Sending Contract */}
       <AnimatePresence>
