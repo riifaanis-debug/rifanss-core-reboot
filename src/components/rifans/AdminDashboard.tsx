@@ -538,12 +538,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     setIsConfirmingSendContract(true);
   };
 
+  /* تسجيل المبلغ الفعلي لنتيجة الطلب قبل إصدار الأتعاب (الفاتورة/السند) */
+  const ensureRequestResult = async (submissionId: string): Promise<boolean> => {
+    try {
+      const { getRequestResult, recordRequestResult } = await import('../../lib/api');
+      const res: any = await getRequestResult(submissionId);
+      if (Number(res?.actual_amount) > 0) return true;
+
+      const label =
+        res?.type === 'rescheduling_request' || res?.type === 'scheduling_request'
+          ? 'إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً'
+          : res?.type === 'seized_amounts_request'
+          ? 'المبلغ الذي تمت إتاحته أو استرداده فعلياً'
+          : 'المبلغ المعفى فعلياً';
+
+      const input = window.prompt(`أدخل ${label} (بالريال) وفقاً لمستند الجهة التمويلية:`);
+      if (input === null) return false;
+      const value = Number(String(input).replace(/[^\d.]/g, ''));
+      if (!value || value <= 0) {
+        alert('يرجى إدخال مبلغ صحيح أكبر من صفر.');
+        return false;
+      }
+      await recordRequestResult(submissionId, value);
+      fetchSubmissions();
+      return true;
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || 'تعذر تسجيل المبلغ الفعلي لنتيجة الطلب.');
+      return false;
+    }
+  };
+
   const sendInvoice = async (userId: string, submissionId: string) => {
+    if (!(await ensureRequestResult(submissionId))) return;
     setPendingInvoiceData({ userId, submissionId });
     setIsConfirmingSendInvoice(true);
   };
 
   const sendPromissory = async (userId: string, submissionId: string) => {
+    if (!(await ensureRequestResult(submissionId))) return;
     setPendingPromissoryData({ userId, submissionId });
     setIsConfirmingSendPromissory(true);
   };
