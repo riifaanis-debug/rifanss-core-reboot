@@ -575,25 +575,47 @@ export const getAdminInvoices = async () => {
   }));
 };
 
+/**
+ * تسجيل نتيجة الطلب الفعلية (المسؤول فقط — محمي بـ trigger في قاعدة البيانات).
+ * actualAmount = المبلغ المعفى/المُجدول/المُتاح فعلياً وفقاً لمستند الجهة التمويلية.
+ */
+export const recordRequestResult = async (submissionId: string, actualAmount: number) => {
+  const { error } = await supabase
+    .from('requests')
+    .update({
+      actual_amount: actualAmount,
+      result_recorded_at: new Date().toISOString(),
+      result_recorded_by: getCurrentUserId(),
+    })
+    .eq('id', submissionId);
+  if (error) throw error;
+  return true;
+};
+
+export const getRequestResult = async (submissionId: string) => {
+  const { data } = await supabase
+    .from('requests')
+    .select('actual_amount, result_recorded_at, result_recorded_by, type')
+    .eq('id', submissionId)
+    .single();
+  return data;
+};
+
 export const sendInvoice = async (userId: string, submissionId: string) => {
   const invoiceId = `INV-${Date.now()}`;
-  const { data: req } = await supabase.from('requests').select('type, data').eq('id', submissionId).single();
-  
-  const reqData = req?.data as Record<string, any> || {};
-  const products = reqData?.products || [];
-  const totalDebt = Array.isArray(products) ? products.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) : 0;
-  
+  const { data: req } = await supabase.from('requests').select('type, data, actual_amount').eq('id', submissionId).single();
+
   const type = req?.type || 'general';
-  let percentage = 4; // default waive
-  if (type === 'rescheduling_request' || type === 'scheduling_request') {
-    percentage = 0; // fixed amount
-  } else if (type === 'seized_amounts_request') {
-    percentage = 1;
+  const kind = resolveContractKind(type);
+
+  // الأتعاب تُحتسب من المبلغ الفعلي الذي سجّله المسؤول، ولا تُصدر فاتورة قبل تسجيله
+  const actualAmount = Number((req as any)?.actual_amount) || 0;
+  if (actualAmount <= 0) {
+    throw new Error('لا يمكن إصدار الفاتورة قبل تسجيل المبلغ الفعلي لنتيجة الطلب.');
   }
-  
-  const amount = type === 'rescheduling_request' || type === 'scheduling_request' 
-    ? 2000 
-    : Math.round(totalDebt * percentage / 100);
+
+  const percentage = feeRateFor(kind) * 100;
+  const amount = calcFee(kind, actualAmount);
 
   await supabase.from('invoices').insert({
     id: invoiceId,
@@ -602,7 +624,7 @@ export const sendInvoice = async (userId: string, submissionId: string) => {
     type,
     amount,
     percentage,
-    total_debt: totalDebt,
+    total_debt: actualAmount,
     status: 'pending',
   });
 
