@@ -17,6 +17,7 @@ export type Database = {
       app_users: {
         Row: {
           age: string | null
+          auth_user_id: string | null
           bank: string | null
           city: string | null
           created_at: string
@@ -42,6 +43,7 @@ export type Database = {
         }
         Insert: {
           age?: string | null
+          auth_user_id?: string | null
           bank?: string | null
           city?: string | null
           created_at?: string
@@ -67,6 +69,7 @@ export type Database = {
         }
         Update: {
           age?: string | null
+          auth_user_id?: string | null
           bank?: string | null
           city?: string | null
           created_at?: string
@@ -685,6 +688,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       webauthn_challenges: {
         Row: {
           challenge: string
@@ -830,13 +851,24 @@ export type Database = {
       }
     }
     Functions: {
+      current_app_user_id: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_app_id: { Args: { _id: string }; Returns: boolean }
+      owns_request: { Args: { _request_id: string }; Returns: boolean }
       verify_password: {
         Args: { input_password: string; stored_hash: string }
         Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -963,6 +995,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
