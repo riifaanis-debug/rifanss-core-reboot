@@ -64,10 +64,18 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
   };
 
   const getFeeDescription = () => {
-    if (isRescheduling) return '2,000 ريال سعودي (مبلغ مقطوع)';
-    if (isSeizedAmounts) return `1% من إجمالي المبالغ المستردة`;
-    return `4% من إجمالي المبالغ المعفية`;
+    if (isRescheduling) return '1% من إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً';
+    if (isSeizedAmounts) return '1% من المبلغ الذي تمت إتاحته أو استرداده فعلياً';
+    return '4% من المبلغ المعفى فعلياً';
   };
+
+  /* الأساس المالي للفاتورة = المبلغ الفعلي المسجّل لنتيجة الطلب */
+  const feeBasisLabel = isRescheduling
+    ? 'إجمالي مديونية المنتجات المُعاد جدولتها فعلياً'
+    : isSeizedAmounts
+    ? 'المبلغ المُتاح/المسترد فعلياً'
+    : 'المبلغ المعفى فعلياً';
+  const feeBasisAmount = Number(invoice?.total_debt) || Number(submission?.actual_amount) || 0;
 
   const handleDownload = async () => {
     const el = printSheetRef.current;
