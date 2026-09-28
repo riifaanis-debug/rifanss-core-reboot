@@ -50,6 +50,13 @@
       "when": 1790593147768,
       "tag": "0006_add_request_result_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790608569874,
+      "tag": "0007_document_lifecycle_invoices_notes",
+      "breakpoints": true
     }
   ]
 }

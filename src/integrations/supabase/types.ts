@@ -289,43 +289,70 @@ export type Database = {
       }
       invoices: {
         Row: {
+          actual_amount: number | null
           amount: number | null
+          bank: string | null
           created_at: string
+          current_account_number: string | null
+          doc_status: string
           id: string
           notes: string | null
           paid_at: string | null
           percentage: number | null
+          replaced_by: string | null
+          seized_amount: number | null
           status: string | null
           submission_id: string
           total_debt: number | null
           type: string | null
           user_id: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
+          actual_amount?: number | null
           amount?: number | null
+          bank?: string | null
           created_at?: string
+          current_account_number?: string | null
+          doc_status?: string
           id: string
           notes?: string | null
           paid_at?: string | null
           percentage?: number | null
+          replaced_by?: string | null
+          seized_amount?: number | null
           status?: string | null
           submission_id: string
           total_debt?: number | null
           type?: string | null
           user_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
+          actual_amount?: number | null
           amount?: number | null
+          bank?: string | null
           created_at?: string
+          current_account_number?: string | null
+          doc_status?: string
           id?: string
           notes?: string | null
           paid_at?: string | null
           percentage?: number | null
+          replaced_by?: string | null
+          seized_amount?: number | null
           status?: string | null
           submission_id?: string
           total_debt?: number | null
           type?: string | null
           user_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -535,15 +562,20 @@ export type Database = {
           created_at: string
           debtor_name: string | null
           debtor_national_id: string | null
+          doc_status: string
           due_date: string
           id: string
           issue_city: string
           payment_city: string
+          replaced_by: string | null
           signature_data: string | null
           signed_at: string | null
           status: string
           submission_id: string
           user_id: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           amount?: number
@@ -552,15 +584,20 @@ export type Database = {
           created_at?: string
           debtor_name?: string | null
           debtor_national_id?: string | null
+          doc_status?: string
           due_date?: string
           id: string
           issue_city?: string
           payment_city?: string
+          replaced_by?: string | null
           signature_data?: string | null
           signed_at?: string | null
           status?: string
           submission_id: string
           user_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           amount?: number
@@ -569,15 +606,20 @@ export type Database = {
           created_at?: string
           debtor_name?: string | null
           debtor_national_id?: string | null
+          doc_status?: string
           due_date?: string
           id?: string
           issue_city?: string
           payment_city?: string
+          replaced_by?: string | null
           signature_data?: string | null
           signed_at?: string | null
           status?: string
           submission_id?: string
           user_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: []
       }
