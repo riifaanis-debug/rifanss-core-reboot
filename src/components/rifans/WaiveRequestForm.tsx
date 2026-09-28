@@ -1053,8 +1053,9 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
                             region,
                             city: formData.city,
                             bank: formData.bank,
-                            totalAmount,
-                            products,
+                            ...(isSeizedAmounts
+                              ? { currentAccountNumber, seizedAmount: Number(seizedAmount) || 0, seizedSource, seizedDepositDate }
+                              : { totalAmount, products }),
                             summary: formData.summary,
                           },
                         });
