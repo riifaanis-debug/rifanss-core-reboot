@@ -332,222 +332,72 @@ const ContractPage: React.FC<ContractPageProps> = ({ submissionId, onClose }) =>
           {/* التمهيد */}
           <div className="space-y-2 bg-gray-50/70 border border-gray-200 rounded-xl p-3.5 sm:p-4">
             <h3 className="text-xs sm:text-sm font-bold text-[#22042C]">التمهيد:</h3>
-            <p className="text-xs sm:text-sm leading-relaxed sm:leading-loose text-gray-800 text-right">
-              {isRescheduling ? (
-                <>
-                  حيث إن الطرف الثاني لديه التزامات مالية قائمة لدى البنوك والجهات التمويلية، وحيث إن الطرف الأول يعد من الجهات المتخصصة ذات الخبرة والكفاءة المهنية العالية في مجال المنازعات المصرفية والتمويلية، ويضم نخبة من اللجان القانونية المؤهلة القادرة على دراسة الطلبات وتدقيق المستندات ومتابعة الإجراءات بشكل رسمي ونظامي مع البنوك والمصارف والجهات التمويلية وكافة الجهات التنظيمية ذات العلاقة.
-                  وحيث إن الطرف الثاني قد أبدى رغبته الصريحة في التقدم بطلب إعادة جدولة المنتجات التمويلية القائمة لديه لدى البنوك والمصارف، وحيث إن الطرف الأول قد أثبت جدارته المهنية من خلال ما يملكه من لجان متخصصة وخبرات عملية في إدارة طلبات العملاء المقدمة إلى الجهات التمويلية.
-                  وحيث إن هذا التمهيد يعد جزءاً لا يتجزأ من هذا العقد ومكملاً ومفسراً لبنوده، فقد اتفق الطرفان وهما بكامل الأهلية المعتبرة شرعاً ونظاماً على إبرام هذا العقد.
-                </>
-              ) : isSeizedAmounts ? (
-                <>
-                  حيث إن الطرف الثاني لديه مبالغ مالية محجوزة أو مستقطعة بما يتجاوز النسبة النظامية المقررة وفقاً للأنظمة السعودية، وحيث إن الطرف الأول يعد من الجهات المتخصصة ذات الخبرة والكفاءة المهنية العالية في مجال المنازعات المصرفية والتمويلية، ويضم نخبة من اللجان القانونية المؤهلة القادرة على دراسة الطلبات وتدقيق المستندات ومتابعة الإجراءات بشكل رسمي ونظامي مع البنوك والمصارف والجهات التمويلية وكافة الجهات التنظيمية ذات العلاقة.
-                  وحيث إن الطرف الثاني قد أبدى رغبته الصريحة في التقدم بطلب إتاحة النسبة النظامية واسترداد المبالغ المستثناه من الحجز، وحيث إن هذا التمهيد يعد جزءاً لا يتجزأ من هذا العقد ومكملاً ومفسراً لبنوده، فقد اتفق الطرفان وهما بكامل الأهلية المعتبرة شرعاً ونظاماً على إبرام هذا العقد.
-                </>
-              ) : (
-                <>
-                  حيث إن الطرف الثاني قد تقدم وأفاد بأن لديه عجزاً طبياً مثبتاً بموجب تقارير رسمية صادرة من الجهات الطبية المختصة؛ وحيث إن الطرف الأول يُعد من الجهات المتخصصة ذات الخبرة والكفاءة المهنية العالية في مجال المنازعات المصرفية والتمويلية، ويضم نخبة من اللجان القانونية المؤهلة القادرة على دراسة الطلبات، وتدقيق المستندات والتقارير الطبية، ومتابعة الإجراءات بشكل رسمي ونظامي مع البنوك والمصارف والجهات التمويلية والهيئات الطبية وكافة الجهات التنظيمية ذات العلاقة؛ وحيث إن الطرف الثاني قد أبدى رغبته الصريحة في التقدم بطلب إعفاء من جميع التزاماته التمويلية القائمة لدى البنوك والمصارف؛ وحيث إن الطرف الأول قد أثبت جدارته المهنية من خلال ما يملكه من لجان متخصصة وخبرات عملية في إدارة طلبات العملاء المقدمة إلى الجهات التمويلية، وما حققه من نتائج إيجابية تسهم في حفظ حقوق العملاء وتحقيق مصالحهم؛ وحيث إن هذا التمهيد يُعد جزءاً لا يتجزأ من هذا العقد ومكملاً ومفسراً لبنوده؛ فقد اتفق الطرفان، وهما بكامل الأهلية المعتبرة شرعاً ونظاماً، على إبرام هذا العقد وفقاً لما يلي.
-                </>
-              )}
-            </p>
+            {norm.content.preamble.map((p, i) => (
+              <p key={i} className="text-xs sm:text-sm leading-relaxed sm:leading-loose text-gray-800 text-right">{p}</p>
+            ))}
           </div>
 
-          {/* المواد القانونية (المادة 1 إلى 12) */}
+          {/* المواد القانونية — نفس نص نسخة PDF حرفياً */}
           <div className="space-y-4">
-            
-            {/* المادة 1 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (1): حجية التعامل الإلكتروني</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                يقر الطرفان بموافقتهما على إبرام هذا العقد واستخدام الوسائل الإلكترونية (البريد الإلكتروني والرسائل النصية) لتوثيقه، وتعد هذه الوسائل حجة ملزمة وقائمة بذاتها وفقاً لنظام التعاملات الإلكترونية السعودي، ولها ذات الحجية القانونية للتوقيع اليدوي أمام كافة الجهات الرسمية والقضائية.
-              </p>
-            </div>
+            {norm.content.sections.map((s) => (
+              <div key={s.key} className={`border rounded-xl p-3.5 space-y-1.5 ${s.key === 'a6' ? 'bg-gold/5 border-gold/30' : 'border-gray-200'}`}>
+                <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">{s.title}</h4>
+                {(s.paragraphs || []).map((p, i) => (
+                  <p key={i} className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">{p}</p>
+                ))}
+                {s.items && s.items.length > 0 && (
+                  <ol className="list-decimal pr-5 space-y-1 text-xs sm:text-sm text-gray-700">
+                    {s.items.map((it, i) => <li key={i}>{it}</li>)}
+                  </ol>
+                )}
 
-            {/* المادة 2: موضوع العقد + المنتجات التمويلية */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-2.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (2): موضوع العقد والتفويض</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                {isRescheduling
-                  ? `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب إعادة جدولة المنتجات التمويلية الخاصة به لدى ${targetBank}، وذلك فيما يتعلق بمنتجات التمويل الموضحة أدناه:`
-                  : isSeizedAmounts
-                  ? `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب إتاحة النسبة النظامية واسترداد المبالغ المستثناه من الحجز لدى ${targetBank}، وذلك فيما يتعلق بالمبالغ والمنتجات الموضحة أدناه:`
-                  : `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب الإعفاء المقدم من الطرف الثاني لدى ${targetBank}، وذلك فيما يتعلق بمنتجات التمويل الموضحة أدناه:`
-                }
-              </p>
-
-              {/* المنتجات التمويلية (عرض مخصص للجوال) */}
-              <div className="space-y-2 mt-2">
-                <div className="text-[11px] sm:text-xs font-bold text-brand">المنتجات التمويلية المشمولة:</div>
-                <div className="space-y-2">
-                  {products.map((p: any, idx: number) => (
-                    <div key={idx} className="bg-white border border-gray-200 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs">
-                      <div className="flex items-center gap-2">
-                        <CreditCard size={15} className="text-gold shrink-0" />
-                        <div>
-                          <span className="font-bold text-[#22042C]">{p.type}</span>
-                          <span className="text-[11px] text-gray-500 mr-2 font-mono">({p.accountNumber || p.account_number || '---'})</span>
+                {/* جدول المنتجات التمويلية وإجمالي المديونية */}
+                {s.block === 'products' && (
+                  <div className="space-y-2 mt-2">
+                    <div className="text-[11px] sm:text-xs font-bold text-brand">المنتجات التمويلية المشمولة بالعقد:</div>
+                    {products.map((p: any, idx: number) => (
+                      <div key={idx} className="bg-white border border-gray-200 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <CreditCard size={15} className="text-gold shrink-0" />
+                          <div>
+                            <span className="font-bold text-[#22042C]">{p.type}</span>
+                            <span className="text-[11px] text-gray-500 mr-2 font-mono">({p.accountNumber || p.account_number || '---'})</span>
+                            <span className="text-[11px] text-gray-500 mr-2">{targetBank}</span>
+                          </div>
+                        </div>
+                        <div className="text-left sm:text-right font-bold text-[#22042C] font-mono text-sm">
+                          {formatAmount(p.amount)} ر.س
                         </div>
                       </div>
-                      <div className="text-left sm:text-right font-bold text-red-700 font-mono text-sm">
-                        {formatAmount(p.amount)} ر.س
-                      </div>
+                    ))}
+                    <div className="bg-[#FAF7FC] border border-gold/40 rounded-xl p-3 flex items-center justify-between text-xs sm:text-sm font-bold">
+                      <span className="text-[#22042C]">إجمالي المديونية محل الطلب:</span>
+                      <span className="text-base sm:text-lg font-black text-brand font-mono">{formatAmount(norm.totalDebt)} ر.س</span>
                     </div>
-                  ))}
-
-                  {/* إجمالي المديونية */}
-                  <div className="bg-[#FAF7FC] border border-gold/40 rounded-xl p-3 flex items-center justify-between text-xs sm:text-sm font-bold">
-                    <span className="text-[#22042C]">إجمالي المديونية التمويلية:</span>
-                    <span className="text-base sm:text-lg font-black text-brand font-mono">{formatAmount(totalDebt)} ر.س</span>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* المادة 3 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (3): نطاق التفويض</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700">يشمل التفويض الممنوح للطرف الأول الصلاحيات التالية:</p>
-              <ol className="list-decimal pr-5 space-y-1 text-xs sm:text-sm text-gray-700">
-                {isRescheduling ? (
-                  <>
-                    <li>الاطلاع على المستندات والبيانات المالية.</li>
-                    <li>التواصل مع البنوك والجهات التمويلية.</li>
-                    <li>رفع الطلبات ومتابعتها، وإعداد المذكرات النظامية والحضور النظامي عند الحاجة.</li>
-                  </>
-                ) : (
-                  <>
-                    <li>الاطلاع على التقارير الطبية والمستندات الرسمية.</li>
-                    <li>التواصل مع البنوك والجهات التمويلية.</li>
-                    <li>رفع الطلبات ومتابعتها، وإعداد المذكرات القانونية والحضور النظامي عند الحاجة.</li>
-                  </>
                 )}
-              </ol>
-            </div>
 
-            {/* المادة 4 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (4): التزامات الطرف الأول</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                يلتزم الطرف الأول بالمحافظة على سرية بيانات الطرف الثاني، وبذل أقصى درجات العناية المهنية، ورفع الطلبات بصيغة رسمية تعزز فرص القبول، وإبلاغ الطرف الثاني بالمستجدات دورياً.
-              </p>
-            </div>
-
-            {/* المادة 5 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (5): التزامات الطرف الثاني</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                يلتزم الطرف الثاني بتقديم كافة المستندات والبيانات الصحيحة، التعاون مع الطرف الأول لاستكمال النواقص، والالتزام بسداد الأتعاب المستحقة وفقاً لأحكام العقد.
-              </p>
-            </div>
-
-            {/* المادة 6 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5 bg-gold/5 border-gold/30">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (6): المستحقات المالية والأتعاب</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-800 text-right">
-                {isRescheduling
-                  ? 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قرار الموافقة على إعادة جدولة المنتجات التمويلية وإتمام الإجراءات ذات العلاقة. وفي حال صدور القرار يستحق الطرف الأول أتعاباً مقطوعة قدرها: 2,000 ريال سعودي فقط.'
-                  : isSeizedAmounts
-                  ? 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قرار إتاحة النسبة النظامية واسترداد المبالغ المستثناه من الحجز. وفي حال صدور القرار، يستحق الطرف الأول أتعاباً مقطوعة قدرها (1%) من إجمالي المبالغ المستردة فعلياً.'
-                  : 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قبول طلب الإعفاء وإصدار خطاب المخالصة المالية، وفي حال قبول طلب الإعفاء، يستحق الطرف الأول أتعاباً مقطوعة قدرها (4%) من إجمالي المبالغ المعفاة فعلياً.'
-                }
-              </p>
-              <p className="text-xs sm:text-sm font-bold text-red-700 pt-1">
-                "وفي حال عدم قبول الطلب، لا يحق للطرف الأول المطالبة بأي أتعاب"
-              </p>
-            </div>
-
-            {/* المادة 7 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (7): مدة العقد</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                {isRescheduling
-                  ? 'يبدأ العمل بهذا العقد من تاريخ توقيعه، ويستمر سارياً حتى صدور قرار الجهة التمويلية بشأن طلب إعادة الجدولة، ما لم يتم إنهاؤه باتفاق مكتوب بين الطرفين أو وفقاً للأنظمة.'
-                  : isSeizedAmounts
-                  ? 'يبدأ العمل بهذا العقد من تاريخ توقيعه، ويستمر سارياً حتى صدور قرار إتاحة النسبة النظامية واسترداد المبالغ المستثناه من الحجز، ما لم يتم إنهاؤه باتفاق مكتوب بين الطرفين أو وفقاً للأنظمة.'
-                  : 'يبدأ العمل بهذا العقد من تاريخ توقيعه، ويستمر سارياً حتى قبول طلب الإعفاء، ما لم يتم إنهاؤه باتفاق مكتوب بين الطرفين أو وفقاً للأنظمة.'
-                }
-              </p>
-            </div>
-
-            {/* المادة 8: سند لأمر */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-2.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (8): سند لأمر وإقرار دين واجب النفاذ</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                {isRescheduling
-                  ? 'اتفق الطرفان على أن يعد هذا العقد بمثابة سند لأمر واجب النفاذ وفقاً لأحكام نظام الأوراق التجارية ونظام التنفيذ السعودي. ويقر الطرف الثاني إقراراً صريحاً ونهائياً بالتزامه بسداد أتعاب الطرف الأول وقدرها 2,000 ريال سعودي عند صدور قرار الموافقة على طلب إعادة الجدولة.'
-                  : isSeizedAmounts
-                  ? 'اتفق الطرفان على أن يُعد هذا العقد بمثابة سندٍ لأمرٍ واجب النفاذ وفقًا لأحكام نظام الأوراق التجارية ونظام التنفيذ السعودي، ويقر الطرف الثاني إقرارًا صريحًا ونهائيًا بالتزامه بسداد أتعاب الطرف الأول بنسبة (1%) من إجمالي المبالغ المستردة فعلياً، وذلك فور صدور قرار إتاحة النسبة النظامية واسترداد المبالغ المستثناه من الحجز.'
-                  : 'اتفق الطرفان على أن يُعد هذا العقد بمثابة سندٍ لأمرٍ واجب النفاذ وفقًا لأحكام نظام الأوراق التجارية ونظام التنفيذ السعودي، ويقر الطرف الثاني إقرارًا صريحًا ونهائيًا بالتزامه بسداد أتعاب الطرف الأول بنسبة (4%) من إجمالي مبالغ المنتجات التمويلية التي يتم إعفاؤه منها، وذلك فور قبول طلب الإعفاء واستلام خطاب المخالصة المالية.'
-                }
-              </p>
-
-              {/* بطاقة بيانات السند لأمر */}
-              <div className="bg-[#FAF7FC] border border-gold/30 rounded-xl p-3 space-y-1.5 text-xs">
-                <div className="font-bold text-brand border-b border-gold/20 pb-1">بيانات السند لأمر الملحق:</div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">رقم السند:</span>
-                  <span className="font-mono font-bold text-brand">{submissionId}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">قيمة السند:</span>
-                  <span className="font-bold text-[#22042C]">{isRescheduling ? '2,000 ريال سعودي' : isSeizedAmounts ? '1% من المبالغ المستردة' : '4% من المبالغ المعفاة'}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">تاريخ الاستحقاق:</span>
-                  <span className="font-medium text-[#22042C]">{isRescheduling ? 'عند صدور الموافقة' : isSeizedAmounts ? 'عند صدور قرار الإتاحة' : 'عند قبول طلب الإعفاء'}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-500">مكان الوفاء:</span>
-                  <span className="font-medium text-[#22042C]">مدينة جدة – المملكة العربية السعودية</span>
-                </div>
-              </div>
-            </div>
-
-            {/* المادة 9 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (9): أحكام عامة</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                يخضع العقد لأنظمة المملكة العربية السعودية. لا يُعد أي تعديل نافذاً إلا إذا كان مكتوباً وموقعاً من الطرفين.
-              </p>
-            </div>
-
-            {/* المادة 10 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (10): الإقرار والتنازل عن الدفوع</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700">يُقر الطرف الثاني إقراراً صريحاً ونهائياً بما يلي:</p>
-              <ol className="list-decimal pr-5 space-y-1 text-xs sm:text-sm text-gray-700">
-                <li>صحة جميع البيانات والمستندات المقدمة منه.</li>
-                <li>صحة احتساب الأتعاب وفق ما ورد في هذا العقد.</li>
-                <li>التنازل عن أي دفوع أو منازعات تتعلق بسند الأمر متى ما تم إصداره عبر منصة نافذ وفق أحكام هذا العقد.</li>
-                <li>عدم الطعن أو الاعتراض على التنفيذ أمام محكمة التنفيذ إلا في الحدود التي يجيزها النظام.</li>
-              </ol>
-            </div>
-
-            {/* المادة 11 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (11): الإقرار والقبول النهائي</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                يُقر الطرف الثاني بما يلي: اطلاعه الكامل على العقد وفهمه لآثاره، صحة التفويض الممنوح، صحة احتساب الأتعاب، وأن هذا الإقرار حجة قاطعة وملزمة أمام جميع الجهات القضائية والتنفيذية.
-              </p>
-            </div>
-
-            {/* المادة 12 */}
-            <div className="border border-gray-200 rounded-xl p-3.5 space-y-1.5 bg-gray-50/70">
-              <h4 className="text-xs sm:text-sm font-bold text-[#22042C]">المادة (12): التفويض الرسمي</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700 text-right">
-                {isRescheduling ? (
-                  <>
-                    أقر أنا الموقع أدناه وبكامل أهليتي المعتبرة شرعاً ونظاماً بأنني قد فوضت شركة ريفانس المالية، سجل تجاري رقم 7038821125، تفويضاً كاملاً غير مشروط بمراجعة كافة الجهات الحكومية والخاصة والجهات التمويلية والبنوك والمصارف وشركات التمويل وشركة المعلومات الائتمانية (سمة)، وذلك للاطلاع على كافة بياناتي الائتمانية والتمويلية ومتابعة كافة الإجراءات.
-                  </>
-                ) : (
-                  <>
-                    أقر أنا الموقع أدناه وبكامل أهليتي المعتبرة شرعاً ونظاماً بأنني قد فوضت شركة ريفانس المالية، سجل تجاري رقم 7038821125 تفويضاً كاملاً غير مشروط بمراجعة كافة الجهات الحكومية والخاصة والجهات التمويلية (البنوك والمصارف وشركات التمويل) وشركة المعلومات الائتمانية (سمة)، وذلك للاطلاع على كافة بياناتي الائتمانية والتمويلية والطبية ومتابعة طلبات الإعفاء لدى البنك المركزي والجهات المختصة.
-                  </>
+                {/* بيانات الحساب الجاري والمبلغ المحجوز */}
+                {s.block === 'account' && (
+                  <div className="bg-[#FAF7FC] border border-gold/30 rounded-xl p-3 space-y-1.5 text-xs mt-2">
+                    <div className="flex justify-between py-1 border-b border-gray-200">
+                      <span className="text-gray-500">الجهة المالية:</span>
+                      <span className="font-bold text-[#22042C]">{targetBank}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-200">
+                      <span className="text-gray-500">رقم الحساب الجاري:</span>
+                      <span className="font-mono font-bold text-brand">{norm.currentAccountNumber}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-gray-500">المبلغ المحجوز من المبالغ المستثناة من الحجز:</span>
+                      <span className="font-mono font-bold text-[#22042C]">{formatAmount(norm.seizedAmount)} ر.س</span>
+                    </div>
+                  </div>
                 )}
-              </p>
-            </div>
-
+              </div>
+            ))}
           </div>
+
 
           {/* ══════════ التواقيع والاعتماد الإلكتروني (Signatures) ══════════ */}
           <div className="pt-4 border-t-2 border-gold/30 space-y-3">
