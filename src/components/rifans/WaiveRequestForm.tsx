@@ -56,6 +56,11 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
     : [{ id: 1, type: '', file: null, fileName: '', date: new Date().toLocaleDateString('ar-SA') }]
   );
   const [totalAmount, setTotalAmount] = useState(0);
+  /* طلب إتاحة النسبة النظامية: حساب جاري واحد ومبلغ محجوز (بدون منتجات/مديونية) */
+  const [currentAccountNumber, setCurrentAccountNumber] = useState(prefill?.currentAccountNumber || '');
+  const [seizedAmount, setSeizedAmount] = useState(prefill?.seizedAmount ? String(prefill.seizedAmount) : '');
+  const [seizedSource, setSeizedSource] = useState(prefill?.seizedSource || '');
+  const [seizedDepositDate, setSeizedDepositDate] = useState(prefill?.seizedDepositDate || '');
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
