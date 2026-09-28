@@ -89,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const applySession = useCallback(async (session: any) => {
     if (!session?.user) {
+      try { localStorage.removeItem('user'); } catch { /* ignore */ }
       setUser(null);
       setToken(null);
       setFileCookie(null);
@@ -106,13 +107,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
     setUser(profile);
+    // Display-only mirror used by legacy helpers; access is enforced by the database, not this value.
+    try { localStorage.setItem('user', JSON.stringify(profile)); } catch { /* ignore */ }
     return profile;
   }, []);
 
   useEffect(() => {
     // Drop the legacy browser-only session and offline store (no database data is touched).
     try {
-      localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('rifans_offline_users');
     } catch { /* ignore */ }
