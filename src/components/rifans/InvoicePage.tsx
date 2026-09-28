@@ -292,12 +292,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
                 <span className="font-bold text-[#22042C]">{getFeeDescription()}</span>
               </div>
 
-              {!isRescheduling && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                  <span className="text-gray-600 font-medium">إجمالي المبلغ الأساسي:</span>
-                  <span className="font-mono font-bold text-brand">{formatAmount(totalDebt)} ر.س</span>
-                </div>
-              )}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                <span className="text-gray-600 font-medium">{feeBasisLabel}:</span>
+                <span className="font-mono font-bold text-brand">{formatAmount(feeBasisAmount)} ر.س</span>
+              </div>
 
               <div className="pt-3 border-t border-gold/30 flex items-center justify-between">
                 <span className="text-sm sm:text-base font-black text-brand">المبلغ المستحق للسداد:</span>
