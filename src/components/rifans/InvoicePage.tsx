@@ -247,7 +247,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
           </div>
 
           {/* المنتجات التمويلية (Financing Products) */}
-          {products.length > 0 && (
+          {!isSeizedAmounts && products.length > 0 && (
             <div className="space-y-2.5">
               <div className="bg-brand text-white px-3.5 py-2 rounded-xl flex items-center gap-2 font-bold text-xs sm:text-sm">
                 <CreditCard size={16} className="text-gold shrink-0" />
@@ -384,7 +384,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
         </div>
 
         {/* Products Table */}
-        {products.length > 0 && (
+        {!isSeizedAmounts && products.length > 0 && (
           <table className="w-full text-xs mb-4 border border-gray-200">
             <thead>
               <tr className="bg-[#22042C] text-white">
