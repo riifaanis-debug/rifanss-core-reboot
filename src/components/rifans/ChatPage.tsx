@@ -1,3 +1,4 @@
+import { uploadPrivateFile } from '@/lib/functions';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, ArrowRight, MessageCircle, Paperclip, Image, FileText, Mic, Square, Play, Pause, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,11 +157,13 @@ const ChatPage: React.FC<ChatPageProps> = ({ isOpen, onClose, targetUserId, targ
 
   // Upload file to storage
   const uploadFile = useCallback(async (file: Blob, ext: string): Promise<string | null> => {
-    const fileName = `chat/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('uploads').upload(fileName, file);
-    if (error) { console.error('Upload error:', error); return null; }
+    const ownerId = isAdmin ? (selectedUser || '') : currentUserId;
+    if (!ownerId) return null;
+    const fileName = `chat/${ownerId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const { error } = await uploadPrivateFile(fileName, file);
+    if (error) { console.error('Upload error'); return null; }
     return fileName;
-  }, []);
+  }, [isAdmin, selectedUser, currentUserId]);
 
   // Send message with optional attachment
   const sendWithAttachment = useCallback(async (message: string, attachmentUrl?: string, attachmentType?: string) => {

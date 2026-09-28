@@ -1,3 +1,4 @@
+import { uploadPrivateFile } from '@/lib/functions';
 import { invokeFunction } from "@/lib/functions";
 import { supabase } from '@/integrations/supabase/client';
 
@@ -339,10 +340,16 @@ export const updateProfile = async (profileData: any) => {
   }
 };
 
-export const uploadDocument = async (file: File) => {
-  const ext = file.name.split('.').pop() || 'pdf';
-  const fileName = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from('uploads').upload(fileName, file);
+export const uploadDocument = async (file: File, ownerId?: string) => {
+  const ext = (file.name.split('.').pop() || 'pdf').replace(/[^\w]/g, '') || 'bin';
+  let owner = ownerId;
+  if (!owner) {
+    const { data: me } = await supabase.rpc('current_app_user_id');
+    owner = (me as string) || '';
+  }
+  if (!owner) throw new Error('يرجى تسجيل الدخول');
+  const fileName = `${owner}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const { error } = await uploadPrivateFile(fileName, file);
   if (error) throw error;
   // The uploads bucket is private; files are served through the app's public file endpoint.
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
