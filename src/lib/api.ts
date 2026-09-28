@@ -1,6 +1,7 @@
 import { uploadPrivateFile } from '@/lib/functions';
 import { invokeFunction } from "@/lib/functions";
 import { supabase } from '@/integrations/supabase/client';
+import { resolveContractKind, feeRateFor, calcFee } from '@/lib/contractTemplate';
 
 // Helper to get current user ID from localStorage
 const getCurrentUserId = (): string | null => {
