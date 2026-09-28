@@ -72,21 +72,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
       if (!p) return setError('يرجى إدخال كلمة المرور');
       setIsLoading(true);
       try {
-        if ((u.toLowerCase() === 'rifanis' || u === 'Rifanis') && p === '123456') {
-          const adminUser = {
-            id: 'admin-rifanis',
-            fullName: 'مدير النظام',
-            name: 'مدير النظام',
-            email: 'admin@rifans.sa',
-            phone: '0500000000',
-            national_id: 'Rifanis',
-            role: 'admin' as const,
-          };
-          login({ user: adminUser, token: 'session-admin-rifanis' });
-          window.location.hash = '#/admin';
-          onClose();
-          return;
-        }
+
 
         const { supabase } = await import('@/integrations/supabase/client');
         const { data, error: fnErr } = await invokeFunction('verify-login', {
