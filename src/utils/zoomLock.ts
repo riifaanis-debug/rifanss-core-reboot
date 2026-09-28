@@ -3,13 +3,13 @@
  * 
  * Ensures:
  * 1. Exactly one meta viewport tag exists with:
- *    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover"
+ *    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"
  * 2. Absolutely NO modifications to font-size, field dimensions, padding, or layouts.
  * 3. Horizontal layout drift and page widening during typing/input are completely prevented.
  * 4. Natural vertical scrolling remains 100% active and unhindered.
  */
 
-const TARGET_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover';
+const TARGET_VIEWPORT = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover';
 
 export const enforceViewport = () => {
   if (typeof document === 'undefined') return;
@@ -51,6 +51,23 @@ export const initZoomLock = () => {
 
   // 1. Enforce single target viewport tag
   enforceViewport();
+
+  // 1b. Block pinch zoom and double-tap zoom (iOS Safari ignores user-scalable=no)
+  const prevent = (e: Event) => e.preventDefault();
+  document.addEventListener('gesturestart', prevent, { passive: false });
+  document.addEventListener('gesturechange', prevent, { passive: false });
+  document.addEventListener('gestureend', prevent, { passive: false });
+  document.addEventListener('touchmove', (e: TouchEvent) => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e: TouchEvent) => {
+    const now = Date.now();
+    const t = e.target as HTMLElement | null;
+    const isField = !!t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
+    if (!isField && now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
 
   // 2. Prevent horizontal displacement during typing in fields
   const handleTypingOrInteraction = () => {
