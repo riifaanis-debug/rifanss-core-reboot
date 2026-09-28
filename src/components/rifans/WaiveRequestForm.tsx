@@ -304,15 +304,17 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
       return;
     }
     
-    // Validate products/seized amounts
+    // Validate products / seized amount
     const isSeizedAmountsValidation = prefill?.requestType === 'seized_amounts_request';
-    const invalidProduct = isSeizedAmountsValidation 
-      ? products.find(p => !p.accountNumber || !p.amount || !p.type)
-      : products.find(p => !p.type || !p.amount);
-    if (invalidProduct) {
-      const msg = isSeizedAmountsValidation 
-        ? 'يرجى إكمال بيانات الحساب المحجوز (رقم الحساب، المبلغ، ومصدر المبلغ).'
-        : 'يرجى إكمال بيانات المنتجات التمويلية (تحديد النوع وإدخال المبلغ).';
+    if (isSeizedAmountsValidation) {
+      if (!currentAccountNumber || !seizedAmount || !seizedSource) {
+        const msg = 'يرجى إكمال بيانات الحساب الجاري (رقم الحساب، المبلغ المحجوز، ومصدر المبلغ).';
+        setStatusMessage(msg);
+        alert(msg);
+        return;
+      }
+    } else if (products.find(p => !p.type || !p.amount)) {
+      const msg = 'يرجى إكمال بيانات المنتجات التمويلية (تحديد النوع وإدخال المبلغ).';
       setStatusMessage(msg);
       alert(msg);
       return;
