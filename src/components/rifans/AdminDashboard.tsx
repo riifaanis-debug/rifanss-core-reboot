@@ -570,33 +570,82 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     }
   };
 
+  /* منع التكرار: إذا وُجد مستند نشط للطلب يُعرض الحالي، أو يُصدر بديل مع حفظ السابق وسبب الاستبدال */
+  const [isIssuingDoc, setIsIssuingDoc] = useState(false);
+  const handleExistingDoc = async (
+    kind: 'invoice' | 'note',
+    userId: string,
+    submissionId: string,
+  ): Promise<boolean> => {
+    const api = await import('../../lib/api');
+    const existing: any = kind === 'invoice'
+      ? await api.getActiveInvoice(submissionId)
+      : await api.getActivePromissoryNote(submissionId);
+    if (!existing) return false;
+    const label = kind === 'invoice' ? 'فاتورة' : 'سند لأمر';
+    const wantsReplace = window.confirm(
+      `يوجد ${label} نشط لهذا الطلب برقم ${existing.id}.\n\nاضغط «موافق» لإصدار ${label} بديل (يُحفظ السابق بحالة مستبدل)، أو «إلغاء» لعرض المستند الحالي.`,
+    );
+    if (!wantsReplace) {
+      window.open(kind === 'invoice' ? `#/invoice/${submissionId}` : `#/promissory/${existing.id}`, '_blank');
+      return true;
+    }
+    const reason = window.prompt(`اذكر سبب إصدار ${label} بديل:`);
+    if (!reason || !reason.trim()) { alert('يجب ذكر سبب الاستبدال.'); return true; }
+    if (!(await ensureRequestResult(submissionId))) return true;
+    setIsIssuingDoc(true);
+    try {
+      if (kind === 'invoice') {
+        await api.replaceInvoice(userId, submissionId, reason.trim());
+        fetchSubmissions();
+        window.open(`#/invoice/${submissionId}`, '_blank');
+      } else {
+        const res = await api.replacePromissoryNote(userId, submissionId, reason.trim());
+        setPromissoryNotes(await getAdminPromissoryNotes());
+        window.open(`#/promissory/${res.id}`, '_blank');
+      }
+    } catch (err) {
+      alert((err as any)?.message || 'تعذر إصدار المستند البديل');
+    } finally {
+      setIsIssuingDoc(false);
+    }
+    return true;
+  };
+
   const sendInvoice = async (userId: string, submissionId: string) => {
+    if (isIssuingDoc) return;
+    if (await handleExistingDoc('invoice', userId, submissionId)) return;
     if (!(await ensureRequestResult(submissionId))) return;
     setPendingInvoiceData({ userId, submissionId });
     setIsConfirmingSendInvoice(true);
   };
 
   const sendPromissory = async (userId: string, submissionId: string) => {
+    if (isIssuingDoc) return;
+    if (await handleExistingDoc('note', userId, submissionId)) return;
     if (!(await ensureRequestResult(submissionId))) return;
     setPendingPromissoryData({ userId, submissionId });
     setIsConfirmingSendPromissory(true);
   };
 
   const handleConfirmSendPromissory = async () => {
-    if (!pendingPromissoryData) return;
+    if (!pendingPromissoryData || isIssuingDoc) return;
     const { userId, submissionId } = pendingPromissoryData;
+    setIsIssuingDoc(true);
     try {
-      const noteId = await apiSendPromissoryNote(userId, submissionId);
+      const res = await apiSendPromissoryNote(userId, submissionId);
       setIsConfirmingSendPromissory(false);
       setPendingPromissoryData(null);
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
       const notes = await getAdminPromissoryNotes();
       setPromissoryNotes(notes);
-      window.open(`#/promissory/${noteId}`, '_blank');
+      window.open(`#/promissory/${res.id}`, '_blank');
     } catch (err) {
       console.error(err);
       alert((err as any)?.message || 'حدث خطأ في إرسال سند الأمر');
+    } finally {
+      setIsIssuingDoc(false);
     }
   };
 
@@ -619,19 +668,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   };
 
   const handleConfirmSendInvoice = async () => {
-    if (!pendingInvoiceData) return;
+    if (!pendingInvoiceData || isIssuingDoc) return;
     const { userId, submissionId } = pendingInvoiceData;
-    
+    setIsIssuingDoc(true);
     try {
-      await apiSendInvoice(userId, submissionId);
+      const res = await apiSendInvoice(userId, submissionId);
       setIsConfirmingSendInvoice(false);
       setPendingInvoiceData(null);
+      if (res.existing) window.open(`#/invoice/${submissionId}`, '_blank');
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
       fetchSubmissions();
     } catch (err) {
       console.error(err);
       alert((err as any)?.message || 'حدث خطأ في إرسال الفاتورة');
+    } finally {
+      setIsIssuingDoc(false);
     }
   };
 
