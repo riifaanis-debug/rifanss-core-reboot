@@ -17,15 +17,6 @@ interface PromissoryNotePageProps {
   onClose: () => void;
 }
 
-// Build full Arabic Hijri + Gregorian date label
-const buildIssueDate = (iso: string) => {
-  const d = new Date(iso);
-  const dayName = new Intl.DateTimeFormat('ar-SA', { weekday: 'long' }).format(d);
-  const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
-  const gregorian = new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
-  const time = new Intl.DateTimeFormat('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true }).format(d);
-  return `${dayName} ، ${hijri} هـ ، الموافق ${gregorian} ، ${time}`;
-};
 
 const PromissoryNotePage: React.FC<PromissoryNotePageProps> = ({ noteId, onClose }) => {
   const { user } = useAuth();
