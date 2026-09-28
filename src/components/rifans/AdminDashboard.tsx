@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AdminPaymentRequests } from './PaymentRequests';
 import ChatPage from './ChatPage';
+import ContractPage from './ContractPage';
 import OpenRequestBuilder from './OpenRequestBuilder';
 import WaiveAndReschedulingManagement from './WaiveAndReschedulingManagement';
 import { Button, Card } from './Shared';
