@@ -36,6 +36,13 @@
       "when": 1790568707831,
       "tag": "0004_secure_auth_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790568755016,
+      "tag": "0005_chat_admin_alias",
+      "breakpoints": true
     }
   ]
 }
