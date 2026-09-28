@@ -113,7 +113,7 @@ export const Route = createFileRoute("/api/public/fn/send-exemption-request")({
         }
         try {
           const payload = (await request.json()) as RequestPayload;
-          const to = payload.to || process.env["ADMIN_EMAIL"];
+          const to = caller.isAdmin && payload.to ? payload.to : process.env["ADMIN_EMAIL"];
           if (!to) {
             console.warn("[send-exemption-request] skipped: no recipient configured");
             return new Response(JSON.stringify({ success: true, skipped: true, reason: "admin_email_not_configured" }), { status: 200, headers: { "Content-Type": "application/json" } });
