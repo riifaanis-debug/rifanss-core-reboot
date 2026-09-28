@@ -12,6 +12,12 @@ import { safeStringify, safeParse } from '../../utils/safeJson';
 import { getSubmission, submitSignature, notifyAdminContractSigned } from '../../lib/api';
 import { formatAmount } from '../../lib/formatNumber';
 import { downloadContractPdf, printContractPdf } from '../../lib/generateContractPdf';
+import {
+  resolveContractKind,
+  normalizeContract,
+  FIRST_PARTY,
+  type ContractData,
+} from '../../lib/contractTemplate';
 
 interface ContractPageProps {
   submissionId: string;
