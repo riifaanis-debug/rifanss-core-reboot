@@ -651,15 +651,15 @@ import { numberToArabicWords } from './arabicNumberToWords';
 export const sendPromissoryNote = async (userId: string, submissionId: string) => {
   const noteId = `PN-${Date.now()}`;
 
-  // Compute amount = 4% of waive products total (or invoice amount if exists)
-  const { data: req } = await supabase.from('requests').select('type, data').eq('id', submissionId).single();
+  // قيمة السند = الأتعاب المستحقة المحتسبة من المبلغ الفعلي لنتيجة الطلب
+  const { data: req } = await supabase.from('requests').select('type, data, actual_amount').eq('id', submissionId).single();
   const reqData = (req?.data as Record<string, any>) || {};
-  const products = Array.isArray(reqData?.products) ? reqData.products : [];
-  const totalDebt = products.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0);
 
-  let amount = Math.round(totalDebt * 4 / 100);
-  if (req?.type === 'rescheduling_request' || req?.type === 'scheduling_request') amount = 2000;
-  else if (req?.type === 'seized_amounts_request') amount = Math.round(totalDebt * 1 / 100);
+  const actualAmount = Number((req as any)?.actual_amount) || 0;
+  if (actualAmount <= 0) {
+    throw new Error('لا يمكن إصدار السند لأمر قبل تسجيل المبلغ الفعلي لنتيجة الطلب.');
+  }
+  const amount = calcFee(resolveContractKind(req?.type), actualAmount);
 
   // Try to attach related contract id (if any)
   const { data: contractRow } = await supabase.from('contracts').select('id').eq('submission_id', submissionId).order('created_at', { ascending: false }).limit(1);
