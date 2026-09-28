@@ -40,7 +40,7 @@ export interface ContractData {
 export const FIRST_PARTY = {
   name: 'شركة ريفانس المالية',
   unifiedNumber: '7038821125',
-  representative: 'AZZAH ALOBIDI',
+  representative: 'AZZAH Ali ALOBIDI',
   title: 'المدير العام',
   delegationNumber: 'DLG398908',
 };

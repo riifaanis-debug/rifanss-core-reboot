@@ -150,7 +150,7 @@ const ContractPage: React.FC<ContractPageProps> = ({ submissionId, onClose }) =>
     setIsPdfLoading(true);
     try {
       const data = getContractPayload();
-      await downloadContractPdf(data, `عقد ريفانيس المالية - ${submissionId}.pdf`);
+      await downloadContractPdf(data, `عقد ريفانس المالية - ${submissionId}.pdf`);
     } catch (e) {
       console.error('Error downloading contract:', e);
     } finally {
@@ -312,7 +312,7 @@ const ContractPage: React.FC<ContractPageProps> = ({ submissionId, onClose }) =>
                 </div>
                 <div className="text-gray-700"><strong>الاسم:</strong> شركة ريفانس المالية</div>
                 <div className="text-gray-700"><strong>الرقم الوطني الموحد:</strong> <span className="font-mono font-bold text-brand">7038821125</span></div>
-                <div className="text-gray-700"><strong>يمثلها:</strong> AZZAH ALOBIDI (المدير العام)</div>
+                <div className="text-gray-700"><strong>يمثلها:</strong> AZZAH Ali ALOBIDI (المدير العام)</div>
                 <div className="text-gray-700"><strong>تفويض رقم:</strong> <span className="font-mono">DLG398908</span></div>
               </div>
 
