@@ -340,61 +340,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lookupError = err;
     }
 
-    // If Supabase has an error (unconfigured key / network error / etc.), use offline local store
+    // No offline/local fallback: accounts must exist in the database
     if (lookupError) {
-      console.warn('Supabase lookup returned error, using local fallback:', lookupError);
-      const offlineUsers = getOfflineUsers();
-      let appUser = offlineUsers.find(u => u.national_id === nationalId);
-      if (!appUser) {
-        // Auto-provision local user profile so the user can test the app without blockers
-        appUser = {
-          id: `local-${Date.now()}`,
-          full_name: `عميل ${nationalId.slice(-4)}`,
-          email: '',
-          phone: phone || '',
-          national_id: nationalId,
-          file_number: generateUniqueCustomerNumber(),
-          role: 'user',
-        };
-        saveOfflineUser(appUser);
-      } else if (phone && !appUser.phone) {
-        appUser.phone = phone;
-        saveOfflineUser(appUser);
-      }
-      return {
-        id: appUser.id,
-        fullName: appUser.full_name,
-        name: appUser.full_name,
-        email: appUser.email,
-        phone: appUser.phone,
-        mobile: appUser.phone,
-        national_id: appUser.national_id,
-        nationalId: appUser.national_id,
-        file_number: appUser.file_number,
-        fileNumber: appUser.file_number,
-        role: appUser.role as 'admin' | 'user',
-      };
+      throw new Error('تعذّر تسجيل الدخول، يرجى المحاولة لاحقًا');
     }
 
     if (!existingUsers || existingUsers.length === 0) {
-      // Check offline store before throwing
-      const offlineUsers = getOfflineUsers();
-      const appUser = offlineUsers.find(u => u.national_id === nationalId);
-      if (appUser) {
-        return {
-          id: appUser.id,
-          fullName: appUser.full_name,
-          name: appUser.full_name,
-          email: appUser.email,
-          phone: appUser.phone,
-          mobile: appUser.phone,
-          national_id: appUser.national_id,
-          nationalId: appUser.national_id,
-          file_number: appUser.file_number,
-          fileNumber: appUser.file_number,
-          role: appUser.role as 'admin' | 'user',
-        };
-      }
       throw new Error('لا يوجد حساب بهذه الهوية. يرجى إنشاء حساب جديد.');
     }
     const appUser = existingUsers[0];
