@@ -35,6 +35,7 @@ const ContractPage: React.FC<ContractPageProps> = ({ submissionId, onClose }) =>
     ? submission.data.products
     : (typeof submission?.data?.products === 'string' ? safeParse(submission.data.products, []) : []);
   const totalDebt = products.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
+  const contractKind = resolveContractKind(submission?.type);
 
   const fetchSubmission = async () => {
     setIsLoading(true);
