@@ -602,46 +602,90 @@ export const getRequestResult = async (submissionId: string) => {
   return data;
 };
 
-export const sendInvoice = async (userId: string, submissionId: string) => {
-  const invoiceId = `INV-${Date.now()}`;
+type IssueResult = { id: string; existing: boolean };
+
+const productsTotal = (reqData: Record<string, any>) => {
+  const raw = reqData?.products;
+  const list = Array.isArray(raw) ? raw : (typeof raw === 'string' ? (() => { try { return JSON.parse(raw); } catch { return []; } })() : []);
+  return (list || []).reduce((acc: number, p: any) => acc + (Number(p?.amount) || 0), 0);
+};
+
+/** يتحقق من تسجيل النتيجة الفعلية ويعيد بيانات الطلب */
+const loadRequestForFees = async (submissionId: string, docLabel: string) => {
   const { data: req } = await supabase.from('requests').select('type, data, actual_amount').eq('id', submissionId).single();
-
-  const type = req?.type || 'general';
-  const kind = resolveContractKind(type);
-
-  // الأتعاب تُحتسب من المبلغ الفعلي الذي سجّله المسؤول، ولا تُصدر فاتورة قبل تسجيله
   const actualAmount = Number((req as any)?.actual_amount) || 0;
   if (actualAmount <= 0) {
-    throw new Error('لا يمكن إصدار الفاتورة قبل تسجيل المبلغ الفعلي لنتيجة الطلب.');
+    throw new Error(`لا يمكن إصدار ${docLabel} قبل تسجيل المبلغ الفعلي لنتيجة الطلب.`);
   }
+  const type = req?.type || 'general';
+  const kind = resolveContractKind(type);
+  return { type, kind, actualAmount, reqData: ((req?.data as Record<string, any>) || {}), fee: calcFee(kind, actualAmount) };
+};
 
-  const percentage = feeRateFor(kind) * 100;
-  const amount = calcFee(kind, actualAmount);
-
-  await supabase.from('invoices').insert({
+const createInvoiceRecord = async (userId: string, submissionId: string): Promise<string> => {
+  const { type, kind, actualAmount, reqData, fee } = await loadRequestForFees(submissionId, 'الفاتورة');
+  const invoiceId = `INV-${Date.now()}`;
+  const isSeized = kind === 'seized';
+  const { error } = await supabase.from('invoices').insert({
     id: invoiceId,
     submission_id: submissionId,
     user_id: userId,
     type,
-    amount,
-    percentage,
-    total_debt: actualAmount,
+    amount: fee,
+    percentage: feeRateFor(kind) * 100,
+    total_debt: isSeized ? null : productsTotal(reqData),
+    actual_amount: actualAmount,
+    seized_amount: isSeized ? (Number(reqData.seizedAmount) || null) : null,
+    current_account_number: isSeized ? (reqData.currentAccountNumber || null) : null,
+    bank: reqData.bank || null,
     status: 'pending',
-  });
-
-  await supabase.from('notifications').insert({
-    id: `NOT-${Date.now()}-inv`,
-    user_id: userId,
-    submission_id: submissionId,
-    title: 'فاتورة جديدة',
-    message: 'تم إصدار فاتورة جديدة لطلبك، يرجى المراجعة.',
-    type: 'invoice',
-  });
-
+    doc_status: 'active',
+  } as any);
+  if (error) throw error;
   return invoiceId;
 };
 
+const notifyInvoice = (userId: string, submissionId: string) => supabase.from('notifications').insert({
+  id: `NOT-${Date.now()}-inv`,
+  user_id: userId,
+  submission_id: submissionId,
+  title: 'فاتورة جديدة',
+  message: 'تم إصدار فاتورة جديدة لطلبك، يرجى المراجعة.',
+  type: 'invoice',
+});
+
+export const getActiveInvoice = async (submissionId: string) => {
+  const { data } = await supabase.from('invoices').select('*').eq('submission_id', submissionId).eq('doc_status', 'active').limit(1);
+  return data && data.length > 0 ? data[0] : null;
+};
+
+/** إصدار فاتورة — إذا كانت هناك فاتورة نشطة للطلب تُعاد بدل إنشاء نسخة مكررة */
+export const sendInvoice = async (userId: string, submissionId: string): Promise<IssueResult> => {
+  const existing = await getActiveInvoice(submissionId);
+  if (existing) return { id: existing.id, existing: true };
+  const id = await createInvoiceRecord(userId, submissionId);
+  await notifyInvoice(userId, submissionId);
+  return { id, existing: false };
+};
+
+/** إصدار فاتورة بديلة: تُعلَّم الحالية «مستبدلة» وتبقى محفوظة، ثم تُنشأ فاتورة نشطة جديدة */
+export const replaceInvoice = async (userId: string, submissionId: string, reason: string): Promise<IssueResult> => {
+  const old = await getActiveInvoice(submissionId);
+  if (old) {
+    const { error } = await supabase.from('invoices').update({
+      doc_status: 'replaced', voided_at: new Date().toISOString(), voided_by: getCurrentUserId(), void_reason: reason,
+    } as any).eq('id', old.id);
+    if (error) throw error;
+  }
+  const id = await createInvoiceRecord(userId, submissionId);
+  if (old) await supabase.from('invoices').update({ replaced_by: id } as any).eq('id', old.id);
+  await notifyInvoice(userId, submissionId);
+  return { id, existing: false };
+};
+
 export const getInvoiceBySubmission = async (submissionId: string) => {
+  const active = await getActiveInvoice(submissionId);
+  if (active) return active;
   const { data } = await supabase.from('invoices').select('*').eq('submission_id', submissionId).order('created_at', { ascending: false }).limit(1);
   return data && data.length > 0 ? data[0] : null;
 };
@@ -649,50 +693,74 @@ export const getInvoiceBySubmission = async (submissionId: string) => {
 // ---- PROMISSORY NOTES (سندات الأمر) ----
 import { numberToArabicWords } from './arabicNumberToWords';
 
-export const sendPromissoryNote = async (userId: string, submissionId: string) => {
-  const noteId = `PN-${Date.now()}`;
+const createNoteRecord = async (userId: string, submissionId: string): Promise<string> => {
+  const { fee, reqData } = await loadRequestForFees(submissionId, 'السند لأمر');
 
-  // قيمة السند = الأتعاب المستحقة المحتسبة من المبلغ الفعلي لنتيجة الطلب
-  const { data: req } = await supabase.from('requests').select('type, data, actual_amount').eq('id', submissionId).single();
-  const reqData = (req?.data as Record<string, any>) || {};
-
-  const actualAmount = Number((req as any)?.actual_amount) || 0;
-  if (actualAmount <= 0) {
-    throw new Error('لا يمكن إصدار السند لأمر قبل تسجيل المبلغ الفعلي لنتيجة الطلب.');
-  }
-  const amount = calcFee(resolveContractKind(req?.type), actualAmount);
-
-  // Try to attach related contract id (if any)
+  // السند مرتبط بعقد إلكتروني لنفس الطلب فقط
   const { data: contractRow } = await supabase.from('contracts').select('id').eq('submission_id', submissionId).order('created_at', { ascending: false }).limit(1);
   const contractId = contractRow && contractRow.length > 0 ? contractRow[0].id : null;
+  if (!contractId) throw new Error('لا يمكن إصدار السند لأمر قبل إصدار عقد لهذا الطلب.');
 
-  // Resolve debtor identity
   const { data: appUser } = await supabase.from('app_users').select('full_name, first_name, last_name, national_id').eq('id', userId).single();
   const debtorName = (reqData?.fullName as string) || appUser?.full_name || `${appUser?.first_name || ''} ${appUser?.last_name || ''}`.trim() || '---';
   const debtorNationalId = (reqData?.nationalId as string) || appUser?.national_id || '---';
 
-  await supabase.from('promissory_notes').insert({
+  const noteId = `PN-${Date.now()}`;
+  const { error } = await supabase.from('promissory_notes').insert({
     id: noteId,
     submission_id: submissionId,
     user_id: userId,
     contract_id: contractId,
-    amount,
-    amount_in_words: numberToArabicWords(amount),
+    amount: fee,
+    amount_in_words: numberToArabicWords(fee),
     debtor_name: debtorName,
     debtor_national_id: debtorNationalId,
+    issue_city: 'جدة',
+    payment_city: 'جدة',
+    due_date: 'لدى الإطلاع',
     status: 'pending',
-  });
-
-  await supabase.from('notifications').insert({
-    id: `NOT-${Date.now()}-pn`,
-    user_id: userId,
-    submission_id: submissionId,
-    title: 'سند لأمر جديد',
-    message: 'تم إصدار سند لأمر إلكتروني خاص بطلبك، يرجى المراجعة والتوقيع.',
-    type: 'promissory_note',
-  });
-
+    doc_status: 'active',
+  } as any);
+  if (error) throw error;
   return noteId;
+};
+
+const notifyNote = (userId: string, submissionId: string) => supabase.from('notifications').insert({
+  id: `NOT-${Date.now()}-pn`,
+  user_id: userId,
+  submission_id: submissionId,
+  title: 'سند لأمر جديد',
+  message: 'تم إصدار سند لأمر إلكتروني خاص بطلبك، يرجى المراجعة والتوقيع.',
+  type: 'promissory_note',
+});
+
+export const getActivePromissoryNote = async (submissionId: string) => {
+  const { data } = await supabase.from('promissory_notes').select('*').eq('submission_id', submissionId).eq('doc_status', 'active').limit(1);
+  return data && data.length > 0 ? data[0] : null;
+};
+
+/** إصدار سند — إذا كان هناك سند نشط للطلب يُعاد بدل إنشاء نسخة مكررة */
+export const sendPromissoryNote = async (userId: string, submissionId: string): Promise<IssueResult> => {
+  const existing = await getActivePromissoryNote(submissionId);
+  if (existing) return { id: existing.id, existing: true };
+  const id = await createNoteRecord(userId, submissionId);
+  await notifyNote(userId, submissionId);
+  return { id, existing: false };
+};
+
+/** إصدار سند بديل: يُعلَّم الحالي «مستبدل» ويبقى محفوظاً دون تعديل محتواه */
+export const replacePromissoryNote = async (userId: string, submissionId: string, reason: string): Promise<IssueResult> => {
+  const old = await getActivePromissoryNote(submissionId);
+  if (old) {
+    const { error } = await supabase.from('promissory_notes').update({
+      doc_status: 'replaced', voided_at: new Date().toISOString(), voided_by: getCurrentUserId(), void_reason: reason,
+    } as any).eq('id', old.id);
+    if (error) throw error;
+  }
+  const id = await createNoteRecord(userId, submissionId);
+  if (old) await supabase.from('promissory_notes').update({ replaced_by: id } as any).eq('id', old.id);
+  await notifyNote(userId, submissionId);
+  return { id, existing: false };
 };
 
 export const getAdminPromissoryNotes = async () => {
