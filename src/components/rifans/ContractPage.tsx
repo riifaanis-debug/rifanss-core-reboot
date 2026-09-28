@@ -111,35 +111,26 @@ const ContractPage: React.FC<ContractPageProps> = ({ submissionId, onClose }) =>
     setHasSignature(false);
   };
 
-  const getContractPayload = () => {
-    const isRescheduling = submission?.type === 'rescheduling_request' || submission?.type === 'scheduling_request';
-    const isSeizedAmounts = submission?.type === 'seized_amounts_request';
-    const contractTitle = isRescheduling
-      ? 'عقد تفويض ومتابعة طلب جدولة منتجات تمويلية'
-      : isSeizedAmounts
-      ? 'عقد تفويض ومتابعة طلب إتاحة النسبة النظامية'
-      : 'عقد تفويض ومتابعة طلب إعفاء تمويلي';
-
-    return {
-      submissionId,
-      submission,
-      products,
-      totalDebt,
-      contractTitle,
-      isRescheduling,
-      isSeizedAmounts,
-      isAlreadySigned,
-      signatureData: (isAlreadySigned && submission?.signature_data)
-        ? submission.signature_data
-        : (canvasRef.current?.toDataURL() || null),
-      signedAt: submission?.signed_at || (isSuccess ? new Date().toISOString() : null),
-      clientName: [submission?.data?.firstName, submission?.data?.middleName, submission?.data?.lastName].filter(Boolean).join(' ') || 'العميل الكريم',
-      nationalId: submission?.data?.nationalId || submission?.data?.userNationalId || '---',
-      mobile: submission?.data?.mobile || submission?.data?.phone || '---',
-      bank: submission?.data?.bank || (isRescheduling ? 'الجهات التمويلية والبنوك' : 'البنك الأهلي السعودي'),
-      contractDate: new Date(submission?.timestamp || Date.now()).toLocaleDateString('ar-SA'),
-    };
-  };
+  const getContractPayload = (): ContractData => ({
+    submissionId,
+    submission,
+    kind: contractKind,
+    products,
+    totalDebt,
+    currentAccountNumber: submission?.data?.currentAccountNumber,
+    seizedAmount: submission?.data?.seizedAmount,
+    isAlreadySigned,
+    signatureData: (isAlreadySigned && submission?.signature_data)
+      ? submission.signature_data
+      : (canvasRef.current?.toDataURL() || null),
+    signedAt: submission?.signed_at || (isSuccess ? new Date().toISOString() : null),
+    clientName: [submission?.data?.firstName, submission?.data?.middleName, submission?.data?.lastName].filter(Boolean).join(' ') || 'العميل الكريم',
+    nationalId: submission?.data?.nationalId || submission?.data?.userNationalId || '---',
+    mobile: submission?.data?.mobile || submission?.data?.phone || '---',
+    bank: submission?.data?.bank || 'الجهة التمويلية',
+    fileNumber: submission?.file_number || submissionId,
+    contractDate: new Date(submission?.timestamp || Date.now()).toLocaleDateString('ar-SA'),
+  });
 
   const handlePrint = async () => {
     if (isPdfLoading) return;
