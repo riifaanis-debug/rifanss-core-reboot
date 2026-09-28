@@ -595,7 +595,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       window.open(`#/promissory/${noteId}`, '_blank');
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ في إرسال سند الأمر');
+      alert((err as any)?.message || 'حدث خطأ في إرسال سند الأمر');
     }
   };
 
@@ -630,7 +630,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       fetchSubmissions();
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ في إرسال الفاتورة');
+      alert((err as any)?.message || 'حدث خطأ في إرسال الفاتورة');
     }
   };
 
