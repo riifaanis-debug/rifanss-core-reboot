@@ -2,26 +2,31 @@ import { invokeFunction } from "@/lib/functions";
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Shared';
 import { Loader2, ShieldCheck, ArrowRight, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import Logo from './Logo';
 
 interface OtpVerificationProps {
-  email: string;
-  userId: string;
-  onVerified: () => void;
+  mode: 'register' | 'login';
+  nationalId: string;
+  phone: string;
+  email?: string; // register only
+  onVerified: (user: any) => void | Promise<void>;
   onCancel: () => void;
 }
 
-const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVerified, onCancel }) => {
+const OtpVerification: React.FC<OtpVerificationProps> = ({ mode, nationalId, phone, email, onVerified, onCancel }) => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [sent, setSent] = useState(false);
+  const [maskedEmail, setMaskedEmail] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const didSend = useRef(false);
 
   useEffect(() => {
+    if (didSend.current) return;
+    didSend.current = true;
     sendOtp();
   }, []);
 
@@ -36,20 +41,23 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVeri
     setIsSending(true);
     setError('');
     try {
-      const { data, error: fnError } = await invokeFunction('send-otp', {
-        body: { email, userId },
+      const { data } = await invokeFunction('send-otp', {
+        body: { mode, nationalId, phone, email },
       });
 
-      if (fnError || !data?.success) {
-        setError(data?.error || 'فشل إرسال رمز التحقق');
+      if (!data?.success) {
+        setError(data?.error || 'تعذّر إرسال رمز التحقق حاليًا، يرجى المحاولة لاحقًا');
+        if (data?.retryAfter) setCountdown(Number(data.retryAfter));
         return;
       }
 
+      setMaskedEmail(data.maskedEmail || '');
       setSent(true);
+      setOtp(['', '', '', '']);
       setCountdown(60);
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     } catch {
-      setError('فشل إرسال رمز التحقق');
+      setError('تعذّر إرسال رمز التحقق حاليًا، يرجى المحاولة لاحقًا');
     } finally {
       setIsSending(false);
     }
@@ -97,40 +105,22 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVeri
     setIsLoading(true);
     setError('');
     try {
-      // Allow fallback test code '1234' or '0000' for seamless verification/testing
-      if (code === '1234' || code === '0000') {
-        onVerified();
-        return;
-      }
-
-      const { data, error: fnError } = await invokeFunction('verify-otp', {
-        body: { email, code, userId },
+      const { data } = await invokeFunction('verify-otp', {
+        body: { mode, nationalId, phone, email, code },
       });
 
-      if (fnError || !data?.success) {
-        setError(data?.error || 'رمز التحقق غير صحيح (يمكنك استخدام الرمز التجريبي: 1234)');
+      if (!data?.success || !data?.user) {
+        setError(data?.error || 'رمز التحقق غير صحيح');
         return;
       }
 
-      onVerified();
+      await onVerified(data.user);
     } catch {
-      // In case of network / service latency, allow test code 1234
-      if (code === '1234' || code === '0000') {
-        onVerified();
-      } else {
-        setError('تعذّر الاتصال بخادم التحقق. يمكنك إدخال الرمز التجريبي: 1234');
-      }
+      setError('تعذّر الاتصال بخادم التحقق، يرجى المحاولة لاحقًا');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const maskedPhone = email ? (() => {
-    const [local, domain] = email.split('@');
-    if (!domain) return email;
-    const masked = local.length <= 2 ? local[0] + '*' : local.slice(0, 2) + '***';
-    return `${masked}@${domain}`;
-  })() : '';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -147,15 +137,19 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVeri
           <h2 className="text-sm font-bold text-brand dark:text-white mb-1">التحقق من البريد الإلكتروني</h2>
           <p className="text-[10px] text-muted mb-2">
             {sent ? (
-              <>تم إرسال رمز التحقق إلى <span className="font-bold text-brand dark:text-gold dir-ltr inline-block">{maskedPhone}</span></>
-            ) : (
+              <>تم إرسال رمز التحقق إلى <span className="font-bold text-brand dark:text-gold dir-ltr inline-block">{maskedEmail}</span></>
+            ) : isSending ? (
               'جاري إرسال رمز التحقق...'
+            ) : (
+              'لم يتم إرسال رمز التحقق'
             )}
           </p>
 
-          <div className="mb-3 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg text-[9px] text-amber-800 dark:text-amber-300 leading-tight">
-            يرجى تفقد مجلد <b>البريد غير الهام (Junk / Spam)</b> أو استخدام الرمز التجريبي: <button type="button" onClick={() => { setOtp(['1','2','3','4']); setError(''); }} className="font-bold underline text-gold">1234</button>
-          </div>
+          {sent && (
+            <div className="mb-3 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg text-[9px] text-amber-800 dark:text-amber-300 leading-tight">
+              يرجى تفقد مجلد <b>البريد غير الهام (Junk / Spam)</b> إذا لم تجد الرسالة.
+            </div>
+          )}
 
           {error && (
             <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-[10px]">
@@ -173,6 +167,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVeri
                 inputMode="numeric"
                 maxLength={1}
                 value={digit}
+                disabled={!sent}
                 onChange={e => handleChange(i, e.target.value)}
                 onKeyDown={e => handleKeyDown(i, e)}
                 className="w-9 h-10 text-center text-base font-bold bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none transition-all dark:text-white"
@@ -183,7 +178,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ email, userId, onVeri
           <Button
             onClick={handleVerify}
             className="w-full py-1.5 text-xs gap-2 rounded-lg mb-2"
-            disabled={isLoading || otp.join('').length !== 4}
+            disabled={!sent || isLoading || otp.join('').length !== 4}
           >
             {isLoading ? (
               <Loader2 className="animate-spin mx-auto" size={16} />
