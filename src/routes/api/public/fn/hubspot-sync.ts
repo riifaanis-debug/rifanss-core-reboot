@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getCaller } from "@/lib/auth-session.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
@@ -142,6 +143,10 @@ export const Route = createFileRoute("/api/public/fn/hubspot-sync")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const caller = await getCaller(request);
+        if (!caller?.appUser) {
+          return new Response(JSON.stringify({ success: false, error: "unauthorized" }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
         try {
           const LOVABLE_API_KEY = process.env["LOVABLE_API_KEY"];
           const HUBSPOT_API_KEY = process.env["HUBSPOT_API_KEY"];

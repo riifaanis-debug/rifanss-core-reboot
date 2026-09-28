@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { mintSessionToken } from "@/lib/auth-session.server";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -44,8 +45,10 @@ export const Route = createFileRoute("/api/public/fn/verify-login")({
             return json({ success: false, error: "بيانات الدخول غير صحيحة" }, 401);
           }
 
+          const token_hash = await mintSessionToken(user);
           return json({
             success: true,
+            token_hash,
             user: {
               id: user.id,
               fullName: user.full_name,

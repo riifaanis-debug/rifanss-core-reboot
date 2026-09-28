@@ -1,5 +1,5 @@
 import { invokeFunction } from "@/lib/functions";
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 
@@ -18,20 +18,19 @@ interface User {
 }
 
 interface AuthResponse {
-  user: any;
+  // One-time token issued by the server after a verified OTP / admin password.
+  token_hash?: string;
+  user?: any;
   token?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (data: AuthResponse) => void;
+  login: (data: AuthResponse) => Promise<User | null>;
+  updateLocalUser: (patch: Partial<User>) => void;
   logout: () => void;
   isLoading: boolean;
-  loginOrRegisterUser: (nationalId: string, phone: string) => Promise<User>;
-  lookupOrCreateUser: (nationalId: string, phone: string) => Promise<User>;
-  lookupUserByNationalId: (nationalId: string, phone?: string) => Promise<User>;
-  registerNewUser: (nationalId: string, phone: string, email: string) => Promise<User>;
   loginWithEmail: (email: string, password: string) => Promise<User>;
   loginWithGoogle: () => Promise<User>;
   loginWithApple: () => Promise<User>;
@@ -54,431 +53,142 @@ export const generateUniqueCustomerNumber = (): string => {
   return `RF-${year}${month}${day}-${randomPart}`;
 };
 
+// Short-lived cookie so same-origin file links (<img>, <a>) can be authorised by the server.
+function setFileCookie(token: string | null) {
+  if (typeof document === 'undefined') return;
+  const base = 'path=/api/public/uploads; SameSite=None; Secure; Partitioned';
+  document.cookie = token
+    ? `rf_at=${encodeURIComponent(token)}; ${base}; max-age=3600`
+    : `rf_at=; ${base}; max-age=0`;
+}
+
+async function loadProfile(authUserId: string): Promise<User | null> {
+  const [{ data: appUser }, { data: roleRow }] = await Promise.all([
+    supabase.from('app_users').select('*').eq('auth_user_id', authUserId).maybeSingle(),
+    supabase.from('user_roles').select('role').eq('user_id', authUserId).eq('role', 'admin').maybeSingle(),
+  ]);
+  if (!appUser) return null;
+  return {
+    id: appUser.id,
+    fullName: appUser.full_name ?? undefined,
+    name: appUser.full_name ?? undefined,
+    email: appUser.email ?? undefined,
+    phone: appUser.phone ?? undefined,
+    mobile: appUser.phone ?? undefined,
+    national_id: appUser.national_id ?? undefined,
+    nationalId: appUser.national_id ?? undefined,
+    file_number: appUser.file_number ?? undefined,
+    fileNumber: appUser.file_number ?? undefined,
+    role: roleRow ? 'admin' : 'user',
+  };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
-    if (savedUser && savedUser !== 'undefined' && savedToken && savedToken !== 'undefined') {
-      try {
-        setUser(JSON.parse(savedUser));
-        setToken(savedToken);
-      } catch (e) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
+  const applySession = useCallback(async (session: any) => {
+    if (!session?.user) {
+      try { localStorage.removeItem('user'); } catch { /* ignore */ }
+      setUser(null);
+      setToken(null);
+      setFileCookie(null);
+      return null;
     }
-
-    // Listen for Supabase auth state changes (e.g. Google OAuth callback)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const supaUser = session.user;
-        const email = supaUser.email || '';
-        const fullName = supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || email.split('@')[0];
-
-        // Check if user exists in app_users
-        const { data: existing } = await supabase
-          .from('app_users')
-          .select('*')
-          .eq('email', email)
-          .limit(1);
-
-        let appUser: any;
-        if (!existing || existing.length === 0) {
-          // Create new app_users record
-          const fileNumber = generateUniqueCustomerNumber();
-          const newUser = {
-            id: supaUser.id,
-            full_name: fullName,
-            email,
-            file_number: fileNumber,
-            role: 'user',
-          };
-          const { data: inserted } = await supabase
-            .from('app_users')
-            .insert(newUser)
-            .select()
-            .single();
-          appUser = inserted || newUser;
-        } else {
-          appUser = existing[0];
-          if (!appUser.file_number) {
-            const fileNumber = generateUniqueCustomerNumber();
-            await supabase.from('app_users').update({ file_number: fileNumber }).eq('id', appUser.id);
-            appUser.file_number = fileNumber;
-          }
-        }
-
-        const userData: User = {
-          id: appUser.id,
-          fullName: appUser.full_name,
-          name: appUser.full_name,
-          email: appUser.email,
-          phone: appUser.phone,
-          mobile: appUser.phone,
-          national_id: appUser.national_id,
-          nationalId: appUser.national_id,
-          file_number: appUser.file_number,
-          fileNumber: appUser.file_number,
-          role: appUser.role as 'admin' | 'user',
-        };
-
-        setUser(userData);
-        setToken(session.access_token);
-        localStorage.setItem('token', session.access_token);
-        localStorage.setItem('user', JSON.stringify(userData));
-
-        // Redirect based on role
-        if (appUser.role === 'admin') {
-          window.location.hash = '#/admin';
-        } else {
-          window.location.hash = '#/dashboard';
-        }
-      }
-    });
-
-    setIsLoading(false);
-    return () => subscription.unsubscribe();
+    setToken(session.access_token);
+    setFileCookie(session.access_token);
+    const profile = await loadProfile(session.user.id);
+    if (!profile) {
+      // Signed in to the auth system but not linked to a customer account: not allowed.
+      await supabase.auth.signOut();
+      setUser(null);
+      setToken(null);
+      setFileCookie(null);
+      return null;
+    }
+    setUser(profile);
+    // Display-only mirror used by legacy helpers; access is enforced by the database, not this value.
+    try { localStorage.setItem('user', JSON.stringify(profile)); } catch { /* ignore */ }
+    return profile;
   }, []);
 
-  const login = (data: AuthResponse) => {
-    setUser(data.user);
-    setToken(data.token || 'session');
-    localStorage.setItem('token', data.token || 'session');
-    localStorage.setItem('user', JSON.stringify(data.user));
+  useEffect(() => {
+    // Drop the legacy browser-only session and offline store (no database data is touched).
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('rifans_offline_users');
+    } catch { /* ignore */ }
+
+    let active = true;
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return;
+      await applySession(data.session);
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') {
+        setToken(session?.access_token ?? null);
+        setFileCookie(session?.access_token ?? null);
+        return;
+      }
+      if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT' && event !== 'USER_UPDATED') return;
+      setTimeout(async () => {
+        const profile = await applySession(session);
+        // Social sign-in callback: redirect after the session is confirmed
+        if (event === 'SIGNED_IN' && profile && sessionStorage.getItem('oauth_pending')) {
+          sessionStorage.removeItem('oauth_pending');
+          window.location.hash = profile.role === 'admin' ? '#/admin' : '#/dashboard';
+        }
+      }, 0);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [applySession]);
+
+  const login = async (data: AuthResponse): Promise<User | null> => {
+    if (!data?.token_hash) throw new Error('تعذّر تسجيل الدخول');
+    const { data: res, error } = await supabase.auth.verifyOtp({ token_hash: data.token_hash, type: 'magiclink' });
+    if (error || !res.session) throw new Error('تعذّر تسجيل الدخول، يرجى المحاولة لاحقًا');
+    const profile = await applySession(res.session);
+    if (!profile) throw new Error('تعذّر تسجيل الدخول، يرجى المحاولة لاحقًا');
+    return profile;
+  };
+
+  const updateLocalUser = (patch: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch, id: prev.id, role: prev.role };
+      try { localStorage.setItem('user', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    window.location.hash = '#/';
-  };
-
-  // Local storage helpers for seamless offline/preview fallback when Supabase is unconfigured or unreachable
-  const LOCAL_USERS_KEY = 'rifans_offline_users';
-  const getOfflineUsers = (): any[] => {
-    try {
-      const raw = localStorage.getItem(LOCAL_USERS_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  };
-  const saveOfflineUser = (userRecord: any) => {
-    try {
-      const list = getOfflineUsers();
-      const idx = list.findIndex(u => u.id === userRecord.id || u.national_id === userRecord.national_id);
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...userRecord };
-      } else {
-        list.push(userRecord);
-      }
-      localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(list));
-    } catch (err) {
-      console.warn('Failed to save offline user', err);
-    }
-  };
-
-  // Lookup or create user WITHOUT logging in (for OTP flow)
-  const lookupOrCreateUser = async (nationalId: string, phone: string): Promise<User> => {
-    let existingUsers: any[] | null = null;
-    let lookupError: any = null;
-
-    try {
-      const res = await supabase
-        .from('app_users')
-        .select('*')
-        .eq('national_id', nationalId)
-        .limit(1);
-      existingUsers = res.data;
-      lookupError = res.error;
-    } catch (err) {
-      lookupError = err;
-    }
-
-    // Resilient fallback if Supabase is unconfigured or returns an authorization/network error
-    if (lookupError) {
-      console.warn('Supabase lookup failed, falling back to local store:', lookupError);
-      const offlineUsers = getOfflineUsers();
-      let appUser = offlineUsers.find(u => u.national_id === nationalId);
-      if (!appUser) {
-        appUser = {
-          id: `local-${Date.now()}`,
-          full_name: `عميل ${nationalId.slice(-4)}`,
-          email: '',
-          phone: phone,
-          national_id: nationalId,
-          file_number: generateUniqueCustomerNumber(),
-          role: 'user',
-        };
-        saveOfflineUser(appUser);
-      } else if (phone && appUser.phone !== phone) {
-        appUser.phone = phone;
-        saveOfflineUser(appUser);
-      }
-      return {
-        id: appUser.id,
-        fullName: appUser.full_name,
-        name: appUser.full_name,
-        email: appUser.email,
-        phone: appUser.phone,
-        mobile: appUser.phone,
-        national_id: appUser.national_id,
-        nationalId: appUser.national_id,
-        file_number: appUser.file_number,
-        fileNumber: appUser.file_number,
-        role: appUser.role as 'admin' | 'user',
-      };
-    }
-
-    let appUser: any;
-
-    if (!existingUsers || existingUsers.length === 0) {
-      const fileNumber = generateUniqueCustomerNumber();
-      const newUser = {
-        id: Date.now().toString(),
-        full_name: `عميل ${nationalId.slice(-4)}`,
-        email: '',
-        phone: phone,
-        national_id: nationalId,
-        file_number: fileNumber,
-        role: 'user',
-      };
-      const { data: inserted, error: insertError } = await supabase
-        .from('app_users')
-        .insert(newUser)
-        .select()
-        .single();
-
-      if (insertError) {
-        console.warn('Failed inserting to Supabase, saving locally:', insertError);
-        saveOfflineUser(newUser);
-        appUser = newUser;
-      } else {
-        appUser = inserted;
-        saveOfflineUser(inserted);
-      }
-
-      // Sync new contact to HubSpot (fire-and-forget)
-      try {
-        invokeFunction('hubspot-sync', {
-          body: {
-            action: 'upsert_contact',
-            contact: {
-              phone: appUser.phone,
-              firstname: appUser.full_name,
-              national_id: appUser.national_id,
-              file_number: appUser.file_number,
-            },
-          },
-        });
-      } catch (e) {
-        console.error('hubspot-sync (new contact) failed', e);
-      }
-    } else {
-      appUser = existingUsers[0];
-      const updates: any = {};
-      if (appUser.phone !== phone) {
-        updates.phone = phone;
-        appUser.phone = phone;
-      }
-      if (!appUser.file_number) {
-        appUser.file_number = generateUniqueCustomerNumber();
-        updates.file_number = appUser.file_number;
-      }
-      if (Object.keys(updates).length > 0) {
-        await supabase.from('app_users').update(updates).eq('id', appUser.id);
-      }
-      saveOfflineUser(appUser);
-    }
-
-    return {
-      id: appUser.id,
-      fullName: appUser.full_name,
-      name: appUser.full_name,
-      email: appUser.email,
-      phone: appUser.phone,
-      mobile: appUser.phone,
-      national_id: appUser.national_id,
-      nationalId: appUser.national_id,
-      file_number: appUser.file_number,
-      fileNumber: appUser.file_number,
-      role: appUser.role as 'admin' | 'user',
-    };
-  };
-
-  const loginOrRegisterUser = async (nationalId: string, phone: string): Promise<User> => {
-    setIsLoading(true);
-    try {
-      const userData = await lookupOrCreateUser(nationalId, phone);
-      login({ user: userData, token: `session-${userData.id}` });
-      return userData;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Lookup user by national ID (with resilient fallback for unconfigured/offline DB)
-  const lookupUserByNationalId = async (nationalId: string, phone?: string): Promise<User> => {
-    let existingUsers: any[] | null = null;
-    let lookupError: any = null;
-
-    try {
-      const res = await supabase
-        .from('app_users')
-        .select('*')
-        .eq('national_id', nationalId)
-        .limit(1);
-      existingUsers = res.data;
-      lookupError = res.error;
-    } catch (err) {
-      lookupError = err;
-    }
-
-    // No offline/local fallback: accounts must exist in the database
-    if (lookupError) {
-      throw new Error('تعذّر تسجيل الدخول، يرجى المحاولة لاحقًا');
-    }
-
-    if (!existingUsers || existingUsers.length === 0) {
-      throw new Error('لا يوجد حساب بهذه الهوية. يرجى إنشاء حساب جديد.');
-    }
-    const appUser = existingUsers[0];
-    if (!appUser.file_number) {
-      const fileNumber = generateUniqueCustomerNumber();
-      await supabase.from('app_users').update({ file_number: fileNumber }).eq('id', appUser.id);
-      appUser.file_number = fileNumber;
-    }
-    saveOfflineUser(appUser);
-    return {
-      id: appUser.id,
-      fullName: appUser.full_name,
-      name: appUser.full_name,
-      email: appUser.email,
-      phone: appUser.phone,
-      mobile: appUser.phone,
-      national_id: appUser.national_id,
-      nationalId: appUser.national_id,
-      file_number: appUser.file_number,
-      fileNumber: appUser.file_number,
-      role: appUser.role as 'admin' | 'user',
-    };
-  };
-
-  // Create new user account (registration flow) - requires email
-  const registerNewUser = async (nationalId: string, phone: string, email: string): Promise<User> => {
-    let existing: any[] | null = null;
-    try {
-      const res = await supabase
-        .from('app_users')
-        .select('id')
-        .eq('national_id', nationalId)
-        .limit(1);
-      existing = res.data;
-    } catch {
-      // ignore
-    }
-
-    if (existing && existing.length > 0) {
-      throw new Error('يوجد حساب مسجل بهذه الهوية بالفعل. يرجى تسجيل الدخول.');
-    }
-
-    const offlineUsers = getOfflineUsers();
-    if (offlineUsers.some(u => u.national_id === nationalId && u.email)) {
-      throw new Error('يوجد حساب مسجل بهذه الهوية بالفعل. يرجى تسجيل الدخول.');
-    }
-
-    const fileNumber = generateUniqueCustomerNumber();
-    const newUser = {
-      id: Date.now().toString(),
-      full_name: `عميل ${nationalId.slice(-4)}`,
-      email: email.toLowerCase().trim(),
-      phone,
-      national_id: nationalId,
-      file_number: fileNumber,
-      role: 'user',
-    };
-    saveOfflineUser(newUser);
-
-    try {
-      const { data: inserted, error: insertError } = await supabase
-        .from('app_users')
-        .insert(newUser)
-        .select()
-        .single();
-
-      if (!insertError && inserted) {
-        saveOfflineUser(inserted);
-      }
-    } catch (e) {
-      console.warn('Could not insert user into remote Supabase, saved locally', e);
-    }
-
-    try {
-      invokeFunction('hubspot-sync', {
-        body: {
-          action: 'upsert_contact',
-          contact: {
-            email: newUser.email,
-            phone: newUser.phone,
-            firstname: newUser.full_name,
-            national_id: newUser.national_id,
-            file_number: newUser.file_number,
-          },
-        },
-      });
-    } catch (e) {
-      console.error('hubspot-sync (new contact) failed', e);
-    }
-
-    return {
-      id: newUser.id,
-      fullName: newUser.full_name,
-      name: newUser.full_name,
-      email: newUser.email,
-      phone: newUser.phone,
-      mobile: newUser.phone,
-      national_id: newUser.national_id,
-      nationalId: newUser.national_id,
-      file_number: newUser.file_number,
-      fileNumber: newUser.file_number,
-      role: newUser.role as 'admin' | 'user',
-    };
+    supabase.auth.signOut().finally(() => {
+      setUser(null);
+      setToken(null);
+      setFileCookie(null);
+      window.location.hash = '#/';
+    });
   };
 
   const loginWithEmail = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      // Use server-side edge function for secure bcrypt password verification
       const { data, error } = await invokeFunction('verify-login', {
         body: { email, password },
       });
-
-      if (error || !data?.success) {
+      if (error || !data?.success || !data?.token_hash) {
         throw new Error(data?.error || 'بيانات الدخول غير صحيحة');
       }
-
-      const userData: User = {
-        id: data.user.id,
-        fullName: data.user.fullName,
-        name: data.user.name,
-        email: data.user.email,
-        phone: data.user.phone,
-        mobile: data.user.phone,
-        national_id: data.user.national_id,
-        nationalId: data.user.national_id,
-        file_number: data.user.file_number || data.user.fileNumber,
-        fileNumber: data.user.file_number || data.user.fileNumber,
-        role: data.user.role as 'admin' | 'user',
-      };
-
-      login({ user: userData, token: `session-${data.user.id}` });
-      return userData;
+      const profile = await login({ token_hash: data.token_hash });
+      if (!profile) throw new Error('بيانات الدخول غير صحيحة');
+      return profile;
     } finally {
       setIsLoading(false);
     }
@@ -487,16 +197,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async (): Promise<User> => {
     setIsLoading(true);
     try {
+      sessionStorage.setItem('oauth_pending', '1');
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-
       if (result.error) {
+        sessionStorage.removeItem('oauth_pending');
         throw new Error('فشل تسجيل الدخول بحساب Google');
       }
-
-      // If redirected, the page will reload and we handle the session in useEffect
-      // For now, throw a placeholder since the page will redirect
       throw new Error('جاري التحويل...');
     } finally {
       setIsLoading(false);
@@ -506,14 +214,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithApple = async (): Promise<User> => {
     setIsLoading(true);
     try {
+      sessionStorage.setItem('oauth_pending', '1');
       const result = await lovable.auth.signInWithOAuth("apple", {
         redirect_uri: window.location.origin,
       });
-
       if (result.error) {
+        sessionStorage.removeItem('oauth_pending');
         throw new Error('فشل تسجيل الدخول بحساب Apple');
       }
-
       throw new Error('جاري التحويل...');
     } finally {
       setIsLoading(false);
@@ -521,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading, loginOrRegisterUser, lookupOrCreateUser, lookupUserByNationalId, registerNewUser, loginWithEmail, loginWithGoogle, loginWithApple }}>
+    <AuthContext.Provider value={{ user, token, login, updateLocalUser, logout, isLoading, loginWithEmail, loginWithGoogle, loginWithApple }}>
       {children}
     </AuthContext.Provider>
   );

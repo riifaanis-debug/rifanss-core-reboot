@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getCaller } from "@/lib/auth-session.server";
 import { sendMail, arrayBufferToBase64 } from "@/lib/rifans-mail.server";
 
 const json = (body: unknown, status = 200) =>
@@ -14,6 +15,10 @@ export const Route = createFileRoute("/api/public/fn/notify-admin")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const caller = await getCaller(request);
+        if (!caller?.appUser) {
+          return new Response(JSON.stringify({ success: false, error: "unauthorized" }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
         try {
           const { requestData, userData } = (await request.json()) as any;
 

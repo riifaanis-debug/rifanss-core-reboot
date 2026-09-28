@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { mintSessionToken } from "@/lib/auth-session.server";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -99,7 +100,8 @@ export const Route = createFileRoute("/api/public/fn/verify-otp")({
 
           if (mode === "login") {
             await supabaseAdmin.from("app_users").update({ phone_verified: true }).eq("id", loginUser.id);
-            return json({ success: true, user: toClient(loginUser) });
+            const token_hash = await mintSessionToken(loginUser);
+            return json({ success: true, user: toClient(loginUser), token_hash });
           }
 
           // Register: create the account only now
@@ -130,7 +132,8 @@ export const Route = createFileRoute("/api/public/fn/verify-otp")({
           if (createError || !created) {
             return json({ success: false, error: "تعذّر إنشاء الحساب" }, 500);
           }
-          return json({ success: true, user: toClient(created), created: true });
+          const token_hash = await mintSessionToken(created);
+          return json({ success: true, user: toClient(created), created: true, token_hash });
         } catch {
           console.error("verify-otp error");
           return json({ success: false, error: "خطأ في الخادم" }, 500);

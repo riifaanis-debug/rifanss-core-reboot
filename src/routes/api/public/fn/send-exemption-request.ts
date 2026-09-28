@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getCaller } from "@/lib/auth-session.server";
 import { sendMail } from "@/lib/rifans-mail.server";
 
 interface RequestPayload {
@@ -106,9 +107,13 @@ export const Route = createFileRoute("/api/public/fn/send-exemption-request")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const caller = await getCaller(request);
+        if (!caller?.appUser) {
+          return new Response(JSON.stringify({ success: false, error: "unauthorized" }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
         try {
           const payload = (await request.json()) as RequestPayload;
-          const to = payload.to || process.env["ADMIN_EMAIL"];
+          const to = caller.isAdmin && payload.to ? payload.to : process.env["ADMIN_EMAIL"];
           if (!to) {
             console.warn("[send-exemption-request] skipped: no recipient configured");
             return new Response(JSON.stringify({ success: true, skipped: true, reason: "admin_email_not_configured" }), { status: 200, headers: { "Content-Type": "application/json" } });
