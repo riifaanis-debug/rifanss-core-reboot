@@ -512,7 +512,8 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
             bank: formData.bank || profileData.bank,
             email: formData.email || profileData.email,
             documents: mergedDocs,
-            products: newProducts,
+            // طلب إتاحة النسبة النظامية لا يتضمن منتجات تمويلية، فلا تُمسّ منتجات الملف
+            products: isSeizedAmounts ? existingProducts : newProducts,
           };
           await updateProfile(updatedProfilePayload);
           
