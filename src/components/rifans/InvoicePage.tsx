@@ -64,10 +64,18 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
   };
 
   const getFeeDescription = () => {
-    if (isRescheduling) return '2,000 ريال سعودي (مبلغ مقطوع)';
-    if (isSeizedAmounts) return `1% من إجمالي المبالغ المستردة`;
-    return `4% من إجمالي المبالغ المعفية`;
+    if (isRescheduling) return '1% من إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً';
+    if (isSeizedAmounts) return '1% من المبلغ الذي تمت إتاحته أو استرداده فعلياً';
+    return '4% من المبلغ المعفى فعلياً';
   };
+
+  /* الأساس المالي للفاتورة = المبلغ الفعلي المسجّل لنتيجة الطلب */
+  const feeBasisLabel = isRescheduling
+    ? 'إجمالي مديونية المنتجات المُعاد جدولتها فعلياً'
+    : isSeizedAmounts
+    ? 'المبلغ المُتاح/المسترد فعلياً'
+    : 'المبلغ المعفى فعلياً';
+  const feeBasisAmount = Number(invoice?.total_debt) || Number(submission?.actual_amount) || 0;
 
   const handleDownload = async () => {
     const el = printSheetRef.current;
@@ -239,7 +247,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
           </div>
 
           {/* المنتجات التمويلية (Financing Products) */}
-          {products.length > 0 && (
+          {!isSeizedAmounts && products.length > 0 && (
             <div className="space-y-2.5">
               <div className="bg-brand text-white px-3.5 py-2 rounded-xl flex items-center gap-2 font-bold text-xs sm:text-sm">
                 <CreditCard size={16} className="text-gold shrink-0" />
@@ -284,12 +292,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
                 <span className="font-bold text-[#22042C]">{getFeeDescription()}</span>
               </div>
 
-              {!isRescheduling && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                  <span className="text-gray-600 font-medium">إجمالي المبلغ الأساسي:</span>
-                  <span className="font-mono font-bold text-brand">{formatAmount(totalDebt)} ر.س</span>
-                </div>
-              )}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                <span className="text-gray-600 font-medium">{feeBasisLabel}:</span>
+                <span className="font-mono font-bold text-brand">{formatAmount(feeBasisAmount)} ر.س</span>
+              </div>
 
               <div className="pt-3 border-t border-gold/30 flex items-center justify-between">
                 <span className="text-sm sm:text-base font-black text-brand">المبلغ المستحق للسداد:</span>
@@ -378,7 +384,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ submissionId, onClose }) => {
         </div>
 
         {/* Products Table */}
-        {products.length > 0 && (
+        {!isSeizedAmounts && products.length > 0 && (
           <table className="w-full text-xs mb-4 border border-gray-200">
             <thead>
               <tr className="bg-[#22042C] text-white">

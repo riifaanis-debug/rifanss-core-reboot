@@ -1,11 +1,25 @@
 import rifansLogo from '@/assets/rifans-logo.png';
 import rifansStampImg from '@/assets/rifans-stamp.png';
 
+/* ═══════════════════════════════════════════════════════════════
+ * المصدر الوحيد لنصوص وبيانات العقود (شاشة العميل + الطباعة + PDF)
+ * ═══════════════════════════════════════════════════════════════ */
+
+export type ContractKind = 'exemption' | 'rescheduling' | 'seized';
+
+export interface ContractProduct {
+  type: string;
+  accountNumber?: string;
+  account_number?: string;
+  amount: number | string;
+}
+
 export interface ContractData {
   submissionId: string;
   submission?: any;
   fileNumber?: string;
   contractTitle?: string;
+  kind?: ContractKind;
   isRescheduling?: boolean;
   isSeizedAmounts?: boolean;
   contractDate?: string;
@@ -13,16 +27,51 @@ export interface ContractData {
   nationalId?: string;
   mobile?: string;
   bank?: string;
-  products?: Array<{
-    type: string;
-    accountNumber?: string;
-    account_number?: string;
-    amount: number | string;
-  }>;
+  products?: ContractProduct[];
   totalDebt?: number;
+  currentAccountNumber?: string;
+  seizedAmount?: number | string;
   signatureData?: string | null;
   signedAt?: string | null;
   isAlreadySigned?: boolean;
+}
+
+/* ── بيانات الطرف الأول الثابتة ── */
+export const FIRST_PARTY = {
+  name: 'شركة ريفانس المالية',
+  unifiedNumber: '7038821125',
+  representative: 'AZZAH ALOBIDI',
+  title: 'المدير العام',
+  delegationNumber: 'DLG398908',
+};
+
+/* ── نسب الأتعاب حسب نوع الطلب ── */
+export const FEE_RATES: Record<ContractKind, number> = {
+  exemption: 0.04,
+  rescheduling: 0.01,
+  seized: 0.01,
+};
+
+export const FEE_BASIS_LABEL: Record<ContractKind, string> = {
+  exemption: 'المبلغ المعفى فعلياً',
+  rescheduling: 'إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً',
+  seized: 'المبلغ الذي تمت إتاحته أو استرداده فعلياً',
+};
+
+export function resolveContractKind(type?: string | null): ContractKind {
+  if (type === 'rescheduling_request' || type === 'scheduling_request') return 'rescheduling';
+  if (type === 'seized_amounts_request') return 'seized';
+  return 'exemption';
+}
+
+export function feeRateFor(kind: ContractKind): number {
+  return FEE_RATES[kind];
+}
+
+export function calcFee(kind: ContractKind, actualAmount: number | string | null | undefined): number {
+  const base = Number(actualAmount) || 0;
+  if (base <= 0) return 0;
+  return Math.round(base * FEE_RATES[kind] * 100) / 100;
 }
 
 export function formatAmount(val: any): string {
@@ -42,130 +91,408 @@ export function formatArabicDate(dateInput?: any): string {
   }
 }
 
-/**
- * Extracts normalized ContractData from either a ContractData object,
- * an HTMLElement with __contractData attached, or by parsing the DOM.
- */
-export function extractContractData(input: HTMLElement | ContractData): ContractData {
-  if (input && typeof (input as any).submissionId === 'string') {
-    return input as ContractData;
+/* ═══════════════════════════════════════════════════════════════
+ * نصوص العقد المهيكلة
+ * ═══════════════════════════════════════════════════════════════ */
+
+export interface ContractSection {
+  key: string;
+  title: string;
+  paragraphs?: string[];
+  items?: string[];
+  /** بلوك بيانات يُعرض داخل المادة: جدول المنتجات أو بيانات الحساب */
+  block?: 'products' | 'account';
+}
+
+export interface ContractContent {
+  kind: ContractKind;
+  title: string;
+  preamble: string[];
+  sections: ContractSection[];
+}
+
+const ARTICLE_1: ContractSection = {
+  key: 'a1',
+  title: 'المادة (1): حجية التعامل والتوقيع الإلكتروني',
+  paragraphs: [
+    'يوافق الطرفان على إبرام هذا العقد وإتمام الإجراءات المرتبطة به باستخدام الوسائل الإلكترونية المعتمدة في المنصة، بما في ذلك التحقق الإلكتروني والتوقيع الإلكتروني والرسائل المرسلة إلى بيانات الاتصال المسجلة للطرف الثاني.',
+    'ويتم توثيق موافقة الطرف الثاني وتوقيعه وفق الآلية الإلكترونية المعتمدة في النظام، مع الاحتفاظ بالسجلات الإلكترونية المرتبطة بعملية التحقق والتوقيع وفق الأنظمة المعمول بها في المملكة العربية السعودية.',
+  ],
+};
+
+function requestLabel(kind: ContractKind): string {
+  if (kind === 'rescheduling') return 'طلب إعادة الجدولة';
+  if (kind === 'seized') return 'طلب إتاحة النسبة النظامية';
+  return 'طلب الإعفاء';
+}
+
+function articles4and5(kind: ContractKind): ContractSection[] {
+  const label = requestLabel(kind);
+  return [
+    {
+      key: 'a4',
+      title: 'المادة (4): التزامات الطرف الأول',
+      paragraphs: [
+        `يلتزم الطرف الأول ببذل العناية المهنية اللازمة، والمحافظة على سرية بيانات ومستندات الطرف الثاني، واستخدامها في حدود الغرض من الخدمة، ومتابعة ${label} وإبلاغ الطرف الثاني بالمستجدات الجوهرية، وعدم تقديم نتيجة الطلب على أنها نتيجة مضمونة.`,
+      ],
+    },
+    {
+      key: 'a5',
+      title: 'المادة (5): التزامات الطرف الثاني',
+      paragraphs: [
+        `يلتزم الطرف الثاني بتقديم البيانات والمستندات الصحيحة والكاملة، والتعاون في استكمال المتطلبات، وإبلاغ الطرف الأول بأي تغيير جوهري يؤثر في ${label}، وسداد الأتعاب عند تحقق شروط استحقاقها.`,
+      ],
+    },
+  ];
+}
+
+function commonTailSections(kind: ContractKind): ContractSection[] {
+  const label = requestLabel(kind);
+
+  const delegationParagraphs: string[] = [];
+  if (kind === 'exemption') {
+    delegationParagraphs.push(
+      `يفوض الطرف الثاني الطرف الأول تفويضاً خاصاً بدراسة وتقديم ومتابعة طلب الإعفاء محل هذا العقد فقط، ولا يمتد هذا التفويض إلى إعادة الجدولة أو إتاحة النسبة النظامية أو أي خدمة أخرى.`
+    );
+  } else if (kind === 'rescheduling') {
+    delegationParagraphs.push(
+      `يفوض الطرف الثاني الطرف الأول تفويضاً خاصاً بدراسة وتقديم ومتابعة طلب إعادة جدولة المنتجات التمويلية محل هذا العقد فقط، ولا يمتد هذا التفويض إلى الإعفاء أو إتاحة النسبة النظامية أو أي خدمة أخرى.`
+    );
+  } else {
+    delegationParagraphs.push(
+      `يفوض الطرف الثاني الطرف الأول تفويضاً خاصاً بدراسة وتقديم ومتابعة طلب إتاحة النسبة النظامية واسترداد المبالغ المستثناة من الحجز محل هذا العقد فقط، ولا يمتد هذا التفويض إلى الإعفاء أو إعادة الجدولة أو أي خدمة أخرى.`
+    );
+    delegationParagraphs.push(
+      '«ولا يمنح هذا التفويض الطرف الأول صلاحية السحب من الحساب أو التحويل منه أو إدارة الحساب أو التصرف في أموال الطرف الثاني.»'
+    );
+  }
+  delegationParagraphs.push('وينتهي التفويض بانتهاء الغرض الذي صدر من أجله أو بانتهاء العقد.');
+
+  const privacy: string[] = [
+    'تتم معالجة البيانات والمستندات اللازمة لتنفيذ الخدمة في حدود الغرض من الطلب، ولا يمتد التفويض إلى بيانات غير لازمة للخدمة.',
+  ];
+  if (kind === 'exemption') {
+    privacy.push('ويمكن معالجة المستندات الطبية المرتبطة بطلب الإعفاء بالقدر اللازم لتنفيذ الخدمة.');
   }
 
-  const el = input as HTMLElement;
-  if ((el as any)?.__contractData) {
-    return (el as any).__contractData as ContractData;
+  return [
+    {
+      key: 'a8',
+      title: 'المادة (8): مدة العقد وإنهاؤه',
+      paragraphs: [
+        `يبدأ سريان العقد من تاريخ اعتماده وتوقيعه إلكترونياً، ويستمر إلى حين تحقق الغرض منه، أو صدور نتيجة نهائية لـ${label}، أو إنهائه باتفاق الطرفين، أو طلب الطرف الثاني إنهاء المتابعة، أو تعذر استكمال الطلب بسبب عدم توفير البيانات أو المستندات المطلوبة، أو وجود مانع نظامي أو إجرائي يحول دون استمرار الخدمة.`,
+        'ولا يؤثر انتهاء العقد على الحقوق المالية التي ثبت استحقاقها قبل انتهائه.',
+      ],
+    },
+    {
+      key: 'a9',
+      title: 'المادة (9): السند لأمر',
+      paragraphs: [
+        'لا يُعد هذا العقد بذاته سنداً لأمر.',
+        'وإذا استلزم توثيق الأتعاب إصدار سند لأمر، فيكون السند لأمر وثيقة مستقلة عن العقد ويتم إنشاؤه وإصداره وفق الإجراءات والبيانات والشروط النظامية المطبقة عليه.',
+        'ويجب أن تتوافق قيمة السند مع الأتعاب المستحقة فعلياً وفق نوع الطلب ونتيجته.',
+      ],
+    },
+    {
+      key: 'a10',
+      title: 'المادة (10): البيانات والخصوصية',
+      paragraphs: privacy,
+    },
+    {
+      key: 'a11',
+      title: 'المادة (11): الإقرارات',
+      paragraphs: [
+        'يقر الطرف الثاني بصحة البيانات والمستندات المقدمة منه، واطلاعه على نطاق الخدمة وآلية احتساب الأتعاب، وعلمه بأن القرار النهائي يعود للجهة المختصة، وأنه قرأ العقد قبل اعتماده.',
+        'ولا يُفسر أي حكم في العقد على أنه تنازل من أي طرف عن حق مقرر له بموجب الأنظمة المعمول بها.',
+      ],
+    },
+    {
+      key: 'a12',
+      title: 'المادة (12): أحكام عامة',
+      paragraphs: [
+        'يخضع العقد للأنظمة المعمول بها في المملكة العربية السعودية، ولا يكون أي تعديل على أحكامه نافذاً إلا بعد اعتماده بالطريقة المتفق عليها بين الطرفين.',
+        'وفي حال تعذر تطبيق أي حكم، فلا يؤثر ذلك على بقية أحكام العقد بالقدر الذي تسمح به الأنظمة.',
+      ],
+    },
+    {
+      key: 'a13',
+      title: 'المادة (13): التفويض',
+      paragraphs: delegationParagraphs,
+    },
+  ];
+}
+
+export function getContractContent(
+  kind: ContractKind,
+  vars: { bank: string }
+): ContractContent {
+  const bank = vars.bank;
+
+  if (kind === 'rescheduling') {
+    return {
+      kind,
+      title: 'عقد تفويض ومتابعة طلب إعادة جدولة منتجات تمويلية',
+      preamble: [
+        'حيث إن الطرف الثاني يرغب في الاستعانة بالطرف الأول لدراسة ومتابعة طلب إعادة جدولة المنتجات التمويلية المشمولة بهذا العقد لدى الجهة التمويلية، بما يتناسب مع ظروفه والتزاماته المالية، وحيث إن الطرف الأول يقدم خدمات دراسة ومتابعة الطلبات وإعداد المستندات والمخاطبات اللازمة في حدود الخدمة المتفق عليها؛ فقد اتفق الطرفان، وهما بكامل الأهلية المعتبرة شرعاً ونظاماً، على إبرام هذا العقد وفقاً للبنود التالية.',
+        'ويُعد هذا التمهيد جزءاً لا يتجزأ من العقد ومكملاً ومفسراً لأحكامه.',
+      ],
+      sections: [
+        ARTICLE_1,
+        {
+          key: 'a2',
+          title: 'المادة (2): موضوع العقد ونطاق الخدمة',
+          paragraphs: [
+            `يفوض الطرف الثاني الطرف الأول في دراسة وإعداد وتقديم ومتابعة طلب إعادة جدولة المنتجات التمويلية المحددة في هذا العقد لدى ${bank}، واستكمال الإجراءات المرتبطة بالطلب في حدود التفويض.`,
+            'ولا يمتد العقد تلقائياً إلى الإعفاء أو إتاحة النسبة النظامية أو أي خدمة أخرى.',
+          ],
+          block: 'products',
+        },
+        {
+          key: 'a3',
+          title: 'المادة (3): نطاق التفويض',
+          paragraphs: [
+            `يقتصر التفويض على الاطلاع على البيانات والمستندات المالية والتمويلية اللازمة للطلب، والتواصل مع ${bank} والجهات المختصة، وإعداد وتقديم ومتابعة طلب إعادة الجدولة واستكمال متطلباته.`,
+          ],
+        },
+        ...articles4and5(kind),
+        {
+          key: 'a6',
+          title: 'المادة (6): الأتعاب وشروط استحقاقها',
+          paragraphs: [
+            'لا تستحق أتعاب الطرف الأول لمجرد تقديم طلب إعادة الجدولة أو متابعته.',
+            'تستحق الأتعاب عند الموافقة الفعلية على إعادة الجدولة وإتمامها للمنتجات المشمولة بالعقد وثبوت ذلك بمستند أو جدول سداد أو قرار صادر من الجهة التمويلية.',
+            'الأتعاب = 1% من إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً.',
+            'وفي حال عدم الموافقة وعدم تحقق إعادة الجدولة فعلياً، فلا تستحق أتعاب نجاح.',
+          ],
+        },
+        {
+          key: 'a7',
+          title: 'المادة (7): عدم ضمان نتيجة الطلب',
+          paragraphs: [
+            'لا يضمن الطرف الأول موافقة الجهة التمويلية على إعادة الجدولة أو شروطها أو مقدار القسط أو مدة السداد، وتبقى الموافقة وشروطها من اختصاص الجهة التمويلية.',
+          ],
+        },
+        ...commonTailSections(kind),
+      ],
+    };
   }
 
-  // Fallback: Parse from DOM
-  const text = el.innerText || el.textContent || '';
-  const isRescheduling = text.includes('جدولة') || text.includes('rescheduling');
-  const isSeizedAmounts = text.includes('النسبة النظامية') || text.includes('المبالغ المحجوزة') || text.includes('seized');
+  if (kind === 'seized') {
+    return {
+      kind,
+      title: 'عقد تفويض ومتابعة طلب إتاحة النسبة النظامية',
+      preamble: [
+        'حيث إن الطرف الثاني لديه مبلغ محجوز في حسابه الجاري، ويرغب في الاستعانة بالطرف الأول لدراسة ومتابعة طلب إتاحة النسبة النظامية واسترداد المبالغ المستثناة من الحجز، وفق الأنظمة والتعليمات والإجراءات ذات العلاقة، وحيث إن الطرف الأول يقدم خدمات دراسة ومتابعة الطلبات وإعداد المستندات والمخاطبات اللازمة في حدود الخدمة المتفق عليها؛ فقد اتفق الطرفان، وهما بكامل الأهلية المعتبرة شرعاً ونظاماً، على إبرام هذا العقد وفقاً للبنود التالية.',
+        'ويُعد هذا التمهيد جزءاً لا يتجزأ من العقد ومكملاً ومفسراً لأحكامه.',
+      ],
+      sections: [
+        ARTICLE_1,
+        {
+          key: 'a2',
+          title: 'المادة (2): موضوع العقد ونطاق الخدمة',
+          paragraphs: [
+            `يفوض الطرف الثاني الطرف الأول في دراسة وإعداد وتقديم ومتابعة طلب إتاحة النسبة النظامية واسترداد المبالغ المستثناة من الحجز والموجودة في الحساب الجاري المحدد في هذا العقد لدى ${bank}، ومتابعة الإجراءات المتعلقة بالطلب لدى الجهات المختصة، وذلك في حدود هذا العقد والتفويض الممنوح بموجبه.`,
+            'ولا يمتد هذا العقد إلى طلبات الإعفاء أو إعادة الجدولة أو أي خدمة أخرى غير مرتبطة مباشرة بطلب إتاحة النسبة النظامية.',
+          ],
+          block: 'account',
+        },
+        {
+          key: 'a3',
+          title: 'المادة (3): نطاق التفويض',
+          paragraphs: ['يقتصر التفويض على:'],
+          items: [
+            'الاطلاع على البيانات والمستندات المرتبطة بالحساب الجاري والمبلغ المحجوز محل الطلب.',
+            'الاطلاع على المستندات والقرارات والمعلومات اللازمة لإثبات المبالغ المستثناة من الحجز.',
+            `التواصل والمتابعة مع ${bank} والجهات المختصة ذات العلاقة.`,
+            'إعداد وتقديم ومتابعة الطلب والمذكرات والمخاطبات المتعلقة بإتاحة النسبة النظامية واسترداد المبالغ المستثناة من الحجز.',
+            'استكمال متطلبات الطلب بالتنسيق مع الطرف الثاني.',
+          ],
+        },
+        ...articles4and5(kind),
+        {
+          key: 'a6',
+          title: 'المادة (6): الأتعاب وشروط استحقاقها',
+          paragraphs: [
+            'لا تستحق أتعاب الطرف الأول لمجرد تقديم الطلب أو متابعته.',
+            'تستحق الأتعاب بعد نجاح الطلب فعلياً وثبوت المبلغ الذي تمت إتاحته أو استرداده للطرف الثاني من المبلغ المحجوز في الحساب والمستثنى من الحجز.',
+            'الأتعاب = 1% من إجمالي المبلغ الذي تمت إتاحته أو استرداده فعلياً لصالح الطرف الثاني.',
+            'وإذا تمت إتاحة جزء من المبلغ فقط، تحتسب نسبة 1% على المبلغ المتاح أو المسترد فعلياً فقط وليس على كامل المبلغ المحجوز.',
+            'وفي حال عدم إتاحة أو استرداد أي مبلغ فعلياً، فلا تستحق أتعاب نجاح.',
+          ],
+        },
+        {
+          key: 'a7',
+          title: 'المادة (7): عدم ضمان نتيجة الطلب',
+          paragraphs: [
+            'لا يمثل العقد وعداً أو ضماناً بقبول طلب إتاحة النسبة النظامية أو استرداد كامل المبلغ المحجوز، ويظل قرار الإتاحة وتحديد المبلغ من اختصاص الجهة صاحبة الصلاحية.',
+          ],
+        },
+        ...commonTailSections(kind),
+      ],
+    };
+  }
 
-  // Extract reference / file number
-  const refMatch = text.match(/(?:رقم ملف العميل|رقم العقد|رقم المرجع|المرجع|الملف)\s*[:：]?\s*([0-9A-Za-z_-]+)/);
-  const submissionId = refMatch ? refMatch[1] : `CR-${Date.now()}`;
-
-  // Extract client name
-  const nameMatch = text.match(/(?:اسم العميل|الطرف الثاني)\s*[:：]?\s*([^\n\r,]+)/);
-  const clientName = nameMatch ? nameMatch[1].trim() : 'العميل الكريم';
-
-  // Extract national id
-  const idMatch = text.match(/(?:رقم الهوية الوطنية|رقم الهوية|السجل المدني)\s*[:：]?\s*([0-9]{10})/);
-  const nationalId = idMatch ? idMatch[1] : '---';
-
-  // Extract mobile
-  const mobMatch = text.match(/(?:رقم الجوال|الجوال)\s*[:：]?\s*([0-9+]{9,14})/);
-  const mobile = mobMatch ? mobMatch[1] : '---';
-
-  // Extract bank
-  const bankMatch = text.match(/(?:اسم الجهة التمويلية|الجهة التمويلية|البنك)\s*[:：]?\s*([^\n\r,]+)/);
-  const bank = bankMatch ? bankMatch[1].trim() : 'الجهة المالية';
-
-  // Extract contract title
-  let contractTitle = 'عقد تفويض ومتابعة طلب إعفاء تمويلي';
-  if (isRescheduling) contractTitle = 'عقد تفويض ومتابعة طلب جدولة منتجات تمويلية';
-  if (isSeizedAmounts) contractTitle = 'عقد تفويض ومتابعة طلب إتاحة النسبة النظامية';
-
-  // Extract signature img
-  const sigImg = el.querySelector('img[alt*="توقيع"], img[alt*="signature"]') as HTMLImageElement;
-  const signatureData = sigImg ? sigImg.src : null;
-
+  /* الإعفاء التمويلي */
   return {
-    submissionId,
-    clientName,
-    nationalId,
-    mobile,
-    bank,
-    contractTitle,
-    isRescheduling,
-    isSeizedAmounts,
-    contractDate: formatArabicDate(new Date()),
-    products: [],
-    totalDebt: 0,
-    signatureData,
-    isAlreadySigned: !!signatureData,
+    kind,
+    title: 'عقد تفويض ومتابعة طلب إعفاء تمويلي',
+    preamble: [
+      'حيث إن الطرف الثاني يرغب في الاستعانة بالطرف الأول لدراسة ومتابعة طلب إعفائه من الالتزامات التمويلية المشمولة بهذا العقد لدى الجهة التمويلية، وحيث إن الطرف الأول يقدم خدمات دراسة ومتابعة الطلبات وإعداد المستندات والمخاطبات اللازمة في حدود الخدمة المتفق عليها؛ فقد اتفق الطرفان، وهما بكامل الأهلية المعتبرة شرعاً ونظاماً، على إبرام هذا العقد وفقاً للبنود التالية.',
+      'ويُعد هذا التمهيد جزءاً لا يتجزأ من العقد ومكملاً ومفسراً لأحكامه.',
+    ],
+    sections: [
+      ARTICLE_1,
+      {
+        key: 'a2',
+        title: 'المادة (2): موضوع العقد ونطاق الخدمة',
+        paragraphs: [
+          `يفوض الطرف الثاني الطرف الأول في دراسة وإعداد وتقديم ومتابعة طلب الإعفاء من الالتزامات التمويلية المحددة في هذا العقد لدى ${bank}، واتخاذ إجراءات المتابعة اللازمة في حدود هذا العقد والتفويض الممنوح بموجبه.`,
+          'ولا يمتد هذا العقد تلقائياً إلى إعادة الجدولة أو إتاحة النسبة النظامية أو أي خدمة أخرى غير مرتبطة مباشرة بطلب الإعفاء محل هذا العقد.',
+        ],
+        block: 'products',
+      },
+      {
+        key: 'a3',
+        title: 'المادة (3): نطاق التفويض',
+        paragraphs: ['يقتصر التفويض على الإجراءات اللازمة لتنفيذ طلب الإعفاء، ويشمل في حدود الحاجة:'],
+        items: [
+          'الاطلاع على المستندات والبيانات اللازمة لدراسة الطلب.',
+          'الاطلاع على التقارير والمستندات الطبية المرتبطة بالطلب متى كانت ضرورية.',
+          `التواصل والمتابعة مع ${bank} والجهات المختصة ذات العلاقة.`,
+          'إعداد وتقديم ومتابعة الطلب والمذكرات والمخاطبات المتعلقة به.',
+          'متابعة حالة الطلب واستكمال المتطلبات بالتنسيق مع الطرف الثاني.',
+        ],
+      },
+      ...articles4and5(kind),
+      {
+        key: 'a6',
+        title: 'المادة (6): الأتعاب وشروط استحقاقها',
+        paragraphs: [
+          'لا تستحق أتعاب الطرف الأول لمجرد تقديم الطلب أو متابعته.',
+          'تستحق الأتعاب عند قبول طلب الإعفاء فعلياً وثبوت مقدار المبالغ المعفاة بموجب مستند نهائي صادر من الجهة التمويلية أو الجهة المختصة.',
+          'الأتعاب = 4% من إجمالي المبالغ المعفاة فعلياً.',
+          'ويقصد بالمبالغ المعفاة فعلياً قيمة الالتزامات التمويلية التي يثبت إعفاء الطرف الثاني منها بصورة نهائية.',
+          'وفي حال عدم تحقق إعفاء فعلي، فلا تستحق أتعاب نجاح.',
+        ],
+      },
+      {
+        key: 'a7',
+        title: 'المادة (7): عدم ضمان نتيجة الطلب',
+        paragraphs: [
+          'يقوم الطرف الأول بدراسة وإعداد ومتابعة الطلب وبذل العناية المهنية اللازمة، ولا يمثل هذا العقد وعداً أو ضماناً بقبول طلب الإعفاء، ويظل قرار القبول أو الرفض وتحديد نطاق الإعفاء من اختصاص الجهة صاحبة الصلاحية.',
+        ],
+      },
+      ...commonTailSections(kind),
+    ],
   };
 }
 
-/**
- * Builds the official 3-page A4 contract HTML structure.
- * Designed strictly to A4 proportions (210mm x 297mm) with balanced margins,
- * unified company headers, dynamic page-numbered footers, and unbreakable clauses.
- */
-export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): string {
-  const data = extractContractData(raw);
+/* ═══════════════════════════════════════════════════════════════
+ * تطبيع بيانات العقد
+ * ═══════════════════════════════════════════════════════════════ */
+
+export interface NormalizedContract {
+  kind: ContractKind;
+  content: ContractContent;
+  clientName: string;
+  nationalId: string;
+  mobile: string;
+  bank: string;
+  submissionId: string;
+  fileNumber: string;
+  contractDate: string;
+  products: ContractProduct[];
+  totalDebt: number;
+  currentAccountNumber: string;
+  seizedAmount: number;
+  signatureData: string | null;
+  signedAt: string | null;
+  isSigned: boolean;
+}
+
+export function normalizeContract(input: HTMLElement | ContractData): NormalizedContract {
+  const data: ContractData =
+    input && typeof (input as any).submissionId === 'string'
+      ? (input as ContractData)
+      : (((input as any)?.__contractData as ContractData) || ({ submissionId: '' } as ContractData));
 
   const submission = data.submission || {};
   const subData = submission.data || {};
+
+  const kind: ContractKind =
+    data.kind ||
+    (data.isSeizedAmounts ? 'seized' : data.isRescheduling ? 'rescheduling' : resolveContractKind(submission.type));
 
   const clientName =
     data.clientName ||
     [subData.firstName, subData.middleName, subData.lastName].filter(Boolean).join(' ') ||
     'العميل الكريم';
 
-  const nationalId =
-    data.nationalId ||
-    subData.nationalId ||
-    subData.userNationalId ||
-    '---';
+  const nationalId = data.nationalId || subData.nationalId || subData.userNationalId || '---';
+  const mobile = data.mobile || subData.mobile || subData.phone || '---';
+  const bank = data.bank || subData.bank || 'الجهة التمويلية';
 
-  const mobile =
-    data.mobile ||
-    subData.mobile ||
-    subData.phone ||
-    '---';
+  const submissionId = data.submissionId || subData.id || '';
+  const fileNumber = data.fileNumber || submission.file_number || submissionId;
+  const contractDate = data.contractDate || formatArabicDate(submission.timestamp || submission.created_at || new Date());
 
-  const bank =
-    data.bank ||
-    subData.bank ||
-    (data.isRescheduling ? 'الجهات التمويلية والبنوك' : 'البنك الأهلي السعودي');
+  const rawProducts: ContractProduct[] =
+    kind === 'seized'
+      ? []
+      : Array.isArray(data.products) && data.products.length > 0
+      ? data.products
+      : Array.isArray(subData.products)
+      ? subData.products
+      : [];
 
-  const submissionId = data.submissionId || data.fileNumber || subData.id || `1787873399904`;
-  const contractDate = data.contractDate || formatArabicDate(submission.timestamp || new Date());
+  const totalDebt =
+    kind === 'seized'
+      ? 0
+      : Number(data.totalDebt) ||
+        rawProducts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) ||
+        0;
 
-  const isRescheduling = !!data.isRescheduling;
-  const isSeizedAmounts = !!data.isSeizedAmounts;
+  const currentAccountNumber =
+    data.currentAccountNumber || subData.currentAccountNumber || subData.current_account_number || '---';
+  const seizedAmount = Number(data.seizedAmount ?? subData.seizedAmount ?? subData.seized_amount) || 0;
 
-  let contractTitle = data.contractTitle;
-  if (!contractTitle) {
-    if (isRescheduling) contractTitle = 'عقد تفويض ومتابعة طلب جدولة منتجات تمويلية';
-    else if (isSeizedAmounts) contractTitle = 'عقد تفويض ومتابعة طلب إتاحة النسبة النظامية';
-    else contractTitle = 'عقد تفويض ومتابعة طلب إعفاء تمويلي';
-  }
-
-  // Products
-  const products = Array.isArray(data.products) && data.products.length > 0
-    ? data.products
-    : (Array.isArray(subData.products) ? subData.products : []);
-
-  const totalDebt = data.totalDebt || products.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0) || 0;
-
-  // Signature
   const signatureData = data.signatureData || submission.signature_data || null;
   const signedAt = data.signedAt || submission.signed_at || null;
-  const isSigned = data.isAlreadySigned || !!signatureData;
 
-  // Render Header
+  return {
+    kind,
+    content: getContractContent(kind, { bank }),
+    clientName,
+    nationalId,
+    mobile,
+    bank,
+    submissionId,
+    fileNumber,
+    contractDate,
+    products: rawProducts,
+    totalDebt,
+    currentAccountNumber,
+    seizedAmount,
+    signatureData,
+    signedAt,
+    isSigned: !!(data.isAlreadySigned || signatureData),
+  };
+}
+
+/** توافق للخلف */
+export function extractContractData(input: HTMLElement | ContractData): ContractData {
+  if (input && typeof (input as any).submissionId === 'string') return input as ContractData;
+  if ((input as any)?.__contractData) return (input as any).__contractData as ContractData;
+  return { submissionId: '' };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * بناء صفحات A4 من النصوص نفسها (طباعة / PDF)
+ * ═══════════════════════════════════════════════════════════════ */
+
+export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): string {
+  const c = normalizeContract(raw);
+
   const renderHeader = () => `
     <div class="a4-header" style="margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2.5px solid #C5A059;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -184,8 +511,7 @@ export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): s
     </div>
   `;
 
-  // Render Footer
-  const renderFooter = (pageIndex: number, totalPages: number = 3) => `
+  const renderFooter = (pageIndex: number, totalPages: number) => `
     <div class="a4-footer" style="margin-top: auto; padding-top: 8px; border-top: 1.5px solid #E5E7EB;">
       <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #4B5563; direction: ltr; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         <div style="font-weight: 700; color: #22042C;">rifanss.com</div>
@@ -195,141 +521,118 @@ export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): s
     </div>
   `;
 
-  // Content Preamble Text
-  let preambleText = '';
-  if (isRescheduling) {
-    preambleText = `حيث إن الطرف الثاني يرغب في توكيل الطرف الأول ومتابعته لدى الجهات التمويلية والبنوك لإعادة جدولة المنتجات التمويلية القائمة في ذمته وتخفيض الالتزامات الشهرية بما يتناسب مع دخله المالي وإعادة هيكلة مديونياته، وحيث إن الطرف الأول يمتلك الخبرة المهنية والنظامية في دراسة ومتابعة طلبات إعادة الجدولة وإعداد الحلول الائتمانية لدى البنوك والجهات التمويلية، فقد التقت إرادة الطرفين بكامل الأهلية المعتبرة شرعاً ونظاماً على إبرام هذا العقد وفقاً للشروط والبنود التالية:`;
-  } else if (isSeizedAmounts) {
-    preambleText = `حيث إن الطرف الثاني يرغب في توكيل الطرف الأول ومتابعته لدى الجهات التمويلية والبنوك لإتاحة النسبة النظامية المستثناة واسترداد المبالغ المحجوزة من مستحقاته ورواتبه بما يتوافق مع الأنظمة والتعليمات الصادرة من البنك المركزي السعودي ومحاكم التنفيذ، وحيث إن الطرف الأول يمتلك الخبرة المهنية والنظامية في دراسة ومتابعة طلبات استرداد المبالغ وإتاحة النسب المستثناة وإعداد المذكرات والمخاطبات الرسمية لدى البنوك والجهات المختصة، فقد التقت إرادة الطرفين بكامل الأهلية المعتبرة شرعاً ونظاماً على إبرام هذا العقد وفقاً للشروط والبنود التالية:`;
-  } else {
-    preambleText = `حيث إن الطرف الثاني يرغب في تفويض الطرف الأول ومتابعته لدى ${bank} لطلب الإعفاء من الالتزامات التمويلية المترتبة عليه وفقاً للتعليمات والأنظمة واللوائح المعتمدة، وحيث إن الطرف الأول يمتلك الخبرة المهنية في دراسة ومتابعة طلبات الإعفاء وإعداد المذكرات القانونية والمخاطبات الرسمية لدى البنوك والجهات التمويلية ، فقد التقت إرادة الطرفين بكامل الأهلية المعتبرة شرعاً ونظاماً على إبرام هذا العقد وفقاً للشروط والبنود التالية:`;
-  }
-
-  // Article 2 text
-  let article2Text = '';
-  if (isRescheduling) {
-    article2Text = `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب إعادة جدولة المنتجات التمويلية الخاصة به لدى ${bank}، وذلك فيما يتعلق بمنتجات التمويل الموضحة أدناه:`;
-  } else if (isSeizedAmounts) {
-    article2Text = `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب إتاحة النسبة النظامية واسترداد المبالغ المستثناه من الحجز لدى ${bank}، وذلك فيما يتعلق بالمبالغ والمنتجات الموضحة أدناه:`;
-  } else {
-    article2Text = `يفوض الطرف الثاني بموجب هذا العقد تفويضاً صريحاً ومباشراً وقابلاً للتنفيذ للطرف الأول في استلام وتقديم ومتابعة طلب الإعفاء المقدم من الطرف الثاني لدى ${bank}، وذلك فيما يتعلق بمنتجات التمويل الموضحة أدناه:`;
-  }
-
-  // Article 3 items
-  const scopeItems = isRescheduling
-    ? [
-        'الاطلاع على المستندات والبيانات المالية وتفاصيل المنتجات التمويلية والأقساط الشهرية الخاصة بالطرف الثاني.',
-        'التواصل المباشر مع البنوك والجهات التمويلية واللجان الائتمانية والبنك المركزي السعودي فيما يخص طلب إعادة الجدولة وتخفيض الأقساط.',
-        'إعداد وصياغة ومتابعة طلبات إعادة الهيكلة وتقديم الحلول التمويلية البديلة وإرفاق المذكرات المالية اللازمة لتعزيز قبول الطلب.'
-      ]
-    : (isSeizedAmounts
-      ? [
-          'الاطلاع على الحسابات البنكية والقرارات التنفيذية والمستندات الرسمية الصادرة بحق الطرف الثاني.',
-          'التواصل مع البنوك ومحاكم التنفيذ ومؤسسة النقد (البنك المركزي السعودي) لمتابعة واسترداد المبالغ المحجوزة خارج النسبة النظامية.',
-          'رفع الطلبات ومتابعتها وإعداد المذكرات النظامية والحضور النظامي أمام اللجان المصرفية وجهات الاختصاص لإنفاذ النسبة المستثناة.'
-        ]
-      : [
-          'الاطلاع على التقارير الطبية والمستندات الرسمية الخاصة بالطرف الثاني.',
-          'التواصل مع البنك الأهلي السعودي، البنك المركزي السعودي، واللجان المختصة.',
-          'رفع طلبات الإعفاء ومتابعتها، وإعداد المذكرات القانونية والاعتراضات والحضور النظامي عند الحاجة.'
-        ]);
-
-  // Article 6 text
-  let article6Text = '';
-  if (isRescheduling) {
-    article6Text = 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قرار الموافقة على إعادة جدولة المنتجات التمويلية وإتمام الإجراءات ذات العلاقة. وفي حال صدور القرار يستحق الطرف الأول أتعاباً مقطوعة قدرها: 2,000 ريال سعودي فقط.';
-  } else if (isSeizedAmounts) {
-    article6Text = 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قرار إتاحة النسبة النظامية واسترداد المبالغ المستثناه من الحجز وإيداعها في حساب الطرف الثاني. وفي حال صدور القرار، يستحق الطرف الأول أتعاباً مقطوعة قدرها (1%) من إجمالي المبالغ المستردة فعلياً.';
-  } else {
-    article6Text = 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قبول طلب الإعفاء وإصدار خطاب المخالصة المالية، وفي حال قبول طلب الإعفاء، يستحق الطرف الأول أتعاباً مقطوعة قدرها (4%) من إجمالي المبالغ المعفاة فعلياً.';
-  }
-
-  // Article 7 text
-  let article7Text = '';
-  if (isRescheduling) {
-    article7Text = 'يبدأ العمل بهذا العقد من تاريخ توقيعه، ويستمر سارياً حتى صدور القرار النهائي بشأن طلب إعادة الجدولة وإتمام كافة الإجراءات ذات العلاقة، ما لم يتم إنهاؤه باتفاق مكتوب بين الطرفين أو وفقاً للأنظمة.';
-  } else if (isSeizedAmounts) {
-    article7Text = 'يبدأ العمل بهذا العقد من تاريخ توقيعه، ويستمر سارياً حتى صدور القرار النهائي بشأن استرداد المبالغ وإتاحة النسبة النظامية، ما لم يتم إنهاؤه باتفاق مكتوب بين الطرفين أو وفقاً للأنظمة.';
-  } else {
-    article7Text = 'يبدأ العمل بهذا العقد من تاريخ توقيعه، ويستمر سارياً حتى قبول طلب الإعفاء، ما لم يتم إنهاؤه باتفاق مكتوب بين الطرفين أو وفقاً للأنظمة.';
-  }
-
-  // Article 8 values
-  let bondValueText = '';
-  let bondDueText = '';
-  if (isRescheduling) {
-    bondValueText = '2,000 ريال سعودي';
-    bondDueText = 'فور صدور الموافقة على طلب إعادة الجدولة';
-  } else if (isSeizedAmounts) {
-    bondValueText = 'تمثل نسبة (1%) من إجمالي المبالغ المستردة فعلياً';
-    bondDueText = 'فور صدور قرار إتاحة النسبة النظامية واسترداد المبالغ';
-  } else {
-    bondValueText = 'تمثل نسبة (4%) من إجمالي مبالغ المنتجات التمويلية المعفاة فعليًا';
-    bondDueText = 'فور قبول طلب الإعفاء واستلام خطاب المخالصة المالية الصادر من الجهة المختصة';
-  }
-
-  // Article 12 text
-  let article12Text = '';
-  if (isRescheduling) {
-    article12Text = `
-      <p style="margin: 0 0 6px 0; text-align: right; font-size: 11px; line-height: 1.65;">أقر أنا الموقع أدناه وبكامل أهليتي المعتبرة شرعاً ونظاماً بأنني قد فوضت شركة ريفانس المالية، سجل تجاري رقم 7038821125 تفويضاً كاملاً غير مشروط بمراجعة كافة الجهات الحكومية والخاصة والجهات التمويلية (البنوك والمصارف وشركات التمويل) والبنك المركزي السعودي وشركة المعلومات الائتمانية (سمة)، وذلك للاطلاع على كافة بياناتي الائتمانية والتمويلية والالتزامات القائمة.</p>
-      <p style="margin: 0 0 6px 0; text-align: right; font-size: 11px; line-height: 1.65;">كما يشمل هذا التفويض حق تقديم طلبات إعادة جدولة المنتجات التمويلية، وطلب تخفيض الأقساط الشهرية أو تسوية الالتزامات واستلام خطابات الموافقة وقرارات إعادة الهيكلة وجداول السداد الجديدة، ومتابعة كافة الإجراءات المتعلقة بملفي لدى البنك المركزي السعودي وكافة اللجان القضائية والرقابية والتمويلية.</p>
-      <p style="margin: 0; text-align: right; font-size: 11px; line-height: 1.65;">ويعد هذا التفويض سارياً من تاريخ توقيعه وحتى انتهاء الغرض الذي أعد من أجله أو قيامي بإلغائه رسمياً عبر القنوات المعتمدة لدى الشركة، مع التزامي بكافة النتائج والآثار القانونية والمالية المترتبة على هذا التفويض.</p>
-    `;
-  } else {
-    article12Text = `
-      <p style="margin: 0 0 6px 0; text-align: right; font-size: 11px; line-height: 1.65;">أقر أنا الموقع أدناه وبكامل أهليتي المعتبرة شرعاً ونظاماً بأنني قد فوضت شركة ريفانس المالية، سجل تجاري رقم 7038821125 تفويضاً كاملاً غير مشروط بمراجعة كافة الجهات الحكومية والخاصة والجهات التمويلية (البنوك والمصارف وشركات التمويل) وشركة المعلومات الائتمانية (سمة)، وذلك للاطلاع على كافة بياناتي الائتمانية والتمويلية والطبية.</p>
-      <p style="margin: 0 0 6px 0; text-align: right; font-size: 11px; line-height: 1.65;">كما يشمل هذا التفويض حق تقديم طلبات الإعفاء من المديونيات، أو طلبات إعادة الجدولة، أو تسوية الالتزامات واستلام خطابات المخالصة أو قرارات الإعفاء، ومتابعة كافة الإجراءات المتعلقة بملفي لدى البنك المركزي السعودي وكافة اللجان القضائية والرقابية.</p>
-      <p style="margin: 0; text-align: right; font-size: 11px; line-height: 1.65;">ويعد هذا التفويض سارياً من تاريخ توقيعه وحتى انتهاء الغرض الذي أعد من أجله أو قيامي بإلغائه رسمياً عبر القنوات المعتمدة لدى الشركة، مع التزامي بكافة النتائج والآثار القانونية المترتبة على هذا التفويض.</p>
-    `;
-  }
-
-  // Render Product Rows
-  const renderProductRows = () => {
-    if (products.length === 0) {
-      return `
-        <tr>
-          <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${bank}</td>
-          <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">تمويل شخصي / عقاري</td>
-          <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-family: monospace;">---</td>
-          <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 700;">--- ريال</td>
-        </tr>
-      `;
-    }
-    return products.map((p: any) => `
+  const productsBlock = () => {
+    const rows =
+      c.products.length === 0
+        ? `<tr>
+             <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${c.bank}</td>
+             <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">---</td>
+             <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-family: monospace;">---</td>
+             <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 700;">--- ريال</td>
+           </tr>`
+        : c.products
+            .map(
+              (p) => `
       <tr>
-        <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${bank}</td>
+        <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${c.bank}</td>
         <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${p.type || 'منتج تمويلي'}</td>
         <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-family: monospace;">${p.accountNumber || p.account_number || '---'}</td>
         <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 700; color: #22042C;">${formatAmount(p.amount)} ريال سعودي</td>
-      </tr>
-    `).join('');
+      </tr>`
+            )
+            .join('');
+
+    return `
+      <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden; margin-top: 8px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #F3EFF5; border-bottom: 1.5px solid #D1D5DB;">
+              <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right; border-left: 1px solid #D1D5DB;">الجهة التمويلية</th>
+              <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right; border-left: 1px solid #D1D5DB;">نوع المنتج</th>
+              <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right; border-left: 1px solid #D1D5DB;">رقم الحساب/العقد</th>
+              <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right;">مبلغ المديونية</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+            <tr style="background: #FAF6ED; border-top: 1.5px solid #C5A059;">
+              <td colspan="3" style="padding: 7px 10px; font-weight: 800; color: #22042C; text-align: right; font-size: 11.5px;">إجمالي المديونية محل الطلب:</td>
+              <td style="padding: 7px 10px; font-weight: 900; color: #22042C; text-align: right; font-size: 12.5px;">${formatAmount(c.totalDebt)} ريال سعودي</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
   };
 
-  /* ─────────────────────────────────────────────────────────────
-   * HTML FOR PAGE 1
-   * ───────────────────────────────────────────────────────────── */
+  const accountBlock = () => `
+    <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden; margin-top: 8px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        <tbody>
+          <tr style="background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
+            <td style="padding: 6px 12px; font-weight: 700; color: #4B5563; width: 45%; border-left: 1px solid #E5E7EB;">الجهة المالية:</td>
+            <td style="padding: 6px 12px; font-weight: 800; color: #22042C;">${c.bank}</td>
+          </tr>
+          <tr style="background: #ffffff; border-bottom: 1px solid #E5E7EB;">
+            <td style="padding: 6px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">رقم الحساب الجاري:</td>
+            <td style="padding: 6px 12px; font-weight: 800; color: #22042C; font-family: monospace;">${c.currentAccountNumber}</td>
+          </tr>
+          <tr style="background: #F9FAFB;">
+            <td style="padding: 6px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">المبلغ المحجوز في الحساب من المبالغ المستثناة من الحجز:</td>
+            <td style="padding: 6px 12px; font-weight: 800; color: #22042C;">${formatAmount(c.seizedAmount)} ريال سعودي</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const renderSection = (s: ContractSection) => `
+    <div style="margin-bottom: 11px;">
+      <h3 style="font-size: 13px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">${s.title}</h3>
+      ${(s.paragraphs || [])
+        .map(
+          (p) =>
+            `<p style="font-size: 11px; line-height: 1.65; text-align: right; margin: 0 0 4px 0; color: #1f2937;">${p}</p>`
+        )
+        .join('')}
+      ${
+        s.items && s.items.length
+          ? `<div style="padding-right: 8px; font-size: 11px; line-height: 1.65; color: #1f2937;">${s.items
+              .map((it, i) => `<div style="margin-bottom: 2px;"><strong>${i + 1}.</strong> ${it}</div>`)
+              .join('')}</div>`
+          : ''
+      }
+      ${s.block === 'products' ? productsBlock() : ''}
+      ${s.block === 'account' ? accountBlock() : ''}
+    </div>
+  `;
+
+  const pageStyle =
+    "box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; padding: 12mm 15mm; background: #ffffff; color: #1f2937; font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; direction: rtl; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative;";
+
+  /* ── الصفحة 1: العنوان + الأطراف + التمهيد + المواد 1-3 ── */
+  const sections = c.content.sections;
+  const page1Sections = sections.filter((s) => ['a1', 'a2', 'a3'].includes(s.key));
+  const page2Sections = sections.filter((s) => ['a4', 'a5', 'a6', 'a7', 'a8'].includes(s.key));
+  const page3Sections = sections.filter((s) => ['a9', 'a10', 'a11', 'a12', 'a13'].includes(s.key));
+
   const page1Html = `
-    <div class="contract-a4-page" style="box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; padding: 12mm 15mm 12mm 15mm; background: #ffffff; color: #1f2937; font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; direction: rtl; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative;">
+    <div class="contract-a4-page" style="${pageStyle}">
       <div>
         ${renderHeader()}
 
-        <!-- Title & Metadata -->
         <div style="text-align: center; margin-bottom: 14px;">
-          <div style="font-size: 13.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">
-            شركة ريفانس المالية
-          </div>
+          <div style="font-size: 13.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">${FIRST_PARTY.name}</div>
           <div style="font-size: 15px; font-weight: 800; color: #22042C; background: #FAF6ED; border: 1.5px solid #EADBBA; border-radius: 8px; padding: 6px 18px; display: inline-block;">
-            ${contractTitle}
+            ${c.content.title}
           </div>
           <div style="display: flex; justify-content: center; gap: 20px; margin-top: 6px; font-size: 11px; color: #374151; background: #F9FAFB; padding: 6px 14px; border-radius: 6px; border: 1px solid #E5E7EB;">
-            <span>رقم ملف العميل: <strong style="font-family: monospace; color: #22042C; font-size: 11.5px;">${submissionId}</strong></span>
-            <span>رقم العقد: <strong style="font-family: monospace; color: #22042C; font-size: 11.5px;">${submissionId}</strong></span>
-            <span>تاريخ العقد: <strong style="color: #22042C;">${contractDate}</strong></span>
+            <span>رقم ملف العميل: <strong style="font-family: monospace; color: #22042C;">${c.fileNumber}</strong></span>
+            <span>رقم العقد: <strong style="font-family: monospace; color: #22042C;">${c.submissionId}</strong></span>
+            <span>تاريخ العقد: <strong style="color: #22042C;">${c.contractDate}</strong></span>
           </div>
         </div>
 
-        <!-- Parties Table -->
         <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden; margin-bottom: 14px;">
           <table style="width: 100%; border-collapse: collapse; font-size: 11.5px;">
             <thead>
@@ -341,262 +644,92 @@ export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): s
             <tbody>
               <tr>
                 <td style="padding: 8px 12px; vertical-align: top; border-left: 1px solid #E5E7EB; line-height: 1.75;">
-                  <div><strong>الاسم:</strong> شركة ريفانس المالية</div>
-                  <div><strong>الرقم الوطني الموحد:</strong> 7038821125</div>
-                  <div><strong>ويمثلها:</strong> AZZAH ALOBIDI بصفة المدير العام</div>
-                  <div><strong>وبموجب تفويض رقم:</strong> DLG398908</div>
+                  <div><strong>الاسم:</strong> ${FIRST_PARTY.name}</div>
+                  <div><strong>الرقم الوطني الموحد:</strong> ${FIRST_PARTY.unifiedNumber}</div>
+                  <div><strong>ويمثلها:</strong> ${FIRST_PARTY.representative} بصفة ${FIRST_PARTY.title}</div>
+                  <div><strong>وبموجب تفويض رقم:</strong> ${FIRST_PARTY.delegationNumber}</div>
                 </td>
                 <td style="padding: 8px 12px; vertical-align: top; line-height: 1.75;">
-                  <div><strong>اسم العميل:</strong> ${clientName}</div>
-                  <div><strong>رقم الهوية الوطنية:</strong> <span style="font-family: monospace; font-weight: 700;">${nationalId}</span></div>
-                  <div><strong>رقم الجوال:</strong> <span style="direction: ltr; display: inline-block; font-weight: 700;">${mobile}</span></div>
+                  <div><strong>اسم العميل:</strong> ${c.clientName}</div>
+                  <div><strong>رقم الهوية الوطنية:</strong> <span style="font-family: monospace; font-weight: 700;">${c.nationalId}</span></div>
+                  <div><strong>رقم الجوال:</strong> <span style="direction: ltr; display: inline-block; font-weight: 700;">${c.mobile}</span></div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Preamble -->
-        <div style="margin-bottom: 14px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">التمهيد:</h3>
-          <p style="font-size: 11.5px; line-height: 1.7; text-align: right; margin: 0; color: #1f2937;">${preambleText}</p>
+        <div style="margin-bottom: 12px;">
+          <h3 style="font-size: 13px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">التمهيد:</h3>
+          ${c.content.preamble
+            .map(
+              (p) =>
+                `<p style="font-size: 11px; line-height: 1.65; text-align: right; margin: 0 0 4px 0; color: #1f2937;">${p}</p>`
+            )
+            .join('')}
         </div>
 
-        <!-- Article 1 -->
-        <div style="margin-bottom: 14px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (1): حجية التعامل الإلكتروني</h3>
-          <p style="font-size: 11.5px; line-height: 1.7; text-align: right; margin: 0; color: #1f2937;">
-            يقر الطرفان بموافقتهما على إبرام هذا العقد واستخدام الوسائل الإلكترونية (البريد الإلكتروني والرسائل النصية) لتوثيقه، وتعد هذه الوسائل حجة ملزمة وقائمة بذاتها وفقاً لنظام التعاملات الإلكترونية السعودي، ولها ذات الحجية القانونية للتوقيع اليدوي أمام كافة الجهات الرسمية والقضائية.
-          </p>
-        </div>
-
-        <!-- Article 2 + Financial Products Table -->
-        <div style="margin-bottom: 6px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (2): موضوع العقد والتفويض</h3>
-          <p style="font-size: 11.5px; line-height: 1.7; text-align: right; margin: 0 0 8px 0; color: #1f2937;">
-            ${article2Text}
-          </p>
-          <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-              <thead>
-                <tr style="background: #F3EFF5; border-bottom: 1.5px solid #D1D5DB;">
-                  <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right; border-left: 1px solid #D1D5DB;">الجهة التمويلية</th>
-                  <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right; border-left: 1px solid #D1D5DB;">نوع المنتج</th>
-                  <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right; border-left: 1px solid #D1D5DB;">رقم الحساب</th>
-                  <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right;">المبلغ</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${renderProductRows()}
-                <tr style="background: #FAF6ED; border-top: 1.5px solid #C5A059;">
-                  <td colspan="3" style="padding: 7px 10px; font-weight: 800; color: #22042C; text-align: right; font-size: 11.5px;">إجمالي المديونية:</td>
-                  <td style="padding: 7px 10px; font-weight: 900; color: #dc2626; text-align: right; font-size: 12.5px;">${formatAmount(totalDebt)} ريال سعودي</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        ${page1Sections.map(renderSection).join('')}
       </div>
 
       ${renderFooter(1, 3)}
     </div>
   `;
 
-  /* ─────────────────────────────────────────────────────────────
-   * HTML FOR PAGE 2
-   * ───────────────────────────────────────────────────────────── */
   const page2Html = `
-    <div class="contract-a4-page" style="box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; padding: 12mm 15mm 12mm 15mm; background: #ffffff; color: #1f2937; font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; direction: rtl; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative;">
+    <div class="contract-a4-page" style="${pageStyle}">
       <div>
         ${renderHeader()}
-
-        <!-- Article 3 -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (3): نطاق التفويض</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; margin: 0 0 4px 0; color: #1f2937;">يشمل التفويض الممنوح للطرف الأول الصلاحيات التالية:</p>
-          <div style="padding-right: 8px; font-size: 11.5px; line-height: 1.65; color: #1f2937;">
-            ${scopeItems.map((item, idx) => `<div style="margin-bottom: 2px;"><strong>${idx + 1}.</strong> ${item}</div>`).join('')}
-          </div>
-        </div>
-
-        <!-- Article 4 -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (4): التزامات الطرف الأول</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; text-align: right; margin: 0; color: #1f2937;">
-            يلتزم الطرف الأول بالمحافظة على سرية بيانات الطرف الثاني، وبذل أقصى درجات العناية المهنية، ورفع الطلبات بصيغة رسمية تعزز فرص القبول، وإبلاغ الطرف الثاني بالمستجدات دورياً.
-          </p>
-        </div>
-
-        <!-- Article 5 -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (5): التزامات الطرف الثاني</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; text-align: right; margin: 0; color: #1f2937;">
-            يلتزم الطرف الثاني بتقديم كافة المستندات والبيانات الصحيحة، التعاون مع الطرف الأول لاستكمال النواقص، والالتزام بسداد الأتعاب المستحقة وفقاً لأحكام العقد.
-          </p>
-        </div>
-
-        <!-- Article 6 -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (6): المستحقات المالية والأتعاب</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; text-align: right; margin: 0 0 4px 0; color: #1f2937;">
-            ${article6Text}
-          </p>
-          <div style="font-size: 11.5px; font-weight: 800; color: #dc2626; background: #FEF2F2; padding: 4px 10px; border-radius: 5px; border: 1px solid #FECACA; display: inline-block;">
-            "وفي حال عدم قبول الطلب، لا يحق للطرف الأول المطالبة بأي أتعاب"
-          </div>
-        </div>
-
-        <!-- Article 7 -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (7): مدة العقد</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; text-align: right; margin: 0; color: #1f2937;">
-            ${article7Text}
-          </p>
-        </div>
-
-        <!-- Article 8 + Promissory Note Table -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (8): سند لأمر وإقرار دين واجب النفاذ</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; text-align: right; margin: 0 0 6px 0; color: #1f2937;">
-            اتفق الطرفان على أن يُعد هذا العقد بمثابة سندٍ لأمرٍ واجب النفاذ وفقًا لأحكام نظام الأوراق التجارية ونظام التنفيذ السعودي، ويقر الطرف الثاني إقرارًا صريحًا ونهائيًا بالتزامه بسداد أتعاب الطرف الأول فور تحقق موجبات استحقاقها النظامية الموضحة في هذا العقد.
-          </p>
-
-          <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden; margin-bottom: 6px;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-              <tbody>
-                <tr style="background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
-                  <td style="padding: 5px 12px; font-weight: 700; color: #4B5563; width: 140px; border-left: 1px solid #E5E7EB;">رقم ملف العميل:</td>
-                  <td style="padding: 5px 12px; font-weight: 800; color: #22042C; font-family: monospace;">${submissionId}</td>
-                </tr>
-                <tr style="background: #ffffff; border-bottom: 1px solid #E5E7EB;">
-                  <td style="padding: 5px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">رقم السند:</td>
-                  <td style="padding: 5px 12px; font-weight: 800; color: #22042C; font-family: monospace;">${submissionId}</td>
-                </tr>
-                <tr style="background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
-                  <td style="padding: 5px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">قيمة السند:</td>
-                  <td style="padding: 5px 12px; font-weight: 800; color: #22042C;">${bondValueText}</td>
-                </tr>
-                <tr style="background: #ffffff; border-bottom: 1px solid #E5E7EB;">
-                  <td style="padding: 5px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">تاريخ الاستحقاق:</td>
-                  <td style="padding: 5px 12px; font-weight: 800; color: #22042C;">${bondDueText}</td>
-                </tr>
-                <tr style="background: #F9FAFB;">
-                  <td style="padding: 5px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">مكان الوفاء:</td>
-                  <td style="padding: 5px 12px; font-weight: 800; color: #22042C;">مدينة جدة – المملكة العربية السعودية</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p style="font-size: 10px; line-height: 1.55; text-align: right; margin: 0; color: #4B5563;">
-            ويُعد هذا السند مستوفيًا لكافة البيانات والشروط النظامية المقررة، ويُعد دينًا ثابتًا في ذمة الطرف الثاني، ويحق للطرف الأول التقدم به مباشرة إلى محكمة التنفيذ المختصة لتنفيذه وفقًا للأنظمة المعمول بها في المملكة العربية السعودية.
-          </p>
-        </div>
-
-        <!-- Article 9 -->
-        <div>
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (9): أحكام عامة</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; text-align: right; margin: 0; color: #1f2937;">
-            يخضع العقد لأنظمة المملكة العربية السعودية. لا يُعد أي تعديل نافذاً إلا إذا كان مكتوباً وموقعاً من الطرفين.
-          </p>
-        </div>
+        ${page2Sections.map(renderSection).join('')}
       </div>
-
       ${renderFooter(2, 3)}
     </div>
   `;
 
-  /* ─────────────────────────────────────────────────────────────
-   * HTML FOR PAGE 3
-   * ───────────────────────────────────────────────────────────── */
   const page3Html = `
-    <div class="contract-a4-page" style="box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; padding: 12mm 15mm 12mm 15mm; background: #ffffff; color: #1f2937; font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; direction: rtl; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative;">
+    <div class="contract-a4-page" style="${pageStyle}">
       <div>
         ${renderHeader()}
+        ${page3Sections.map(renderSection).join('')}
 
-        <!-- Article 10 -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (10): الإقرار والتنازل عن الدفوع</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; margin: 0 0 4px 0; color: #1f2937;">يُقر الطرف الثاني إقراراً صريحاً ونهائياً بما يلي:</p>
-          <div style="padding-right: 8px; font-size: 11px; line-height: 1.65; color: #1f2937;">
-            <div style="margin-bottom: 2px;"><strong>1.</strong> صحة جميع البيانات والمستندات المقدمة منه.</div>
-            <div style="margin-bottom: 2px;"><strong>2.</strong> صحة احتساب الأتعاب وفق ما ورد في هذا العقد.</div>
-            <div style="margin-bottom: 2px;"><strong>3.</strong> التنازل عن أي دفوع أو منازعات تتعلق بسند الأمر متى ما تم إصداره عبر منصة نافذ وفق أحكام هذا العقد.</div>
-            <div><strong>4.</strong> عدم الطعن أو الاعتراض على التنفيذ أمام محكمة التنفيذ إلا في الحدود التي يجيزها النظام.</div>
-          </div>
-        </div>
-
-        <!-- Article 11 -->
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (11): الإقرار والقبول النهائي</h3>
-          <p style="font-size: 11.5px; line-height: 1.65; text-align: right; margin: 0; color: #1f2937;">
-            يُقر الطرف الثاني بما يلي: اطلاعه الكامل على العقد وفهمه لآثاره، صحة التفويض الممنوح، صحة احتساب الأتعاب، وأن هذا الإقرار حجة قاطعة وملزمة أمام جميع الجهات القضائية والتنفيذية.
-          </p>
-        </div>
-
-        <!-- Article 12 -->
-        <div style="margin-bottom: 14px;">
-          <h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">المادة (12): التفويض</h3>
-          <div style="font-size: 11px; line-height: 1.65; color: #1f2937;">
-            ${article12Text}
-          </div>
-        </div>
-
-        <!-- Official Signatures Section -->
         <div style="border: 1.5px solid #22042C; border-radius: 8px; padding: 8px 12px; background: #FAFAFA; margin-bottom: 10px;">
           <div style="font-size: 13px; font-weight: 800; color: #22042C; text-align: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 6px; margin-bottom: 8px;">
             اعتماد وتوقيع أطراف العقد
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <!-- First Party Stamp -->
             <div style="text-align: center; border-left: 1px solid #E5E7EB; padding-left: 8px;">
-              <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">
-                ختم وتوقيع الطرف الأول
+              <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">ختم وتوقيع الطرف الأول</div>
+              <div style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                <img src="${rifansStampImg}" alt="ختم ريفانس المالية" style="max-height: 80px; width: auto; object-fit: contain; mix-blend-mode: multiply;" />
               </div>
-              <div style="height: 85px; display: flex; align-items: center; justify-content: center;">
-                <img src="${rifansStampImg}" alt="ختم ريفانس المالية" style="max-height: 85px; width: auto; object-fit: contain; mix-blend-mode: multiply;" />
-              </div>
-              <div style="font-size: 11px; font-weight: 800; color: #22042C; margin-top: 2px;">
-                شركة ريفانس المالية
-              </div>
-              <div style="font-size: 9.5px; color: #16a34a; font-weight: 700;">
-                ✓ معتمد وموثق إلكترونياً
-              </div>
+              <div style="font-size: 11px; font-weight: 800; color: #22042C; margin-top: 2px;">${FIRST_PARTY.name}</div>
+              <div style="font-size: 9.5px; color: #4B5563;">الرقم الوطني الموحد: ${FIRST_PARTY.unifiedNumber}</div>
+              <div style="font-size: 9.5px; color: #4B5563;">يمثلها: ${FIRST_PARTY.representative} – ${FIRST_PARTY.title}</div>
             </div>
 
-            <!-- Second Party Signature -->
             <div style="text-align: center; padding-right: 8px;">
-              <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">
-                توقيع الطرف الثاني (العميل)
+              <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">توقيع الطرف الثاني (العميل)</div>
+              <div style="height: 80px; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px dashed #D1D5DB; border-radius: 6px; padding: 4px;">
+                ${
+                  c.signatureData
+                    ? `<img src="${c.signatureData}" alt="توقيع العميل" style="max-height: 74px; max-width: 100%; object-fit: contain;" />`
+                    : c.isSigned
+                    ? `<div style="color: #16a34a; font-size: 10.5px; font-weight: 700;">✓ تم التوقيع والاعتماد الإلكتروني</div>`
+                    : `<div style="color: #9CA3AF; font-size: 10.5px; font-style: italic;">بانتظار التوقيع الإلكتروني للعميل</div>`
+                }
               </div>
-              <div style="height: 85px; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px dashed #D1D5DB; border-radius: 6px; padding: 4px;">
-                ${signatureData ? `
-                  <img src="${signatureData}" alt="توقيع العميل" style="max-height: 80px; max-width: 100%; object-fit: contain;" />
-                ` : (isSigned ? `
-                  <div style="color: #16a34a; font-size: 10.5px; font-weight: 700;">
-                    ✓ تم التوقيع والاعتماد الإلكتروني
-                  </div>
-                ` : `
-                  <div style="color: #9CA3AF; font-size: 10.5px; font-style: italic;">
-                    بانتظار التوقيع الإلكتروني للعميل
-                  </div>
-                `)}
-              </div>
-              <div style="font-size: 11px; font-weight: 800; color: #22042C; margin-top: 3px;">
-                ${clientName}
-              </div>
-              <div style="font-size: 9.5px; color: #6B7280;">
-                ${nationalId !== '---' ? `الهوية: ${nationalId}` : ''}
-                ${signedAt ? ` • ${new Date(signedAt).toLocaleDateString('ar-SA')}` : ''}
-              </div>
+              <div style="font-size: 11px; font-weight: 800; color: #22042C; margin-top: 3px;">${c.clientName}</div>
+              <div style="font-size: 9.5px; color: #4B5563;">رقم الهوية: ${c.nationalId}</div>
+              <div style="font-size: 9.5px; color: #4B5563;">${
+                c.signedAt ? `تاريخ ووقت التوقيع: ${new Date(c.signedAt).toLocaleString('ar-SA')}` : 'تاريخ ووقت التوقيع: —'
+              }</div>
             </div>
           </div>
         </div>
 
-        <!-- Electronic Document Notice -->
         <div style="border-top: 1px solid #E5E7EB; padding-top: 6px; text-align: center; font-size: 9.5px; color: #6B7280;">
-          <div>هذه الوثيقة صادرة عن النظام الإلكتروني لشركة ريفانس المالية وتعد ملزمة قانوناً ونظاماً بمجرد التوقيع والموافقة عليها.</div>
-          <div style="margin-top: 2px;">رقم المرجع الإلكتروني: <strong style="font-family: monospace; color: #22042C;">${submissionId}</strong></div>
+          <div>رقم العقد: <strong style="font-family: monospace; color: #22042C;">${c.submissionId}</strong> • رقم ملف العميل: <strong style="font-family: monospace; color: #22042C;">${c.fileNumber}</strong> • رقم المرجع الإلكتروني: <strong style="font-family: monospace; color: #22042C;">${c.submissionId}</strong></div>
+          <div style="margin-top: 2px;">هذه الوثيقة صادرة عن النظام الإلكتروني لشركة ريفانس المالية وتعد ملزمة نظاماً بمجرد اعتمادها والتوقيع عليها.</div>
         </div>
       </div>
 

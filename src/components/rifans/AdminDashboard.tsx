@@ -538,12 +538,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     setIsConfirmingSendContract(true);
   };
 
+  /* تسجيل المبلغ الفعلي لنتيجة الطلب قبل إصدار الأتعاب (الفاتورة/السند) */
+  const ensureRequestResult = async (submissionId: string): Promise<boolean> => {
+    try {
+      const { getRequestResult, recordRequestResult } = await import('../../lib/api');
+      const res: any = await getRequestResult(submissionId);
+      if (Number(res?.actual_amount) > 0) return true;
+
+      const label =
+        res?.type === 'rescheduling_request' || res?.type === 'scheduling_request'
+          ? 'إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً'
+          : res?.type === 'seized_amounts_request'
+          ? 'المبلغ الذي تمت إتاحته أو استرداده فعلياً'
+          : 'المبلغ المعفى فعلياً';
+
+      const input = window.prompt(`أدخل ${label} (بالريال) وفقاً لمستند الجهة التمويلية:`);
+      if (input === null) return false;
+      const value = Number(String(input).replace(/[^\d.]/g, ''));
+      if (!value || value <= 0) {
+        alert('يرجى إدخال مبلغ صحيح أكبر من صفر.');
+        return false;
+      }
+      await recordRequestResult(submissionId, value);
+      fetchSubmissions();
+      return true;
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || 'تعذر تسجيل المبلغ الفعلي لنتيجة الطلب.');
+      return false;
+    }
+  };
+
   const sendInvoice = async (userId: string, submissionId: string) => {
+    if (!(await ensureRequestResult(submissionId))) return;
     setPendingInvoiceData({ userId, submissionId });
     setIsConfirmingSendInvoice(true);
   };
 
   const sendPromissory = async (userId: string, submissionId: string) => {
+    if (!(await ensureRequestResult(submissionId))) return;
     setPendingPromissoryData({ userId, submissionId });
     setIsConfirmingSendPromissory(true);
   };
@@ -562,7 +595,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       window.open(`#/promissory/${noteId}`, '_blank');
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ في إرسال سند الأمر');
+      alert((err as any)?.message || 'حدث خطأ في إرسال سند الأمر');
     }
   };
 
@@ -597,7 +630,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       fetchSubmissions();
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ في إرسال الفاتورة');
+      alert((err as any)?.message || 'حدث خطأ في إرسال الفاتورة');
     }
   };
 
@@ -4662,8 +4695,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                             <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (6): المستحقات المالية والأتعاب</h3>
                             <p>
                               {isRescheduling
-                                ? 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قرار الموافقة على إعادة جدولة المنتجات التمويلية وإتمام الإجراءات ذات العلاقة. وفي حال صدور القرار يستحق الطرف الأول أتعاباً مقطوعة قدرها: 2,000 ريال سعودي فقط.'
-                                : 'لا تستحق أتعاب الطرف الأول إلا بعد صدور قبول طلب الإعفاء وإصدار خطاب المخالصة المالية ، وفي حال قبول طلب الإعفاء ، يستحق الطرف الأول أتعاباً مقطوعة قدرها (4%) من إجمالي المبالغ المعفاة فعلياً'
+                                ? 'لا تستحق أتعاب الطرف الأول لمجرد تقديم الطلب أو متابعته، وإنما تستحق عند الموافقة الفعلية على إعادة الجدولة وإتمامها للمنتجات المشمولة بالعقد وثبوت ذلك بمستند صادر من الجهة التمويلية، وتكون الأتعاب 1% من إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً.'
+                                : 'لا تستحق أتعاب الطرف الأول لمجرد تقديم الطلب أو متابعته، وإنما تستحق عند صدور قرار الإعفاء وثبوته بمستند صادر من الجهة المختصة، وتكون الأتعاب 4% من المبلغ المعفى فعلياً.'
                               }
                             </p>
                             <p className="mt-1 font-black text-[#dc2626] text-[9px]">"وفي حال عدم قبول الطلب، لا يحق للطرف الأول المطالبة بأي أتعاب"</p>
@@ -4677,12 +4710,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                           <section>
                             <h3 className="font-black text-gold mb-0.5 text-[10.5px]">المادة (8): سند لأمر وإقرار دين واجب النفاذ</h3>
                             <p className="mb-1.5">
-                              اتفق الطرفان على أن يُعد هذا العقد بمثابة سندٍ لأمرٍ واجب النفاذ وفقًا لأحكام نظام الأوراق التجارية ونظام التنفيذ السعودي ،ويقر الطرف الثاني إقرارًا صريحًا ونهائيًا بالتزامه بسداد أتعاب الطرف الأول بنسبة (4%) من إجمالي مبالغ المنتجات التمويلية التي يتم إعفاؤه منها، وذلك فور قبول طلب الإعفاء واستلام خطاب المخالصة المالية.
+                              يُصدر سند لأمر مستقل عن هذا العقد بقيمة الأتعاب المستحقة فعلياً بعد تسجيل نتيجة الطلب، ولا يُعد هذا العقد بذاته سنداً لأمر.
                             </p>
                             <div className="bg-brand/5 dark:bg-white/5 p-2 rounded-lg border border-brand/10 dark:border-white/10 space-y-0.5 text-[9px]">
                               <p><strong>• رقم السند:</strong> {sub.id}</p>
-                              <p><strong>• قيمة السند:</strong> {isRescheduling ? '2,000 ريال سعودي' : 'تمثل نسبة (4%) من إجمالي مبالغ المنتجات التمويلية المعفاة فعليًا'}</p>
-                              <p><strong>• تاريخ الاستحقاق:</strong> {isRescheduling ? 'فور صدور الموافقة على طلب إعادة الجدولة' : 'فور قبول طلب الإعفاء واستلام خطاب المخالصة المالية الصادر من الجهة المختصة'}</p>
+                              <p><strong>• قيمة السند:</strong> {isRescheduling ? 'تمثل نسبة (1%) من إجمالي مديونية المنتجات التي تمت إعادة جدولتها فعلياً' : 'تمثل نسبة (4%) من المبلغ المعفى فعلياً'}</p>
+                              <p><strong>• تاريخ الاستحقاق:</strong> {isRescheduling ? 'فور ثبوت إتمام إعادة الجدولة بمستند صادر من الجهة التمويلية' : 'فور ثبوت الإعفاء بمستند صادر من الجهة المختصة'}</p>
                             </div>
                           </section>
 

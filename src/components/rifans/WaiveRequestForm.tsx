@@ -56,6 +56,11 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
     : [{ id: 1, type: '', file: null, fileName: '', date: new Date().toLocaleDateString('ar-SA') }]
   );
   const [totalAmount, setTotalAmount] = useState(0);
+  /* طلب إتاحة النسبة النظامية: حساب جاري واحد ومبلغ محجوز (بدون منتجات/مديونية) */
+  const [currentAccountNumber, setCurrentAccountNumber] = useState(prefill?.currentAccountNumber || '');
+  const [seizedAmount, setSeizedAmount] = useState(prefill?.seizedAmount ? String(prefill.seizedAmount) : '');
+  const [seizedSource, setSeizedSource] = useState(prefill?.seizedSource || '');
+  const [seizedDepositDate, setSeizedDepositDate] = useState(prefill?.seizedDepositDate || '');
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -299,15 +304,17 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
       return;
     }
     
-    // Validate products/seized amounts
+    // Validate products / seized amount
     const isSeizedAmountsValidation = prefill?.requestType === 'seized_amounts_request';
-    const invalidProduct = isSeizedAmountsValidation 
-      ? products.find(p => !p.accountNumber || !p.amount || !p.type)
-      : products.find(p => !p.type || !p.amount);
-    if (invalidProduct) {
-      const msg = isSeizedAmountsValidation 
-        ? 'يرجى إكمال بيانات الحساب المحجوز (رقم الحساب، المبلغ، ومصدر المبلغ).'
-        : 'يرجى إكمال بيانات المنتجات التمويلية (تحديد النوع وإدخال المبلغ).';
+    if (isSeizedAmountsValidation) {
+      if (!currentAccountNumber || !seizedAmount || !seizedSource) {
+        const msg = 'يرجى إكمال بيانات الحساب الجاري (رقم الحساب، المبلغ المحجوز، ومصدر المبلغ).';
+        setStatusMessage(msg);
+        alert(msg);
+        return;
+      }
+    } else if (products.find(p => !p.type || !p.amount)) {
+      const msg = 'يرجى إكمال بيانات المنتجات التمويلية (تحديد النوع وإدخال المبلغ).';
       setStatusMessage(msg);
       alert(msg);
       return;
@@ -391,8 +398,14 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
           region,
           city: formData.city,
           bank: formData.bank,
-          totalAmount,
-          products,
+          ...(isSeizedAmounts
+            ? {
+                currentAccountNumber,
+                seizedAmount: Number(seizedAmount) || 0,
+                seizedSource,
+                seizedDepositDate,
+              }
+            : { totalAmount, products }),
           signature: signatureData,
         },
         files: uploadedFiles,
@@ -499,7 +512,8 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
             bank: formData.bank || profileData.bank,
             email: formData.email || profileData.email,
             documents: mergedDocs,
-            products: newProducts,
+            // طلب إتاحة النسبة النظامية لا يتضمن منتجات تمويلية، فلا تُمسّ منتجات الملف
+            products: isSeizedAmounts ? existingProducts : newProducts,
           };
           await updateProfile(updatedProfilePayload);
           
@@ -683,99 +697,81 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
           {prefill?.requestType === 'seized_amounts_request' ? (
             <div className="mt-8 mb-6 bg-gradient-to-b from-white to-[#FCFAF4] rounded-[16px] border border-gold/30 p-4 shadow-inner">
               <div className="flex justify-between items-center mb-3">
-                 <h3 className="text-[14px] font-bold text-brand">بيانات الحساب والمبالغ المحجوزة</h3>
-                {!isViewOnly && (
-                <button type="button" onClick={addProduct} className="flex items-center gap-1 text-[11px] text-brand bg-white border border-gold/40 px-3 py-1.5 rounded-full hover:bg-gold/10 transition-colors">
-                  <Plus size={12} />
-                  إضافة حساب
-                </button>
-                )}
+                 <h3 className="text-[14px] font-bold text-brand">بيانات الحساب الجاري والمبلغ المحجوز</h3>
               </div>
-              
-              <div className="space-y-3">
-                {products.map((product, idx) => (
-                  <div key={product.id} className="bg-white rounded-[12px] border border-gold/15 p-3 space-y-3 animate-in fade-in slide-in-from-right-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-muted mb-1">رقم الحساب الجاري <span className="text-red-500">*</span></label>
-                         <input 
-                          type="text"
-                          name={`productAccount_${idx}`}
-                          inputMode="numeric"
-                          onKeyDown={onlyNumbers}
-                          required
-                          value={product.accountNumber || ''}
-                          onChange={(e) => updateProduct(product.id, 'accountNumber', e.target.value.replace(/\D/g, ''))}
-                          disabled={isViewOnly}
-                          className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] disabled:bg-gray-50 disabled:cursor-not-allowed font-mono" 
-                          placeholder="رقم الحساب الجاري"
-                         />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-muted mb-1">المبلغ المحجوز في الحساب <span className="text-red-500">*</span></label>
-                         <input 
-                          type="text"
-                          name={`productAmount_${idx}`}
-                          inputMode="numeric"
-                          onKeyDown={onlyNumbers}
-                          required
-                          value={product.amount}
-                          onChange={(e) => updateProduct(product.id, 'amount', e.target.value.replace(/\D/g, ''))}
-                          disabled={isViewOnly}
-                          className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] disabled:bg-gray-50 disabled:cursor-not-allowed font-mono" 
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-muted mb-1">مصدر المبلغ المحجوز <span className="text-red-500">*</span></label>
-                         <select 
-                          name={`productType_${idx}`}
-                          required
-                          value={product.type}
-                          onChange={(e) => updateProduct(product.id, 'type', e.target.value)}
-                          disabled={isViewOnly}
-                          className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
-                        >
-                          <option value="">اختر المصدر</option>
-                          <option value="راتب">راتب</option>
-                          <option value="حساب المواطن">حساب المواطن</option>
-                          <option value="حافز">حافز</option>
-                          <option value="بدل غلاء المعيشة">بدل غلاء المعيشة</option>
-                          <option value="الإعانات الزراعية">الإعانات الزراعية</option>
-                          <option value="برنامج سند">برنامج سند</option>
-                          <option value="تحويل بنكي">تحويل بنكي</option>
-                          <option value="أخرى">أخرى</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-muted mb-1">تاريخ إيداع المبلغ في الحساب</label>
-                         <input 
-                          type="date"
-                          name={`productDate_${idx}`}
-                          value={product.depositDate || ''}
-                          onChange={(e) => updateProduct(product.id, 'depositDate' as any, e.target.value)}
-                          disabled={isViewOnly}
-                          className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] disabled:bg-gray-50 disabled:cursor-not-allowed" 
-                        />
-                      </div>
-                    </div>
-                    {products.length > 1 && !isViewOnly && (
-                      <div className="flex justify-end">
-                        <button type="button" onClick={() => removeProduct(product.id)} className="text-red-400 p-1 hover:bg-red-50 rounded-full transition-colors flex items-center gap-1 text-[10px]">
-                          <Trash2 size={14} />
-                          حذف
-                        </button>
-                      </div>
-                    )}
+
+              <div className="bg-white rounded-[12px] border border-gold/15 p-3 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-muted mb-1">رقم الحساب الجاري <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="currentAccountNumber"
+                      inputMode="numeric"
+                      onKeyDown={onlyNumbers}
+                      required
+                      value={currentAccountNumber}
+                      onChange={(e) => setCurrentAccountNumber(e.target.value.replace(/\D/g, ''))}
+                      disabled={isViewOnly}
+                      className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] disabled:bg-gray-50 disabled:cursor-not-allowed font-mono"
+                      placeholder="رقم الحساب الجاري"
+                    />
                   </div>
-                ))}
+                  <div>
+                    <label className="block text-[10px] font-bold text-muted mb-1">المبلغ المحجوز في الحساب <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="seizedAmount"
+                      inputMode="numeric"
+                      onKeyDown={onlyNumbers}
+                      required
+                      value={seizedAmount}
+                      onChange={(e) => setSeizedAmount(e.target.value.replace(/\D/g, ''))}
+                      disabled={isViewOnly}
+                      className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] disabled:bg-gray-50 disabled:cursor-not-allowed font-mono"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-muted mb-1">مصدر المبلغ المحجوز <span className="text-red-500">*</span></label>
+                    <select
+                      name="seizedSource"
+                      required
+                      value={seizedSource}
+                      onChange={(e) => setSeizedSource(e.target.value)}
+                      disabled={isViewOnly}
+                      className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">اختر المصدر</option>
+                      <option value="راتب">راتب</option>
+                      <option value="حساب المواطن">حساب المواطن</option>
+                      <option value="حافز">حافز</option>
+                      <option value="بدل غلاء المعيشة">بدل غلاء المعيشة</option>
+                      <option value="الإعانات الزراعية">الإعانات الزراعية</option>
+                      <option value="برنامج سند">برنامج سند</option>
+                      <option value="تحويل بنكي">تحويل بنكي</option>
+                      <option value="أخرى">أخرى</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-muted mb-1">تاريخ إيداع المبلغ في الحساب</label>
+                    <input
+                      type="date"
+                      name="seizedDepositDate"
+                      value={seizedDepositDate}
+                      onChange={(e) => setSeizedDepositDate(e.target.value)}
+                      disabled={isViewOnly}
+                      className="w-full py-1 px-2 rounded-[10px] border border-gold/20 text-[12px] disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-gold/10 flex justify-between items-center">
-                <span className="text-[12px] text-muted font-bold">إجمالي المبالغ المحجوزة:</span>
-                <span className="text-[14px] font-extrabold text-brand tabular-nums font-mono">{formatAmount(totalAmount)} ر.س</span>
+                <span className="text-[12px] text-muted font-bold">المبلغ المحجوز:</span>
+                <span className="text-[14px] font-extrabold text-brand tabular-nums font-mono">{formatAmount(Number(seizedAmount) || 0)} ر.س</span>
               </div>
             </div>
           ) : (
@@ -1058,8 +1054,9 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
                             region,
                             city: formData.city,
                             bank: formData.bank,
-                            totalAmount,
-                            products,
+                            ...(isSeizedAmounts
+                              ? { currentAccountNumber, seizedAmount: Number(seizedAmount) || 0, seizedSource, seizedDepositDate }
+                              : { totalAmount, products }),
                             summary: formData.summary,
                           },
                         });

@@ -618,31 +618,40 @@ export type Database = {
       }
       requests: {
         Row: {
+          actual_amount: number | null
           created_at: string
           data: Json | null
           details: string | null
           files: Json | null
           id: string
+          result_recorded_at: string | null
+          result_recorded_by: string | null
           status: string
           type: string
           user_id: string
         }
         Insert: {
+          actual_amount?: number | null
           created_at?: string
           data?: Json | null
           details?: string | null
           files?: Json | null
           id: string
+          result_recorded_at?: string | null
+          result_recorded_by?: string | null
           status?: string
           type?: string
           user_id: string
         }
         Update: {
+          actual_amount?: number | null
           created_at?: string
           data?: Json | null
           details?: string | null
           files?: Json | null
           id?: string
+          result_recorded_at?: string | null
+          result_recorded_by?: string | null
           status?: string
           type?: string
           user_id?: string
