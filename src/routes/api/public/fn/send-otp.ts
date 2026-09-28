@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/public/fn/send-otp")({
           const phone = (body.phone || "").trim();
 
           if (!/^[0-9]{10}$/.test(nationalId) || !/^05[0-9]{8}$/.test(phone)) {
-            return json({ success: false, error: "يرجى التأكد من رقم الهوية ورقم الجوال" }, 400);
+            return json({ success: false, error: "يرجى التأكد من رقم الهوية ورقم الجوال" });
           }
 
           let email = "";
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/fn/send-otp")({
           if (mode === "register") {
             email = (body.email || "").toLowerCase().trim();
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-              return json({ success: false, error: "يرجى إدخال بريد إلكتروني صحيح" }, 400);
+              return json({ success: false, error: "يرجى إدخال بريد إلكتروني صحيح" });
             }
             const { data: existing } = await supabaseAdmin
               .from("app_users")
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/public/fn/send-otp")({
               .eq("national_id", nationalId)
               .limit(1);
             if (existing && existing.length > 0) {
-              return json({ success: false, error: "يوجد حساب مسجل بهذه الهوية. يرجى تسجيل الدخول." }, 409);
+              return json({ success: false, error: "يوجد حساب مسجل بهذه الهوية. يرجى تسجيل الدخول." });
             }
           } else {
             const { data: user } = await supabaseAdmin
@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/public/fn/send-otp")({
               .eq("role", "user")
               .maybeSingle();
             if (!user || user.phone !== phone || !user.email) {
-              return json({ success: false, error: "بيانات الدخول غير صحيحة" }, 401);
+              return json({ success: false, error: "بيانات الدخول غير صحيحة" });
             }
             email = user.email.toLowerCase().trim();
             userId = user.id;
@@ -84,7 +84,7 @@ export const Route = createFileRoute("/api/public/fn/send-otp")({
               const retryAfter = Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 1000);
               return json(
                 { success: false, error: `يرجى الانتظار ${retryAfter} ثانية قبل طلب رمز جديد`, retryAfter },
-                429,
+                200,
               );
             }
           }
@@ -161,7 +161,7 @@ export const Route = createFileRoute("/api/public/fn/send-otp")({
 
           if (!sent) {
             await supabaseAdmin.from("otp_codes").delete().eq("id", inserted.id);
-            return json({ success: false, error: SEND_FAILED }, 503);
+            return json({ success: false, error: SEND_FAILED });
           }
 
           return json({ success: true, maskedEmail: maskEmail(email) });

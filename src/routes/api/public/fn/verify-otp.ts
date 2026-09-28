@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/public/fn/verify-otp")({
           const code = (body.code || "").trim();
 
           if (!/^[0-9]{4}$/.test(code) || !/^[0-9]{10}$/.test(nationalId)) {
-            return json({ success: false, error: INVALID }, 400);
+            return json({ success: false, error: INVALID });
           }
 
           // Resolve the email the code was sent to (server-side only)
@@ -62,11 +62,11 @@ export const Route = createFileRoute("/api/public/fn/verify-otp")({
               .eq("national_id", nationalId)
               .eq("role", "user")
               .maybeSingle();
-            if (!u || u.phone !== phone || !u.email) return json({ success: false, error: INVALID }, 401);
+            if (!u || u.phone !== phone || !u.email) return json({ success: false, error: INVALID });
             loginUser = u;
             email = u.email.toLowerCase().trim();
           }
-          if (!email) return json({ success: false, error: INVALID }, 400);
+          if (!email) return json({ success: false, error: INVALID });
 
           const { data: record } = await supabaseAdmin
             .from("otp_codes")
@@ -78,20 +78,20 @@ export const Route = createFileRoute("/api/public/fn/verify-otp")({
             .maybeSingle();
 
           if (!record) {
-            return json({ success: false, error: "لا يوجد رمز صالح، يرجى طلب رمز جديد" }, 401);
+            return json({ success: false, error: "لا يوجد رمز صالح، يرجى طلب رمز جديد" });
           }
           if (new Date(record.expires_at).getTime() < Date.now()) {
             await supabaseAdmin.from("otp_codes").delete().eq("id", record.id);
-            return json({ success: false, error: "رمز التحقق منتهي الصلاحية، يرجى طلب رمز جديد" }, 401);
+            return json({ success: false, error: "رمز التحقق منتهي الصلاحية، يرجى طلب رمز جديد" });
           }
           if (record.code !== code) {
             const attempts = (record.attempts || 0) + 1;
             if (attempts >= MAX_ATTEMPTS) {
               await supabaseAdmin.from("otp_codes").delete().eq("id", record.id);
-              return json({ success: false, error: "تجاوزت عدد المحاولات، يرجى طلب رمز جديد" }, 429);
+              return json({ success: false, error: "تجاوزت عدد المحاولات، يرجى طلب رمز جديد" });
             }
             await supabaseAdmin.from("otp_codes").update({ attempts }).eq("id", record.id);
-            return json({ success: false, error: INVALID }, 401);
+            return json({ success: false, error: INVALID });
           }
 
           // Single use: delete before acting
@@ -103,14 +103,14 @@ export const Route = createFileRoute("/api/public/fn/verify-otp")({
           }
 
           // Register: create the account only now
-          if (!/^05[0-9]{8}$/.test(phone)) return json({ success: false, error: INVALID }, 400);
+          if (!/^05[0-9]{8}$/.test(phone)) return json({ success: false, error: INVALID });
           const { data: existing } = await supabaseAdmin
             .from("app_users")
             .select("id")
             .eq("national_id", nationalId)
             .limit(1);
           if (existing && existing.length > 0) {
-            return json({ success: false, error: "يوجد حساب مسجل بهذه الهوية. يرجى تسجيل الدخول." }, 409);
+            return json({ success: false, error: "يوجد حساب مسجل بهذه الهوية. يرجى تسجيل الدخول." });
           }
 
           const { data: created, error: createError } = await supabaseAdmin
