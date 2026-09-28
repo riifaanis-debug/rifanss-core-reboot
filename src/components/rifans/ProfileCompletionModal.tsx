@@ -90,15 +90,10 @@ const ProfileCompletionModal: React.FC = () => {
       if (updateError) throw updateError;
 
       // Update local user state
-      login({
-        user: {
-          ...user,
-          fullName: fullName,
-          name: fullName,
-          phone: phone.trim(),
-          national_id: nationalId.trim(),
-        },
-        token: token || undefined,
+      updateLocalUser({
+        fullName: fullName,
+        name: fullName,
+        phone: phone.trim(),
       });
 
       // Send admin notification for new client

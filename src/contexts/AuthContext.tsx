@@ -28,6 +28,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (data: AuthResponse) => Promise<User | null>;
+  updateLocalUser: (patch: Partial<User>) => void;
   logout: () => void;
   isLoading: boolean;
   loginWithEmail: (email: string, password: string) => Promise<User>;
@@ -158,6 +159,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return profile;
   };
 
+  const updateLocalUser = (patch: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch, id: prev.id, role: prev.role };
+      try { localStorage.setItem('user', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   const logout = () => {
     supabase.auth.signOut().finally(() => {
       setUser(null);
@@ -219,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading, loginWithEmail, loginWithGoogle, loginWithApple }}>
+    <AuthContext.Provider value={{ user, token, login, updateLocalUser, logout, isLoading, loginWithEmail, loginWithGoogle, loginWithApple }}>
       {children}
     </AuthContext.Provider>
   );
