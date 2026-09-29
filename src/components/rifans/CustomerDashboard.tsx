@@ -11,6 +11,7 @@ import { safeStringify, safeParse } from '../../utils/safeJson';
 import { supabase } from '@/integrations/supabase/client';
 import { getMyRequests, getMyNotifications, getMyContracts, getMyInvoices, getMyPromissoryNotes, getProfile, updateProfile, markAllNotificationsRead, markNotificationRead, uploadDocument, deleteRequest } from '../../lib/api';
 import { getMyOpenRequests } from '../../lib/openRequestsApi';
+import { notifyAdmins, archiveNotification, customerTargetHash, formatBadge } from '../../lib/notifications';
 import { formatAmount } from '../../lib/formatNumber';
 
 interface CustomerDashboardProps {
@@ -650,6 +651,9 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
         
         // Save updated profile
         await updateProfile(updatedUserData);
+        // Tell all admins when documents arrive for a request that is waiting for them
+        const waiting = requests.filter((r: any) => r.status === 'awaiting_documents');
+        for (const r of waiting) await notifyAdmins('documents_submitted', r.id);
       } catch (err) {
         console.error("Upload error:", err);
         alert('حدث خطأ أثناء رفع الملف.');
