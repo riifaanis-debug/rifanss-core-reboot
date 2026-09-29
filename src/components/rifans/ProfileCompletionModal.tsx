@@ -1,3 +1,4 @@
+import { notifyAdmins } from '@/lib/notifications';
 import { invokeFunction } from "@/lib/functions";
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -97,6 +98,7 @@ const ProfileCompletionModal: React.FC = () => {
       });
 
       // Send admin notification for new client
+      await notifyAdmins('customer_registered');
       try {
         await invokeFunction('notify-admin', {
           body: {

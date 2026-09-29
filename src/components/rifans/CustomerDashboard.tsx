@@ -11,6 +11,7 @@ import { safeStringify, safeParse } from '../../utils/safeJson';
 import { supabase } from '@/integrations/supabase/client';
 import { getMyRequests, getMyNotifications, getMyContracts, getMyInvoices, getMyPromissoryNotes, getProfile, updateProfile, markAllNotificationsRead, markNotificationRead, uploadDocument, deleteRequest } from '../../lib/api';
 import { getMyOpenRequests } from '../../lib/openRequestsApi';
+import { notifyAdmins, archiveNotification, customerTargetHash, formatBadge } from '../../lib/notifications';
 import { formatAmount } from '../../lib/formatNumber';
 
 interface CustomerDashboardProps {
@@ -444,86 +445,30 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
     setIsNotificationsOpen(false);
     if (!n.is_read) {
       await markAsRead(n.id);
-      try {
-        await markNotificationRead(n.id);
-      } catch (e) {
-        console.error("Mark read error:", e);
-      }
+      try { await markNotificationRead(n.id); } catch (e) { console.error("Mark read error:", e); }
     }
-
-    const type = n.type || '';
-    const title = n.title || '';
-    const subId = n.submission_id;
-
-    // Contract direct navigation
-    if (type === 'contract' || title.includes('عقد')) {
-      if (subId) {
-        window.location.hash = `#/contract/${subId}`;
-      } else if (contracts.length > 0) {
-        window.location.hash = `#/contract/${contracts[0].submission_id || contracts[0].id}`;
-      } else {
-        setActiveTab('contracts');
-      }
-      return;
-    }
-
-    // Promissory Note direct navigation
-    if (type === 'promissory_note' || title.includes('سند')) {
-      const foundNote = promissoryNotes.find((p: any) => p.submission_id === subId || p.id === subId);
-      const noteId = foundNote?.id || subId;
-      if (noteId) {
-        window.location.hash = `#/promissory/${noteId}`;
-      } else if (promissoryNotes.length > 0) {
-        window.location.hash = `#/promissory/${promissoryNotes[0].id}`;
-      } else {
-        setActiveTab('promissory');
-      }
-      return;
-    }
-
-    // Invoice direct navigation
-    if (type === 'invoice' || title.includes('فاتورة')) {
-      if (subId) {
-        window.location.hash = `#/invoice/${subId}`;
-      } else if (invoices.length > 0) {
-        window.location.hash = `#/invoice/${invoices[0].submission_id || invoices[0].id}`;
-      } else {
-        setActiveTab('invoices');
-      }
-      return;
-    }
-
-    // Open Request / Document direct navigation
-    if (type === 'open_request' || type === 'system' || title.includes('مستند') || title.includes('طلب مفتوح')) {
-      if (subId) {
-        setTargetOpenRequestId(subId);
-      }
-      setActiveTab('open_requests');
-      return;
-    }
-
-    // Status change / request direct navigation
-    if (type === 'status_change' || type === 'status_update' || subId) {
-      const foundReq = requests.find((r: any) => r.id === subId);
+    const t = n.target_type;
+    const id = n.target_id || n.submission_id;
+    if (t === 'request' && id) {
+      const foundReq = requests.find((r: any) => r.id === id);
+      setActiveTab('requests');
       if (foundReq) {
-        setActiveTab('requests');
-        window.dispatchEvent(new CustomEvent('open-waive-form', { 
-          detail: { 
-            ...userData, 
-            ...(foundReq.data || {}), 
-            requestType: foundReq.type, 
-            viewOnly: true, 
-            viewRequestId: foundReq.id, 
-            viewRequestStatus: foundReq.status 
-          } 
+        window.dispatchEvent(new CustomEvent('open-waive-form', {
+          detail: { ...userData, ...(foundReq.data || {}), requestType: foundReq.type, viewOnly: true, viewRequestId: foundReq.id, viewRequestStatus: foundReq.status },
         }));
-      } else {
-        setActiveTab('requests');
       }
       return;
     }
-
+    if (t === 'open_request') { if (id) setTargetOpenRequestId(id); setActiveTab('open_requests'); return; }
+    if (t === 'payment_request') { setActiveTab('payments'); return; }
+    if (t) { window.location.hash = customerTargetHash(n); return; }
     setActiveTab('requests');
+  };
+
+  const handleArchiveNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(x => x.id !== id));
+    try { await archiveNotification(id); } catch (err) { console.error(err); }
   };
 
   const markAsRead = async (id: string) => {
@@ -650,6 +595,9 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
         
         // Save updated profile
         await updateProfile(updatedUserData);
+        // Tell all admins when documents arrive for a request that is waiting for them
+        const waiting = requests.filter((r: any) => r.status === 'awaiting_documents');
+        for (const r of waiting) await notifyAdmins('documents_submitted', r.id);
       } catch (err) {
         console.error("Upload error:", err);
         alert('حدث خطأ أثناء رفع الملف.');
@@ -983,7 +931,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
                 <Bell size={18} className="text-brand dark:text-gold" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#E52E3D] text-white text-[10px] font-bold flex items-center justify-center px-1">
-                    {unreadCount > 99 ? '99+' : unreadCount}
+                    {formatBadge(unreadCount)}
                   </span>
                 )}
               </button>
@@ -1030,7 +978,13 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
                             <div className="flex-1 min-w-0">
                               <p className="text-[12px] font-bold text-brand dark:text-white truncate">{n.title}</p>
                               <p className="text-[11px] text-muted leading-relaxed mt-0.5 line-clamp-2">{n.message}</p>
-                              <span className="text-[9px] text-gold/90 mt-1 inline-block font-semibold">انقر للانتقال مباشرة ←</span>
+                              <span className="text-[9px] text-muted/70 mt-1 block">{new Date(n.created_at).toLocaleString('ar-SA')}</span>
+                              <span className="text-[9px] text-gold/90 mt-0.5 inline-block font-semibold">انقر للانتقال مباشرة ←</span>
+                            </div>
+                            <span role="button" aria-label="أرشفة" title="أرشفة" onClick={(e) => handleArchiveNotification(e, n.id)} className="w-5 h-5 rounded-full flex items-center justify-center text-muted hover:text-brand shrink-0">
+                              <X size={11} />
+                            </span>
+                            <div className="hidden">
                             </div>
                           </div>
                         </button>

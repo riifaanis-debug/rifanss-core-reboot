@@ -1,3 +1,4 @@
+import { notifyCustomer } from '@/lib/notifications';
 import React, { useEffect, useState } from 'react';
 import { CreditCard, Loader2, Send, CheckCircle, Clock, Search, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,12 +88,11 @@ export const AdminPaymentRequests: React.FC = () => {
       });
       if (error) throw error;
       // Notification for client
-      await supabase.from('notifications').insert({
-        id: `NOTIF-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
-        user_id: selectedUserId,
+      await notifyCustomer({
+        userId: selectedUserId, event: 'payment_request_created', type: 'payment',
         title: 'طلب سداد جديد',
         message: `تم إصدار طلب سداد بمبلغ ${formatAmount(sar)} ر.س${description ? ` مقابل: ${description}` : ''}`,
-        type: 'payment',
+        targetType: 'payment_request',
       });
       // Refresh list
       const { data } = await supabase.from('payment_requests').select('*').order('created_at', { ascending: false });

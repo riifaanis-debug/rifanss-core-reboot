@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notification_states: {
+        Row: {
+          admin_user_id: string
+          archived_at: string | null
+          id: string
+          notification_id: string
+          read_at: string | null
+        }
+        Insert: {
+          admin_user_id: string
+          archived_at?: string | null
+          id?: string
+          notification_id: string
+          read_at?: string | null
+        }
+        Update: {
+          admin_user_id?: string
+          archived_at?: string | null
+          id?: string
+          notification_id?: string
+          read_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notification_states_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "admin_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_notifications: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          event: string
+          id: string
+          message: string
+          submission_id: string | null
+          target_id: string | null
+          target_type: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          event: string
+          id?: string
+          message: string
+          submission_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          event?: string
+          id?: string
+          message?: string
+          submission_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notifications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_notifications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "app_users_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_users: {
         Row: {
           age: string | null
@@ -373,31 +456,43 @@ export type Database = {
       }
       notifications: {
         Row: {
+          archived_at: string | null
           created_at: string
+          event: string | null
           id: string
           is_read: boolean
           message: string
           submission_id: string | null
+          target_id: string | null
+          target_type: string | null
           title: string
           type: string
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
-          id: string
+          event?: string | null
+          id?: string
           is_read?: boolean
           message: string
           submission_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
           title: string
           type?: string
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
+          event?: string | null
           id?: string
           is_read?: boolean
           message?: string
           submission_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
           title?: string
           type?: string
           user_id?: string
@@ -912,6 +1007,14 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_admin_app_id: { Args: { _id: string }; Returns: boolean }
+      notify_admins: {
+        Args: {
+          p_event: string
+          p_submission_id?: string
+          p_target_id?: string
+        }
+        Returns: string
+      }
       owns_request: { Args: { _request_id: string }; Returns: boolean }
       verify_password: {
         Args: { input_password: string; stored_hash: string }

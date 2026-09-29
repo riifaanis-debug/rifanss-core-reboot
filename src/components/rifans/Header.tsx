@@ -4,7 +4,7 @@ import SideMenu from './SideMenu';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import Logo from './Logo';
-import { getMyNotifications, markAllNotificationsRead } from '../../lib/api';
+import { getMyNotifications, markAllNotificationsRead, markNotificationRead, customerTargetHash, subscribeMyNotifications, formatBadge } from '../../lib/notifications';
 import { navigateTo } from '../../utils/scrollManager';
 
 const Header: React.FC = () => {
@@ -34,8 +34,7 @@ const Header: React.FC = () => {
 
     if (user && token) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 120000);
-      return () => clearInterval(interval);
+      if (user?.id) return subscribeMyNotifications(String(user.id), fetchNotifications);
     }
   }, [user, token]);
 
@@ -70,36 +69,18 @@ const Header: React.FC = () => {
 
   const handleNotificationClick = async (n: any) => {
     setShowNotifications(false);
-    try {
-      const { markNotificationRead } = await import('../../lib/api');
-      await markNotificationRead(n.id);
-    } catch (e) {
-      console.error(e);
+    if (!n.is_read) {
+      setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, is_read: true } : item));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      try { await markNotificationRead(n.id); } catch (e) { console.error(e); }
     }
-    setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, is_read: true } : item));
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    window.location.hash = customerTargetHash(n);
+  };
 
-    const type = n.type || '';
-    const title = n.title || '';
-    const subId = n.submission_id;
-
-    if (type === 'contract' || title.includes('عقد')) {
-      window.location.hash = subId ? `#/contract/${subId}` : `#/dashboard?tab=contracts`;
-      return;
-    }
-    if (type === 'promissory_note' || title.includes('سند')) {
-      window.location.hash = subId ? `#/promissory/${subId}` : `#/dashboard?tab=promissory`;
-      return;
-    }
-    if (type === 'invoice' || title.includes('فاتورة')) {
-      window.location.hash = subId ? `#/invoice/${subId}` : `#/dashboard?tab=invoices`;
-      return;
-    }
-    if (type === 'open_request' || type === 'system' || title.includes('مستند') || title.includes('طلب مفتوح')) {
-      window.location.hash = `#/dashboard?tab=open_requests${subId ? `&openReq=${subId}` : ''}`;
-      return;
-    }
-    window.location.hash = `#/dashboard?tab=requests${subId ? `&reqId=${subId}` : ''}`;
+  const handleMarkAllRead = async () => {
+    setNotifications(prev => prev.map(item => ({ ...item, is_read: true })));
+    setUnreadCount(0);
+    try { await markAllNotificationsRead(); } catch (e) { console.error(e); }
   };
 
   const handleOpenAuth = () => {
@@ -169,7 +150,7 @@ const Header: React.FC = () => {
                     <Bell size={15} className="sm:w-4 sm:h-4" />
                     {unreadCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center px-0.5 animate-pulse">
-                        {unreadCount > 99 ? '99+' : unreadCount}
+                        {formatBadge(unreadCount)}
                       </span>
                     )}
                   </button>
@@ -179,6 +160,9 @@ const Header: React.FC = () => {
                     <div className="absolute top-10 sm:top-12 right-0 w-[min(300px,calc(100vw-1.5rem))] max-h-[380px] bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-gold/20 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
                       <div className="flex items-center justify-between p-2.5 sm:p-3 border-b border-gold/10">
                         <h3 className="text-xs sm:text-[13px] font-bold text-gray-900 dark:text-gold">التنبيهات</h3>
+                        {unreadCount > 0 && (
+                          <button onClick={handleMarkAllRead} className="text-[10px] text-gold hover:underline font-bold mr-auto ml-2">تحديد الكل كمقروء</button>
+                        )}
                         <button onClick={() => setShowNotifications(false)} className="w-5 h-5 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center">
                           <X size={11} />
                         </button>

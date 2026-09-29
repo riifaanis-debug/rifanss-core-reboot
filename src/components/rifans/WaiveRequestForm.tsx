@@ -1,3 +1,4 @@
+import { notifyCustomer, notifyAdmins } from '@/lib/notifications';
 import { invokeFunction } from "@/lib/functions";
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Trash2, ArrowRight, CheckCircle, AlertCircle, Lock, Calendar, Hash, ShieldCheck, LogIn } from 'lucide-react';
@@ -424,14 +425,13 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
         result = updated;
         
         // Create notification
-        await supabase.from('notifications').insert({
-          id: `NOT-${Date.now()}`,
-          user_id: result.user_id,
-          submission_id: result.id,
+        await notifyCustomer({
+          userId: result.user_id, event: 'request_submitted', type: 'new_request',
           title: 'تم استلام طلبك',
           message: `تم استلام طلبك بنجاح وهو قيد المراجعة الآن. نوع الطلب: ${result.type}`,
-          type: 'new_request',
+          targetType: 'request', targetId: result.id, submissionId: result.id,
         });
+        await notifyAdmins('request_submitted', result.id);
       } else {
         result = await submitRequest(requestDataObj);
       }
