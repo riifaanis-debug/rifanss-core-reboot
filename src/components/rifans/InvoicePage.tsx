@@ -19,7 +19,7 @@ interface InvoicePageProps {
 const Row = ({ label, value, mono, strong }: { label: string; value: React.ReactNode; mono?: boolean; strong?: boolean }) => (
   <div className="flex flex-row items-center justify-between gap-2 py-1 border-b border-gray-200 last:border-b-0">
     <span className="text-gray-500 font-medium">{label}:</span>
-    <span className={`font-bold ${strong ? 'text-brand' : 'text-[#22042C]'} ${mono ? 'font-mono' : ''}`}>{value}</span>
+    <span className={`font-bold ${strong ? 'text-brand' : 'text-[#2A0E32]'} ${mono ? 'font-mono' : ''}`}>{value}</span>
   </div>
 );
 

@@ -119,12 +119,12 @@ const PromissoryNotePage: React.FC<PromissoryNotePageProps> = ({ noteId, onClose
   const Row = ({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) => (
     <div className="flex flex-row items-center justify-between gap-2 py-1 border-b border-gray-200 last:border-b-0">
       <span className="text-gray-500 font-medium">{label}:</span>
-      <span className={`font-bold text-[#22042C] ${mono ? 'font-mono' : ''}`}>{value}</span>
+      <span className={`font-bold text-[#2A0E32] ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   );
 
   const SectionTitle = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
-    <div className="bg-brand text-white px-3.5 py-2 rounded-xl flex items-center gap-2 font-bold text-xs sm:text-sm print:rounded-md">
+    <div className="bg-brand text-white px-3.5 py-2 rounded-xl flex items-center gap-2 font-bold text-sm print:rounded-md">
       {icon}
       <span>{children}</span>
     </div>
@@ -144,7 +144,7 @@ const PromissoryNotePage: React.FC<PromissoryNotePageProps> = ({ noteId, onClose
     </div>,
     <div key="b0" className="space-y-2.5">
             <SectionTitle icon={<FileText size={16} className="text-gold shrink-0" />}>بيانات السند</SectionTitle>
-            <div className="bg-[#FAF7FC] border border-gray-200 rounded-xl p-3.5 space-y-1 text-xs sm:text-[13px]">
+            <div className="bg-[#FAF7FC] border border-gray-200 rounded-xl p-3.5 space-y-1 text-[13px]">
               <Row label="رقم السند" value={v.noteNumber} mono />
               <Row label="تاريخ الإصدار" value={v.issueDate} />
               <Row label="مكان الإصدار" value={v.issueCity} />
@@ -156,28 +156,28 @@ const PromissoryNotePage: React.FC<PromissoryNotePageProps> = ({ noteId, onClose
           </div>,
     <div key="b1" className="space-y-2.5">
             <SectionTitle icon={<User size={16} className="text-gold shrink-0" />}>المدين</SectionTitle>
-            <div className="bg-[#FAF7FC] border border-gray-200 rounded-xl p-3.5 space-y-1 text-xs sm:text-[13px]">
+            <div className="bg-[#FAF7FC] border border-gray-200 rounded-xl p-3.5 space-y-1 text-[13px]">
               <Row label="الاسم" value={v.debtorName} />
               <Row label="رقم الهوية الوطنية/الإقامة" value={v.debtorNationalId} mono />
             </div>
           </div>,
     <div key="b2" className="space-y-2.5">
             <SectionTitle icon={<Users size={16} className="text-gold shrink-0" />}>المستفيد</SectionTitle>
-            <div className="bg-[#FAF7FC] border border-gray-200 rounded-xl p-3.5 space-y-1 text-xs sm:text-[13px]">
+            <div className="bg-[#FAF7FC] border border-gray-200 rounded-xl p-3.5 space-y-1 text-[13px]">
               <Row label="الاسم" value={v.beneficiary.name} />
               <Row label="الرقم الوطني الموحد" value={v.beneficiary.unifiedNumber} mono />
               <Row label="يمثلها" value={v.beneficiary.representative} />
             </div>
           </div>,
     <div key="b3" className="border-2 border-gold/40 rounded-xl p-4 bg-gold/5 space-y-2.5">
-            <h4 className="text-xs sm:text-sm font-bold text-brand">التعهد بالسداد</h4>
-            <p className="text-xs sm:text-sm leading-relaxed text-gray-800 text-right font-bold">{v.pledge}</p>
+            <h4 className="text-sm font-bold text-brand">التعهد بالسداد</h4>
+            <p className="text-sm leading-relaxed text-gray-800 text-right font-bold">{v.pledge}</p>
             <p className="text-xs text-gray-700 leading-relaxed">{v.contractLink}</p>
           </div>,
     <div key="b4" className="border-t border-gray-200 pt-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="border border-gray-200 rounded-xl p-3 bg-[#FAF7FC] space-y-2 text-xs">
-                <span className="text-xs font-bold text-[#22042C] block text-center">توقيع المدين</span>
+                <span className="text-xs font-bold text-[#2A0E32] block text-center">توقيع المدين</span>
                 <Row label="اسم المدين" value={v.debtorName} />
                 <div className="h-24 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 overflow-hidden">
                   {v.isSigned && v.signatureData ? (
@@ -190,7 +190,7 @@ const PromissoryNotePage: React.FC<PromissoryNotePageProps> = ({ noteId, onClose
               </div>
 
               <div className="border border-gray-200 rounded-xl p-3 bg-[#FAF7FC] text-center space-y-2">
-                <span className="text-xs font-bold text-[#22042C] block">المستفيد</span>
+                <span className="text-xs font-bold text-[#2A0E32] block">المستفيد</span>
                 <span className="text-[11px] text-gray-700 font-bold block">{v.beneficiary.name}</span>
                 <div className="h-24 flex items-center justify-center">
                   <img src={rifansStampImg} alt="ختم شركة ريفانس المالية" className="h-full w-auto object-contain mix-blend-multiply" />
@@ -198,8 +198,8 @@ const PromissoryNotePage: React.FC<PromissoryNotePageProps> = ({ noteId, onClose
               </div>
             </div>
           </div>,
-    <div key="b5" className="border-t border-gray-200 pt-3 text-center text-[10px] sm:text-[11px] text-gray-500">
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 font-medium">
+    <div key="b5" className="border-t border-gray-200 pt-3 text-center text-[11px] text-gray-500">
+            <div className="flex flex-wrap items-center justify-center gap-6 font-medium">
               <span className="flex items-center gap-1"><Phone size={12} className="text-gold" /> 800 2440 432</span>
               <span className="flex items-center gap-1"><Mail size={12} className="text-gold" /> info@rifans.net</span>
               <span className="flex items-center gap-1"><Globe size={12} className="text-gold" /> www.rifanss.com</span>
@@ -219,7 +219,7 @@ const PromissoryNotePage: React.FC<PromissoryNotePageProps> = ({ noteId, onClose
         {/* Signature Capture Pad for mobile (Only if not signed) */}
         {isOwner && !isSigned && !isAdmin && (note.doc_status || 'active') === 'active' && (
           <div className="mt-4 mx-auto max-w-2xl bg-white print:hidden rounded-2xl border border-gold/30 shadow-md p-4 space-y-3">
-            <h3 className="text-xs sm:text-sm font-bold text-brand flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-brand flex items-center gap-1.5">
               <FileCheck size={16} className="text-gold" />
               توقيع المدين على سند الأمر
             </h3>
