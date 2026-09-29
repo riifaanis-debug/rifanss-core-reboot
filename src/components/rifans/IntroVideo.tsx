@@ -5,7 +5,7 @@ const IntroVideo: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   return (
-    <div className="w-full bg-black -mt-[env(safe-area-inset-top)] pt-[env(safe-area-inset-top)]">
+    <div className="w-full bg-black">
       <div className="max-w-[520px] mx-auto">
         <video
           ref={videoRef}
