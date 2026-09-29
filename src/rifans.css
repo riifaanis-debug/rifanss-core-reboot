@@ -673,10 +673,54 @@ body {
   overflow-x: hidden;
 }
 
-@media screen and (max-width: 767px) {
-  input,
-  textarea,
-  select {
-    font-size: 16px !important;
-  }
+/* ===== Unified field style — reference: «الاسم الكامل» in customer profile =====
+   Applies to every text-like field site-wide (and any future field). */
+:where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not([type=hidden]):not([data-otp]), textarea, select) {
+  --field-bg: #f9fafb;
+  --field-border: #f3f4f6;
+}
+.dark :where(input, textarea, select) {
+  --field-bg: rgb(255 255 255 / 0.05);
+  --field-border: rgb(255 255 255 / 0.05);
+}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not([type=hidden]):not([data-otp]),
+textarea,
+select {
+  font-family: 'Tajawal', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.5 !important;
+  color: hsl(var(--brand)) !important;
+  background-color: var(--field-bg) !important;
+  border: 1px solid var(--field-border) !important;
+  border-radius: 10px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  height: auto !important;
+  min-height: 32px !important;
+}
+.dark input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not([type=hidden]):not([data-otp]),
+.dark textarea,
+.dark select { color: #fff !important; }
+input:not([data-otp])::placeholder,
+textarea::placeholder {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.7;
+}
+input:not([type=checkbox]):not([type=radio]):not([data-otp]):focus,
+textarea:focus,
+select:focus {
+  border-color: hsl(var(--gold)) !important;
+  outline: none !important;
+}
+/* Labels that precede a field use the reference label style */
+label:has(+ input:not([type=checkbox]):not([type=radio])),
+label:has(+ textarea),
+label:has(+ select),
+label:has(+ div > input:not([type=checkbox]):not([type=radio])) {
+  font-size: 9px !important;
+  font-weight: 400 !important;
+  margin-bottom: 2px !important;
 }
