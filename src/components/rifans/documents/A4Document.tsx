@@ -116,7 +116,7 @@ export const A4Document: React.FC<A4DocumentProps> = ({ blocks, docType, docNumb
       let cur: number[] = [];
       let h = 0;
       kids.forEach((k, i) => {
-        const bh = k.getBoundingClientRect().height;
+        const bh = k.offsetHeight; // offsetHeight لا يتأثر بتصغير العارض
         const add = cur.length ? bh + GAP : bh;
         if (cur.length && h + add > A4_CONTENT_H) {
           res.push(cur); cur = [i]; h = bh;
