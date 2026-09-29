@@ -64,6 +64,13 @@
       "when": 1790646169632,
       "tag": "0008_notifications_rebuild",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790658354347,
+      "tag": "0009_email_events_outbox",
+      "breakpoints": true
     }
   ]
 }

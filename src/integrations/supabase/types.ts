@@ -283,6 +283,45 @@ export type Database = {
           },
         ]
       }
+      email_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          entity_id: string
+          error: string | null
+          event: string
+          id: string
+          locked_at: string | null
+          recipient_role: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          entity_id: string
+          error?: string | null
+          event: string
+          id?: string
+          locked_at?: string | null
+          recipient_role: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          entity_id?: string
+          error?: string | null
+          event?: string
+          id?: string
+          locked_at?: string | null
+          recipient_role?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -998,6 +1037,11 @@ export type Database = {
     }
     Functions: {
       current_app_user_id: { Args: never; Returns: string }
+      email_dispatch_kick: { Args: never; Returns: undefined }
+      enqueue_email: {
+        Args: { p_entity: string; p_event: string; p_roles: string[] }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

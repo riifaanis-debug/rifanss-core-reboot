@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as ApiPublicEmailDispatchRouteImport } from './routes/api/public/email-dispatch'
 import { Route as ApiPublicFnCheckDomainVerificationRouteImport } from './routes/api/public/fn/check-domain-verification'
 import { Route as ApiPublicFnHubspotSyncRouteImport } from './routes/api/public/fn/hubspot-sync'
 import { Route as ApiPublicFnNotifyAdminRouteImport } from './routes/api/public/fn/notify-admin'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicEmailDispatchRoute = ApiPublicEmailDispatchRouteImport.update({
+  id: '/api/public/email-dispatch',
+  path: '/api/public/email-dispatch',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFnCheckDomainVerificationRoute =
@@ -76,6 +82,7 @@ const ApiPublicUploadsSplatRoute = ApiPublicUploadsSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api/public/email-dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api/public/email-dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api/public/email-dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/api/public/email-dispatch'
     | '/api/public/fn/check-domain-verification'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/api/public/email-dispatch'
     | '/api/public/fn/check-domain-verification'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/api/public/email-dispatch'
     | '/api/public/fn/check-domain-verification'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
@@ -152,6 +164,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  ApiPublicEmailDispatchRoute: typeof ApiPublicEmailDispatchRoute
   ApiPublicFnCheckDomainVerificationRoute: typeof ApiPublicFnCheckDomainVerificationRoute
   ApiPublicFnHubspotSyncRoute: typeof ApiPublicFnHubspotSyncRoute
   ApiPublicFnNotifyAdminRoute: typeof ApiPublicFnNotifyAdminRoute
@@ -176,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/email-dispatch': {
+      id: '/api/public/email-dispatch'
+      path: '/api/public/email-dispatch'
+      fullPath: '/api/public/email-dispatch'
+      preLoaderRoute: typeof ApiPublicEmailDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/fn/check-domain-verification': {
@@ -240,6 +260,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  ApiPublicEmailDispatchRoute: ApiPublicEmailDispatchRoute,
   ApiPublicFnCheckDomainVerificationRoute:
     ApiPublicFnCheckDomainVerificationRoute,
   ApiPublicFnHubspotSyncRoute: ApiPublicFnHubspotSyncRoute,
