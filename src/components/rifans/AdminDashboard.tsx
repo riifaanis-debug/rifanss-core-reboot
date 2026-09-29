@@ -25,6 +25,7 @@ import { safeStringify, safeParse } from '../../utils/safeJson';
 import { supabase } from '@/integrations/supabase/client';
 import { getAdminSubmissions, getAdminUsers, getAdminNotifications, getAdminContracts, updateSubmissionStatus, sendContract as apiSendContract, sendInvoice as apiSendInvoice, getSubmissionHistory as apiGetSubmissionHistory, getAdminInvoices, uploadDocument, sendPromissoryNote as apiSendPromissoryNote, getAdminPromissoryNotes } from '../../lib/api';
 import { formatAmount } from '../../lib/formatNumber';
+import { adminMarkRead, adminMarkAllRead, adminArchive, subscribeAdminNotifications, formatBadge } from '../../lib/notifications';
 import { toPng } from 'html-to-image';
 
 interface AdminDashboardProps {
@@ -489,6 +490,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  useEffect(() => subscribeAdminNotifications(() => { fetchNotifications(); }), []);
+
+  const [notifSearch, setNotifSearch] = useState('');
+  const adminUnread = adminUnread;
+
+  const openAdminNotification = async (n: any) => {
+    if (!n.is_read) {
+      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x));
+      try { await adminMarkRead(n.id); } catch (e) { console.error(e); }
+    }
+    const sub = n.submission_id ? submissions.find((x: any) => x.id === n.submission_id) : null;
+    switch (n.target_type) {
+      case 'customer':
+        handleOpenUserProfile(n.customer_id || n.target_id);
+        return;
+      case 'promissory_note':
+        if (n.target_id && n.target_id !== n.submission_id) { window.open(`#/promissory/${n.target_id}`, '_blank'); return; }
+        break;
+      case 'contract': {
+        const c = contracts.find((x: any) => x.id === n.target_id || x.submission_id === n.submission_id);
+        if (c) { setSelectedContract(c); return; }
+        break;
+      }
+      case 'open_request':
+        setActiveTab('open_request');
+        return;
+    }
+    if (sub) { setSelectedSubmission(sub); fetchSubmissionHistory(sub.id); return; }
+    if (n.customer_id) handleOpenUserProfile(n.customer_id);
+  };
+
+  const archiveAdminNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(x => x.id !== id));
+    try { await adminArchive(id); } catch (err) { console.error(err); }
+  };
+
+  const markAllAdminRead = async () => {
+    const ids = notifications.filter(n => !n.is_read).map(n => n.id);
+    setNotifications(prev => prev.map(x => ({ ...x, is_read: true })));
+    try { await adminMarkAllRead(ids); } catch (err) { console.error(err); }
   };
 
   const fetchContracts = async () => {
@@ -2219,7 +2263,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       { icon: <UserCheck size={18} />, label: 'الموظفون', onClick: () => setActiveTab('employees') },
       { icon: <ShieldCheck size={18} />, label: 'الصلاحيات', onClick: () => setActiveTab('permissions') },
       { icon: <TrendingUp size={18} />, label: 'التقارير والإحصائيات', onClick: () => setActiveTab('stats') },
-      { icon: <Bell size={18} />, label: 'الإشعارات', onClick: () => setActiveTab('notifications'), badge: notifications.filter(n => !n.is_read).length },
+      { icon: <Bell size={18} />, label: 'الإشعارات', onClick: () => setActiveTab('notifications'), badge: adminUnread },
       { icon: <History size={18} />, label: 'سجل العمليات', onClick: () => setActiveTab('audit_log') },
       { icon: <Settings size={18} />, label: 'الإعدادات', onClick: () => setActiveTab('settings') },
       { icon: <Star size={18} />, label: 'التقييمات', onClick: () => setActiveTab('reviews') },
@@ -2253,7 +2297,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       { id: 'mobile_requests', icon: <FileText size={20} />, label: 'الطلبات' },
       { id: 'clients', icon: <Users size={20} />, label: 'العملاء' },
       { id: 'mobile_documents', icon: <FolderOpen size={20} />, label: 'المستندات' },
-      { id: 'mobile_more', icon: <MoreHorizontal size={20} />, label: 'المزيد', badge: notifications.filter(n => !n.is_read).length + unreadChatCount },
+      { id: 'mobile_more', icon: <MoreHorizontal size={20} />, label: 'المزيد', badge: adminUnread + unreadChatCount },
     ];
     let content: React.ReactNode = null;
     if (isLoading) content = <div className="flex flex-col items-center justify-center h-96 gap-3"><div className="w-10 h-10 border-4 border-gold/30 border-t-gold rounded-full animate-spin" /><p className="text-xs text-muted">جاري التحميل...</p></div>;
@@ -2275,7 +2319,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           <div className="flex items-center gap-1">
             <button onClick={() => setActiveTab('notifications')} className="relative w-10 h-10 rounded-xl flex items-center justify-center text-gold active:bg-white/10">
               <Bell size={20} />
-              {notifications.filter(n => !n.is_read).length > 0 && <span className="absolute top-1 left-1 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1">{notifications.filter(n => !n.is_read).length}</span>}
+              {adminUnread > 0 && <span className="absolute top-1 left-1 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1">{formatBadge(adminUnread)}</span>}
             </button>
             <button onClick={onClose} className="w-10 h-10 rounded-xl flex items-center justify-center text-white active:bg-white/10"><X size={22} /></button>
           </div>
@@ -2419,7 +2463,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           <StatCard 
             icon={<Bell className="text-rose-500" />} 
             label="التنبيهات الجديدة" 
-            value={notifications.filter(n => !n.is_read).length} 
+            value={adminUnread} 
             color="rose" 
             onClick={() => setActiveTab('notifications')} 
           />
@@ -2479,13 +2523,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           </div>
           <div className="space-y-2.5">
             {notifications.slice(0, 4).map(n => (
-              <div key={n.id} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 text-xs">
+              <div key={n.id} role="button" onClick={() => openAdminNotification(n)} className="cursor-pointer flex items-start gap-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 text-xs">
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                  n.type === 'status_update' ? 'bg-blue-100 text-blue-600' : 
-                  n.type === 'contract_signature' ? 'bg-emerald-100 text-emerald-600' : 'bg-gold/10 text-gold'
+                  n.event === 'documents_submitted' ? 'bg-blue-100 text-blue-600' : 
+                  (n.event === 'contract_signed' || n.event === 'note_signed') ? 'bg-emerald-100 text-emerald-600' : 'bg-gold/10 text-gold'
                 }`}>
-                  {n.type === 'status_update' ? <RefreshCw size={13} /> : 
-                   n.type === 'contract_signature' ? <PenTool size={13} /> : <Bell size={13} />}
+                  {n.event === 'documents_submitted' ? <RefreshCw size={13} /> : 
+                   (n.event === 'contract_signed' || n.event === 'note_signed') ? <PenTool size={13} /> : <Bell size={13} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1 mb-0.5">
@@ -2570,11 +2614,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             {notifications.slice(0, 5).map(n => (
               <div key={n.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                  n.type === 'status_update' ? 'bg-blue-100 text-blue-600' : 
-                  n.type === 'contract_signature' ? 'bg-emerald-100 text-emerald-600' : 'bg-gold/10 text-gold'
+                  n.event === 'documents_submitted' ? 'bg-blue-100 text-blue-600' : 
+                  (n.event === 'contract_signed' || n.event === 'note_signed') ? 'bg-emerald-100 text-emerald-600' : 'bg-gold/10 text-gold'
                 }`}>
-                  {n.type === 'status_update' ? <RefreshCw size={14} /> : 
-                   n.type === 'contract_signature' ? <PenTool size={14} /> : <Bell size={14} />}
+                  {n.event === 'documents_submitted' ? <RefreshCw size={14} /> : 
+                   (n.event === 'contract_signed' || n.event === 'note_signed') ? <PenTool size={14} /> : <Bell size={14} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
@@ -3226,30 +3270,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           سجل التنبيهات والنشاط
         </h3>
         <div className="flex items-center gap-4 w-full sm:w-auto">
+          {adminUnread > 0 && (
+            <button onClick={markAllAdminRead} className="text-xs text-gold font-bold hover:underline whitespace-nowrap">تحديد الكل كمقروء</button>
+          )}
           <div className="relative w-full sm:w-64">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
             <input 
               type="text" 
               placeholder="بحث في التنبيهات..."
+              value={notifSearch}
+              onChange={(e) => setNotifSearch(e.target.value)}
               className="w-full pr-10 pl-4 py-2 bg-gray-50 dark:bg-white/5 border border-gold/10 rounded-xl text-xs outline-none focus:border-gold"
             />
           </div>
         </div>
       </div>
       <div className="space-y-3 sm:space-y-4">
-        {notifications.map(n => (
-          <div key={n.id} className="flex items-start gap-2 sm:gap-4 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl md:rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 hover:border-gold/30 transition-all group">
+        {notifications.filter(n => {
+          const q = notifSearch.trim();
+          if (!q) return true;
+          return [n.title, n.message, n.user_name, n.submission_id].some(v => String(v || '').includes(q));
+        }).map(n => (
+          <div key={n.id} role="button" onClick={() => openAdminNotification(n)} className={`cursor-pointer flex items-start gap-2 sm:gap-4 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl md:rounded-2xl border hover:border-gold/30 transition-all group ${n.is_read ? 'bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-white/10' : 'bg-gold/10 border-gold/30'}`}>
             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
-              n.type === 'status_update' ? 'bg-blue-100 text-blue-600' : 
-              n.type === 'contract_signature' ? 'bg-rose-100 text-rose-600 border border-rose-200' : 'bg-gold/10 text-gold'
+              n.event === 'documents_submitted' ? 'bg-blue-100 text-blue-600' : 
+              (n.event === 'contract_signed' || n.event === 'note_signed') ? 'bg-rose-100 text-rose-600 border border-rose-200' : 'bg-gold/10 text-gold'
             }`}>
-              {n.type === 'status_update' ? <RefreshCw size={16} /> : 
-               n.type === 'contract_signature' ? <PenTool size={16} /> : <Bell size={16} />}
+              {n.event === 'documents_submitted' ? <RefreshCw size={16} /> : 
+               (n.event === 'contract_signed' || n.event === 'note_signed') ? <PenTool size={16} /> : <Bell size={16} />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 sm:mb-2 gap-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-bold text-brand dark:text-gold">{n.user_name}</span>
+                  {!n.is_read && <span className="w-2 h-2 rounded-full bg-gold shrink-0" aria-label="غير مقروء"></span>}
+                  <span className="text-xs sm:text-sm font-bold text-brand dark:text-gold">{n.user_name || 'تنبيه نظام'}</span>
                   <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300"></span>
                   <span className="text-[9px] sm:text-[10px] text-muted">{n.title}</span>
                 </div>
@@ -3260,11 +3314,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               </div>
               <p className="text-[10px] sm:text-xs text-muted leading-relaxed">{n.message}</p>
             </div>
-            <button className="p-1.5 sm:p-2 opacity-0 group-hover:opacity-100 text-muted hover:text-rose-500 transition-all shrink-0">
+            <button onClick={(e) => archiveAdminNotification(e, n.id)} title="أرشفة" aria-label="أرشفة" className="p-1.5 sm:p-2 opacity-60 sm:opacity-0 group-hover:opacity-100 text-muted hover:text-rose-500 transition-all shrink-0">
               <Trash2 size={14} />
             </button>
           </div>
         ))}
+        {notifications.length === 0 && <div className="py-6 text-center text-xs text-muted">لا توجد تنبيهات حالياً</div>}
       </div>
     </Card>
     </div>
@@ -4124,7 +4179,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           <NavButton active={activeTab === 'employees'} onClick={() => { setActiveTab('employees'); setIsSidebarOpen(false); }} icon={<UserCheck size={18} />} label="الموظفون" badge={employees.length || undefined} />
           <NavButton active={activeTab === 'permissions'} onClick={() => { setActiveTab('permissions'); setIsSidebarOpen(false); }} icon={<ShieldCheck size={18} />} label="الصلاحيات" />
           <NavButton active={activeTab === 'stats'} onClick={() => { setActiveTab('stats'); setIsSidebarOpen(false); }} icon={<TrendingUp size={18} />} label="التقارير والإحصائيات" />
-          <NavButton active={activeTab === 'notifications'} onClick={() => { setActiveTab('notifications'); setIsSidebarOpen(false); }} icon={<Bell size={18} />} label="الإشعارات" badge={notifications.filter(n => !n.is_read).length || undefined} />
+          <NavButton active={activeTab === 'notifications'} onClick={() => { setActiveTab('notifications'); setIsSidebarOpen(false); }} icon={<Bell size={18} />} label="الإشعارات" badge={adminUnread || undefined} />
           <NavButton active={activeTab === 'audit_log'} onClick={() => { setActiveTab('audit_log'); setIsSidebarOpen(false); }} icon={<History size={18} />} label="سجل العمليات" />
           <NavButton active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }} icon={<Settings size={18} />} label="الإعدادات" />
         </aside>
