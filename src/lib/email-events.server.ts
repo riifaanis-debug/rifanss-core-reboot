@@ -192,7 +192,7 @@ export async function dispatchPendingEmails(limit = 20) {
       .update({ status: "processing", locked_at: new Date().toISOString(), attempts: row.attempts + 1 })
       .eq("id", row.id).eq("status", row.status).eq("attempts", row.attempts).select("id");
     if (!claimed?.length) continue;
-    let patch: Record<string, unknown>;
+    let patch: { status: string; error?: string | null; sent_at?: string };
     try {
       const built = await buildEmail(admin, row);
       if ("skip" in built) patch = { status: "skipped", error: built.skip };
