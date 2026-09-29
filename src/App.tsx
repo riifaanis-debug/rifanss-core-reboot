@@ -82,6 +82,28 @@ const LandingPage: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  // Bottom overscroll: match the footer's final colour (#0c0013) only near the page end,
+  // so the top of the page (and the homepage status-bar area) stays untouched.
+  useEffect(() => {
+    const root = document.documentElement;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const nearBottom = window.scrollY + window.innerHeight >= root.scrollHeight - window.innerHeight;
+      const atTop = window.scrollY < window.innerHeight;
+      root.style.backgroundColor = nearBottom && !atTop ? '#0c0013' : '';
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+      root.style.backgroundColor = '';
+    };
+  }, []);
   const [route, setRoute] = useState(window.location.hash);
   const [showAuth, setShowAuth] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
