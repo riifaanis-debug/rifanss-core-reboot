@@ -495,7 +495,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   useEffect(() => subscribeAdminNotifications(() => { fetchNotifications(); }), []);
 
   const [notifSearch, setNotifSearch] = useState('');
-  const adminUnread = adminUnread;
+  const adminUnread = notifications.filter(n => !n.is_read).length;
 
   const openAdminNotification = async (n: any) => {
     if (!n.is_read) {
@@ -2612,7 +2612,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           </div>
           <div className="space-y-4">
             {notifications.slice(0, 5).map(n => (
-              <div key={n.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
+              <div key={n.id} role="button" onClick={() => openAdminNotification(n)} className="cursor-pointer flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   n.event === 'documents_submitted' ? 'bg-blue-100 text-blue-600' : 
                   (n.event === 'contract_signed' || n.event === 'note_signed') ? 'bg-emerald-100 text-emerald-600' : 'bg-gold/10 text-gold'
