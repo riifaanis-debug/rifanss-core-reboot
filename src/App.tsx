@@ -90,7 +90,7 @@ const AppContent: React.FC = () => {
     const update = () => {
       raf = 0;
       const nearBottom = window.scrollY + window.innerHeight >= root.scrollHeight - window.innerHeight;
-      const atTop = window.scrollY < window.innerHeight;
+      const atTop = window.scrollY < 40;
       root.style.backgroundColor = nearBottom && !atTop ? '#0c0013' : '';
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
