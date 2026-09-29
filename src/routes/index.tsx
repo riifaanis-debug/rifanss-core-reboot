@@ -5,8 +5,7 @@ import RifansApp from "@/RifansApp";
 const title = "ريفانس المالية";
 const description =
   "ريفانس المالية ، شركة سعودية ذات مسؤولية محدودة مرخصة من قِبل البنك المركزي السعودي وخاضعة لإشراف ورقابة هيئة السوق المالية";
-const socialImage =
-  "https://storage.googleapis.com/gpt-engineer-file-uploads/ZXGs0DQqPnUdno3heOyjtMPJYtS2/social-images/social-1774888425976-IMG_4053.webp";
+const socialImage = "https://rifanss.com/og-share.jpg";
 
 // The app is a hash-routed single-page application, so every screen renders
 // from this route. It must run client-side only: the app reads
@@ -21,6 +20,9 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
       { property: "og:image", content: socialImage },
+      { property: "og:image:width", content: "1672" },
+      { property: "og:image:height", content: "941" },
+      { property: "og:image:type", content: "image/jpeg" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: socialImage },
       {
