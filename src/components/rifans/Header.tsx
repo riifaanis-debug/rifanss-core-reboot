@@ -7,7 +7,7 @@ import Logo from './Logo';
 import { getMyNotifications, markAllNotificationsRead, markNotificationRead, customerTargetHash, subscribeMyNotifications, formatBadge } from '../../lib/notifications';
 import { navigateTo } from '../../utils/scrollManager';
 
-const Header: React.FC = () => {
+const Header: React.FC<{ overlaySafeArea?: boolean }> = ({ overlaySafeArea = false }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout, token } = useAuth();
@@ -115,7 +115,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-[52px] sm:h-[60px] md:h-[70px] flex items-center
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${overlaySafeArea ? 'pt-[env(safe-area-inset-top)] h-[calc(52px+env(safe-area-inset-top))] sm:h-[calc(60px+env(safe-area-inset-top))] md:h-[calc(70px+env(safe-area-inset-top))]' : 'h-[52px] sm:h-[60px] md:h-[70px]'} flex items-center
         ${isScrolled 
           ? 'bg-white/85 dark:bg-black/80 backdrop-blur-xl border-b border-gold/20 shadow-sm' 
           : 'bg-transparent border-b border-transparent shadow-none'}`}>
