@@ -196,7 +196,9 @@ export async function dispatchPendingEmails(limit = 20) {
     try {
       const built = await buildEmail(admin, row);
       if ("skip" in built) patch = { status: "skipped", error: built.skip };
-      else if (!built.to) patch = { status: "skipped", error: "no_recipient" };
+      else if (!built.to) patch = row.recipient_role === "admin"
+        ? { status: "failed", error: "admin_email_not_configured" }
+        : { status: "skipped", error: "no_recipient" };
       else {
         const res: any = await sendMail({ to: built.to, subject: built.subject, html: built.html });
         patch = res?.skipped ? { status: "failed", error: String(res.reason || "not_configured") }
