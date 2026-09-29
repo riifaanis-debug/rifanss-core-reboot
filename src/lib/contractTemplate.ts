@@ -490,36 +490,12 @@ export function extractContractData(input: HTMLElement | ContractData): Contract
  * بناء صفحات A4 من النصوص نفسها (طباعة / PDF)
  * ═══════════════════════════════════════════════════════════════ */
 
-export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): string {
+/**
+ * المصدر الوحيد لنص العقد بصيغة كتل تُوزَّع على صفحات A4 في العارض الموحد
+ * (العرض = الطباعة = PDF). الترويسة والتذييل يضيفهما العارض لكل صفحة.
+ */
+export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
   const c = normalizeContract(raw);
-
-  const renderHeader = () => `
-    <div class="a4-header" style="margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2.5px solid #C5A059;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="text-align: left; direction: ltr;">
-          <div style="font-size: 14px; font-weight: 800; color: #22042C; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            RIFANIS FINANCIAL COMPANY
-          </div>
-          <div style="font-size: 10px; font-weight: 500; color: #666666; margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            Limited Liability Company | Riyadh, KSA
-          </div>
-        </div>
-        <div>
-          <img src="${rifansLogo}" alt="Rifanis Financial" style="height: 48px; width: auto; object-fit: contain;" />
-        </div>
-      </div>
-    </div>
-  `;
-
-  const renderFooter = (pageIndex: number, totalPages: number) => `
-    <div class="a4-footer" style="margin-top: auto; padding-top: 8px; border-top: 1.5px solid #E5E7EB;">
-      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #4B5563; direction: ltr; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <div style="font-weight: 700; color: #22042C;">rifanss.com</div>
-        <div style="font-weight: 700; color: #22042C;">Page ${pageIndex} of ${totalPages}</div>
-        <div style="font-weight: 600; color: #6B7280;">© 2026 Rifanis Financial</div>
-      </div>
-    </div>
-  `;
 
   const productsBlock = () => {
     const rows =
@@ -527,7 +503,7 @@ export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): s
         ? `<tr>
              <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${c.bank}</td>
              <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">---</td>
-             <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-family: monospace;">---</td>
+             <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; ">---</td>
              <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 700;">--- ريال</td>
            </tr>`
         : c.products
@@ -536,7 +512,7 @@ export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): s
       <tr>
         <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${c.bank}</td>
         <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right;">${p.type || 'منتج تمويلي'}</td>
-        <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-family: monospace;">${p.accountNumber || p.account_number || '---'}</td>
+        <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; ">${p.accountNumber || p.account_number || '---'}</td>
         <td style="padding: 7px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 700; color: #22042C;">${formatAmount(p.amount)} ريال سعودي</td>
       </tr>`
             )
@@ -575,7 +551,7 @@ export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): s
           </tr>
           <tr style="background: #ffffff; border-bottom: 1px solid #E5E7EB;">
             <td style="padding: 6px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">رقم الحساب الجاري:</td>
-            <td style="padding: 6px 12px; font-weight: 800; color: #22042C; font-family: monospace;">${c.currentAccountNumber}</td>
+            <td style="padding: 6px 12px; font-weight: 800; color: #22042C; ">${c.currentAccountNumber}</td>
           </tr>
           <tr style="background: #F9FAFB;">
             <td style="padding: 6px 12px; font-weight: 700; color: #4B5563; border-left: 1px solid #E5E7EB;">المبلغ المحجوز في الحساب من المبالغ المستثناة من الحجز:</td>
@@ -586,162 +562,118 @@ export function buildOfficialContractA4Pages(raw: HTMLElement | ContractData): s
     </div>
   `;
 
-  const renderSection = (s: ContractSection) => `
-    <div style="margin-bottom: 11px;">
-      <h3 style="font-size: 13px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">${s.title}</h3>
-      ${(s.paragraphs || [])
-        .map(
-          (p) =>
-            `<p style="font-size: 11px; line-height: 1.65; text-align: right; margin: 0 0 4px 0; color: #1f2937;">${p}</p>`
-        )
-        .join('')}
-      ${
-        s.items && s.items.length
-          ? `<div style="padding-right: 8px; font-size: 11px; line-height: 1.65; color: #1f2937;">${s.items
-              .map((it, i) => `<div style="margin-bottom: 2px;"><strong>${i + 1}.</strong> ${it}</div>`)
-              .join('')}</div>`
-          : ''
-      }
-      ${s.block === 'products' ? productsBlock() : ''}
-      ${s.block === 'account' ? accountBlock() : ''}
-    </div>
-  `;
+  const P = (p: string) =>
+    `<p style="font-size: 12px; line-height: 1.75; text-align: right; margin: 0; color: #1f2937;">${p}</p>`;
+  const H = (t: string) =>
+    `<h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">${t}</h3>`;
 
-  const pageStyle =
-    "box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; padding: 12mm 15mm; background: #ffffff; color: #1f2937; font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; direction: rtl; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative;";
+  const blocks: string[] = [];
 
-  /* ── الصفحة 1: العنوان + الأطراف + التمهيد + المواد 1-3 ── */
-  const sections = c.content.sections;
-  const page1Sections = sections.filter((s) => ['a1', 'a2', 'a3'].includes(s.key));
-  const page2Sections = sections.filter((s) => ['a4', 'a5', 'a6', 'a7', 'a8'].includes(s.key));
-  const page3Sections = sections.filter((s) => ['a9', 'a10', 'a11', 'a12', 'a13'].includes(s.key));
-
-  const page1Html = `
-    <div class="contract-a4-page" style="${pageStyle}">
-      <div>
-        ${renderHeader()}
-
-        <div style="text-align: center; margin-bottom: 14px;">
-          <div style="font-size: 13.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">${FIRST_PARTY.name}</div>
-          <div style="font-size: 15px; font-weight: 800; color: #22042C; background: #FAF6ED; border: 1.5px solid #EADBBA; border-radius: 8px; padding: 6px 18px; display: inline-block;">
-            ${c.content.title}
-          </div>
-          <div style="display: flex; justify-content: center; gap: 20px; margin-top: 6px; font-size: 11px; color: #374151; background: #F9FAFB; padding: 6px 14px; border-radius: 6px; border: 1px solid #E5E7EB;">
-            <span>رقم ملف العميل: <strong style="font-family: monospace; color: #22042C;">${c.fileNumber}</strong></span>
-            <span>رقم العقد: <strong style="font-family: monospace; color: #22042C;">${c.submissionId}</strong></span>
-            <span>تاريخ العقد: <strong style="color: #22042C;">${c.contractDate}</strong></span>
-          </div>
-        </div>
-
-        <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden; margin-bottom: 14px;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 11.5px;">
-            <thead>
-              <tr style="background: #F3EFF5; border-bottom: 1.5px solid #D1D5DB;">
-                <th style="padding: 6px 12px; font-weight: 800; color: #22042C; text-align: right; width: 50%; border-left: 1px solid #D1D5DB; font-size: 12px;">الطرف الأول</th>
-                <th style="padding: 6px 12px; font-weight: 800; color: #22042C; text-align: right; width: 50%; font-size: 12px;">الطرف الثاني</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="padding: 8px 12px; vertical-align: top; border-left: 1px solid #E5E7EB; line-height: 1.75;">
-                  <div><strong>الاسم:</strong> ${FIRST_PARTY.name}</div>
-                  <div><strong>الرقم الوطني الموحد:</strong> ${FIRST_PARTY.unifiedNumber}</div>
-                  <div><strong>ويمثلها:</strong> ${FIRST_PARTY.representative} بصفة ${FIRST_PARTY.title}</div>
-                  <div><strong>وبموجب تفويض رقم:</strong> ${FIRST_PARTY.delegationNumber}</div>
-                </td>
-                <td style="padding: 8px 12px; vertical-align: top; line-height: 1.75;">
-                  <div><strong>اسم العميل:</strong> ${c.clientName}</div>
-                  <div><strong>رقم الهوية الوطنية:</strong> <span style="font-family: monospace; font-weight: 700;">${c.nationalId}</span></div>
-                  <div><strong>رقم الجوال:</strong> <span style="direction: ltr; display: inline-block; font-weight: 700;">${c.mobile}</span></div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 13px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">التمهيد:</h3>
-          ${c.content.preamble
-            .map(
-              (p) =>
-                `<p style="font-size: 11px; line-height: 1.65; text-align: right; margin: 0 0 4px 0; color: #1f2937;">${p}</p>`
-            )
-            .join('')}
-        </div>
-
-        ${page1Sections.map(renderSection).join('')}
+  /* العنوان وبيانات العقد */
+  blocks.push(`
+    <div style="text-align: center;">
+      <div style="font-size: 17px; font-weight: 800; color: #22042C; background: #FAF6ED; border: 1.5px solid #EADBBA; border-radius: 8px; padding: 7px 18px; display: inline-block;">
+        ${c.content.title}
       </div>
-
-      ${renderFooter(1, 3)}
-    </div>
-  `;
-
-  const page2Html = `
-    <div class="contract-a4-page" style="${pageStyle}">
-      <div>
-        ${renderHeader()}
-        ${page2Sections.map(renderSection).join('')}
+      <div style="display: flex; justify-content: center; gap: 20px; margin-top: 8px; font-size: 11.5px; color: #374151; background: #FBFAF8; padding: 6px 14px; border-radius: 6px; border: 1px solid #E5E7EB;">
+        <span>رقم ملف العميل: <strong style="color: #22042C;">${c.fileNumber}</strong></span>
+        <span>رقم العقد: <strong style="color: #22042C;">${c.submissionId}</strong></span>
+        <span>تاريخ العقد: <strong style="color: #22042C;">${c.contractDate}</strong></span>
       </div>
-      ${renderFooter(2, 3)}
-    </div>
-  `;
+    </div>`);
 
-  const page3Html = `
-    <div class="contract-a4-page" style="${pageStyle}">
-      <div>
-        ${renderHeader()}
-        ${page3Sections.map(renderSection).join('')}
+  /* الأطراف */
+  blocks.push(`
+    <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <thead>
+          <tr style="background: #F3EFF5; border-bottom: 1.5px solid #D1D5DB;">
+            <th style="padding: 6px 12px; font-weight: 800; color: #22042C; text-align: right; width: 50%; border-left: 1px solid #D1D5DB;">الطرف الأول</th>
+            <th style="padding: 6px 12px; font-weight: 800; color: #22042C; text-align: right; width: 50%;">الطرف الثاني</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px 12px; vertical-align: top; border-left: 1px solid #E5E7EB; line-height: 1.8;">
+              <div><strong>الاسم:</strong> ${FIRST_PARTY.name}</div>
+              <div><strong>الرقم الوطني الموحد:</strong> ${FIRST_PARTY.unifiedNumber}</div>
+              <div><strong>ويمثلها:</strong> ${FIRST_PARTY.representative} بصفة ${FIRST_PARTY.title}</div>
+              <div><strong>وبموجب تفويض رقم:</strong> ${FIRST_PARTY.delegationNumber}</div>
+            </td>
+            <td style="padding: 8px 12px; vertical-align: top; line-height: 1.8;">
+              <div><strong>اسم العميل:</strong> ${c.clientName}</div>
+              <div><strong>رقم الهوية الوطنية:</strong> <span style="font-weight: 700;">${c.nationalId}</span></div>
+              <div><strong>رقم الجوال:</strong> <span style="direction: ltr; display: inline-block; font-weight: 700;">${c.mobile}</span></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`);
 
-        <div style="border: 1.5px solid #22042C; border-radius: 8px; padding: 8px 12px; background: #FAFAFA; margin-bottom: 10px;">
-          <div style="font-size: 13px; font-weight: 800; color: #22042C; text-align: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 6px; margin-bottom: 8px;">
-            اعتماد وتوقيع أطراف العقد
+  /* التمهيد */
+  c.content.preamble.forEach((p, i) => blocks.push(i === 0 ? H('التمهيد:') + P(p) : P(p)));
+
+  /* المواد — العنوان يبقى مع أول فقرة، وبقية الفقرات كتل مستقلة لتقسيم سليم بين الصفحات */
+  c.content.sections.forEach((s: ContractSection) => {
+    const paras = s.paragraphs || [];
+    const items = s.items || [];
+    const itemHtml = (it: string, i: number) =>
+      `<div style="padding-right: 8px; font-size: 12px; line-height: 1.75; color: #1f2937;"><strong>${i + 1}.</strong> ${it}</div>`;
+    if (paras.length) {
+      blocks.push(H(s.title) + P(paras[0]));
+      paras.slice(1).forEach((p) => blocks.push(P(p)));
+      items.forEach((it, i) => blocks.push(itemHtml(it, i)));
+    } else if (items.length) {
+      blocks.push(H(s.title) + itemHtml(items[0], 0));
+      items.slice(1).forEach((it, i) => blocks.push(itemHtml(it, i + 1)));
+    } else {
+      blocks.push(H(s.title));
+    }
+    if (s.block === 'products') blocks.push(productsBlock());
+    if (s.block === 'account') blocks.push(accountBlock());
+  });
+
+  /* التواقيع والختم */
+  blocks.push(`
+    <div style="border: 1.5px solid #22042C; border-radius: 8px; padding: 10px 12px; background: #FBFAF8;">
+      <div style="font-size: 13.5px; font-weight: 800; color: #22042C; text-align: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 6px; margin-bottom: 8px;">
+        اعتماد وتوقيع أطراف العقد
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="text-align: center; border-left: 1px solid #E5E7EB; padding-left: 8px;">
+          <div style="font-size: 12px; font-weight: 800; color: #22042C; margin-bottom: 3px;">ختم وتوقيع الطرف الأول</div>
+          <div style="height: 90px; display: flex; align-items: center; justify-content: center;">
+            <img src="${rifansStampImg}" alt="ختم ريفانس المالية" style="max-height: 90px; width: auto; object-fit: contain; mix-blend-mode: multiply;" />
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div style="text-align: center; border-left: 1px solid #E5E7EB; padding-left: 8px;">
-              <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">ختم وتوقيع الطرف الأول</div>
-              <div style="height: 80px; display: flex; align-items: center; justify-content: center;">
-                <img src="${rifansStampImg}" alt="ختم ريفانس المالية" style="max-height: 80px; width: auto; object-fit: contain; mix-blend-mode: multiply;" />
-              </div>
-              <div style="font-size: 11px; font-weight: 800; color: #22042C; margin-top: 2px;">${FIRST_PARTY.name}</div>
-              <div style="font-size: 9.5px; color: #4B5563;">الرقم الوطني الموحد: ${FIRST_PARTY.unifiedNumber}</div>
-              <div style="font-size: 9.5px; color: #4B5563;">يمثلها: ${FIRST_PARTY.representative} – ${FIRST_PARTY.title}</div>
-            </div>
-
-            <div style="text-align: center; padding-right: 8px;">
-              <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-bottom: 3px;">توقيع الطرف الثاني (العميل)</div>
-              <div style="height: 80px; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px dashed #D1D5DB; border-radius: 6px; padding: 4px;">
-                ${
-                  c.signatureData
-                    ? `<img src="${c.signatureData}" alt="توقيع العميل" style="max-height: 74px; max-width: 100%; object-fit: contain;" />`
-                    : c.isSigned
-                    ? `<div style="color: #16a34a; font-size: 10.5px; font-weight: 700;">✓ تم التوقيع والاعتماد الإلكتروني</div>`
-                    : `<div style="color: #9CA3AF; font-size: 10.5px; font-style: italic;">بانتظار التوقيع الإلكتروني للعميل</div>`
-                }
-              </div>
-              <div style="font-size: 11px; font-weight: 800; color: #22042C; margin-top: 3px;">${c.clientName}</div>
-              <div style="font-size: 9.5px; color: #4B5563;">رقم الهوية: ${c.nationalId}</div>
-              <div style="font-size: 9.5px; color: #4B5563;">${
-                c.signedAt ? `تاريخ ووقت التوقيع: ${new Date(c.signedAt).toLocaleString('ar-SA')}` : 'تاريخ ووقت التوقيع: —'
-              }</div>
-            </div>
-          </div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-top: 2px;">${FIRST_PARTY.name}</div>
+          <div style="font-size: 10px; color: #4B5563;">الرقم الوطني الموحد: ${FIRST_PARTY.unifiedNumber}</div>
+          <div style="font-size: 10px; color: #4B5563;">يمثلها: ${FIRST_PARTY.representative} – ${FIRST_PARTY.title}</div>
         </div>
-
-        <div style="border-top: 1px solid #E5E7EB; padding-top: 6px; text-align: center; font-size: 9.5px; color: #6B7280;">
-          <div>رقم العقد: <strong style="font-family: monospace; color: #22042C;">${c.submissionId}</strong> • رقم ملف العميل: <strong style="font-family: monospace; color: #22042C;">${c.fileNumber}</strong> • رقم المرجع الإلكتروني: <strong style="font-family: monospace; color: #22042C;">${c.submissionId}</strong></div>
-          <div style="margin-top: 2px;">هذه الوثيقة صادرة عن النظام الإلكتروني لشركة ريفانس المالية وتعد ملزمة نظاماً بمجرد اعتمادها والتوقيع عليها.</div>
+        <div style="text-align: center; padding-right: 8px;">
+          <div style="font-size: 12px; font-weight: 800; color: #22042C; margin-bottom: 3px;">توقيع الطرف الثاني (العميل)</div>
+          <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px dashed #D1D5DB; border-radius: 6px; padding: 4px;">
+            ${
+              c.signatureData
+                ? `<img src="${c.signatureData}" alt="توقيع العميل" style="max-height: 82px; max-width: 100%; object-fit: contain;" />`
+                : c.isSigned
+                ? `<div style="color: #16a34a; font-size: 11px; font-weight: 700;">✓ تم التوقيع والاعتماد الإلكتروني</div>`
+                : `<div style="color: #9CA3AF; font-size: 11px; font-style: italic;">بانتظار التوقيع الإلكتروني للعميل</div>`
+            }
+          </div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-top: 3px;">${c.clientName}</div>
+          <div style="font-size: 10px; color: #4B5563;">رقم الهوية: ${c.nationalId}</div>
+          <div style="font-size: 10px; color: #4B5563;">${
+            c.signedAt ? `تاريخ ووقت التوقيع: ${new Date(c.signedAt).toLocaleString('ar-SA')}` : 'تاريخ ووقت التوقيع: —'
+          }</div>
         </div>
       </div>
+    </div>`);
 
-      ${renderFooter(3, 3)}
-    </div>
-  `;
+  blocks.push(`
+    <div style="border-top: 1px solid #E5E7EB; padding-top: 6px; text-align: center; font-size: 10px; color: #6B7280;">
+      <div>رقم العقد: <strong style="color: #22042C;">${c.submissionId}</strong> • رقم ملف العميل: <strong style="color: #22042C;">${c.fileNumber}</strong> • رقم المرجع الإلكتروني: <strong style="color: #22042C;">${c.submissionId}</strong></div>
+      <div style="margin-top: 2px;">هذه الوثيقة صادرة عن النظام الإلكتروني لشركة ريفانس المالية وتعد ملزمة نظاماً بمجرد اعتمادها والتوقيع عليها.</div>
+    </div>`);
 
-  return `
-    <div id="rifans-official-contract-wrapper" style="direction: rtl;">
-      ${page1Html}
-      ${page2Html}
-      ${page3Html}
-    </div>
-  `;
+  return blocks.map((b) => b.replace(/#22042C/g, '#2A0E32').replace(/#C5A059/g, '#B99A55'));
 }

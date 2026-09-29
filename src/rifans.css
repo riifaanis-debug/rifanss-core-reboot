@@ -724,3 +724,21 @@ label:has(+ div > input:not([type=checkbox]):not([type=radio])) {
   font-weight: 400 !important;
   margin-bottom: 2px !important;
 }
+
+/* ═══ عارض المستندات الموحد A4 — الطباعة ═══ */
+@media screen {
+  #a4-print-host { display: none !important; }
+}
+@media print {
+  body.a4-printing { width: 210mm !important; height: auto !important; overflow: visible !important; }
+  body.a4-printing > *:not(#a4-print-host) { display: none !important; }
+  body.a4-printing #a4-print-host,
+  body.a4-printing #a4-print-host * { visibility: visible !important; }
+  body.a4-printing #a4-print-host { display: block !important; position: static !important; width: 210mm !important; }
+  #a4-print-host .a4-page {
+    width: 210mm !important; height: 296.5mm !important; margin: 0 !important; box-shadow: none !important;
+    break-after: page; page-break-after: always; break-inside: avoid; page-break-inside: avoid;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  #a4-print-host .a4-page:last-child { break-after: auto; page-break-after: auto; }
+}

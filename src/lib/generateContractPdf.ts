@@ -5,8 +5,20 @@ import rifansStampImg from '@/assets/rifans-stamp.png';
 import {
   ContractData,
   extractContractData,
-  buildOfficialContractA4Pages
+  buildContractBlocks,
+  normalizeContract,
 } from './contractTemplate';
+import { HtmlBlock } from '../components/rifans/documents/A4Document';
+import { exportA4Pdf, printA4 } from '../components/rifans/documents/a4Export';
+import { withOffscreenDocument } from '../components/rifans/documents/offscreen';
+import { createElement } from 'react';
+
+/** كتل العقد الموحدة + بيانات الترويسة — نفس ما يعرضه العارض */
+export function contractDocument(target: HTMLElement | ContractData) {
+  const c = normalizeContract(target);
+  const blocks = buildContractBlocks(target).map((html, i) => createElement(HtmlBlock, { key: i, html }));
+  return { blocks, meta: { docType: c.content.title, docNumber: `رقم العقد ${c.submissionId}` } };
+}
 
 /* ── Clean Arabic File Name (Handles URL Decoding & Character Formatting) ── */
 export const cleanArabicFileName = (name?: string, fallbackId?: string): string => {
@@ -111,76 +123,10 @@ export const generateContractPdf = async (
     const id = data.submissionId || '1787873399904';
     const finalFileName = cleanArabicFileName(fileName, id);
 
-    // Preload logo and stamp
-    const [logoData, stampData] = await Promise.all([
-      toDataUrl(rifansLogo),
-      toDataUrl(rifansStampImg),
-    ]);
-
-    // Build official A4 HTML with embedded preloaded data URLs
-    let html = buildOfficialContractA4Pages(data);
-    html = html.replace(rifansLogo, logoData).replace(rifansStampImg, stampData);
-
-    // Mount off-screen container
-    const container = document.createElement('div');
-    container.id = 'rifans-pdf-render-host';
-    Object.assign(container.style, {
-      position: 'fixed',
-      left: '-9999px',
-      top: '0',
-      width: '794px', // 210mm @ 96 DPI
-      background: '#ffffff',
-      zIndex: '-1',
-      overflow: 'visible',
-      direction: 'rtl',
-    });
-    container.innerHTML = html;
-    document.body.appendChild(container);
-
-    try {
-      await waitForAssets(container);
-      await new Promise((r) => setTimeout(r, 100)); // Allow font rendering
-
-      const pageElements = Array.from(
-        container.querySelectorAll('.contract-a4-page')
-      ) as HTMLElement[];
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true,
-      });
-
-      for (let i = 0; i < pageElements.length; i++) {
-        const pageEl = pageElements[i];
-
-        const canvas = await html2canvas(pageEl, {
-          scale: 2.5, // High resolution for crystal clear print & zoom
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          windowWidth: 794,
-          imageTimeout: 15000,
-        });
-
-        if (i > 0) {
-          pdf.addPage('a4', 'p');
-        }
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-      }
-
-      // Output as Blob
-      const blob = pdf.output('blob');
-      return { pdf, blob };
-    } finally {
-      if (document.body.contains(container)) {
-        document.body.removeChild(container);
-      }
-    }
+    void finalFileName;
+    const { blocks, meta } = contractDocument(data);
+    const blob = await withOffscreenDocument(blocks, meta, (root) => exportA4Pdf(root));
+    return { pdf: null as unknown as jsPDF, blob };
   }
 
   // Fallback for non-contract documents (e.g. receipts, invoices in Admin Dashboard)
@@ -284,41 +230,9 @@ export const printContractPdf = async (
 
   if (isContract) {
     const data = extractContractData(target);
-    const html = buildOfficialContractA4Pages(data);
-
-    // Remove any existing print area
-    const existing = document.getElementById('rifans-official-print-area');
-    if (existing) existing.remove();
-
-    // Create official print container
-    const printContainer = document.createElement('div');
-    printContainer.id = 'rifans-official-print-area';
-    printContainer.innerHTML = html;
-    document.body.appendChild(printContainer);
-
-    // Wait for assets in print container
-    await waitForAssets(printContainer);
-
-    // Add printing class to body
-    document.body.classList.add('is-printing-contract');
-
-    // Cleanup helper
-    const cleanup = () => {
-      document.body.classList.remove('is-printing-contract');
-      if (document.body.contains(printContainer)) {
-        document.body.removeChild(printContainer);
-      }
-    };
-
-    window.addEventListener('afterprint', cleanup, { once: true });
-    // Safety cleanup timeout in case afterprint does not fire (mobile browsers)
-    setTimeout(cleanup, 20000);
-
-    // Slight delay to allow DOM styles to apply before print dialog
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        window.print();
-      }, 100);
+    const { blocks, meta } = contractDocument(data);
+    await withOffscreenDocument(blocks, meta, async (root) => {
+      await printA4(root);
     });
     return;
   }

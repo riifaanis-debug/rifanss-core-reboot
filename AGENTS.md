@@ -11,3 +11,4 @@
 - Customer/admin sessions come from the built-in auth system; the server issues a one-time magic-link token only after a verified OTP or admin password (src/lib/auth-session.server.ts). Why: browser-held sessions could be forged.
 - All table access is enforced by RLS (owner via current_app_user_id(), admin via user_roles/is_admin()); files go only through /api/public/uploads with ownership checks. Why: the browser has direct database access.
 - Invoices/promissory notes: one active doc per request (partial unique index on doc_status='active'); replacements mark old 'replaced', never delete/edit. Why: prevent duplicates while keeping history.
+- All official documents render through src/components/rifans/documents (A4Document paginates blocks into real A4 pages; DocumentViewer scales them; a4Export clones the same pages for PDF/print). Why: screen, PDF and print must be identical from one source.
