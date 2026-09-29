@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { UserProfile, CustomerRequest, UserProduct, UserDocument } from '../../types';
-import { X, User, Phone, CreditCard, LogOut, FileText, Clock, Briefcase, Edit, CheckCircle2, AlertTriangle, MapPin, Building2, Wallet, Plus, Trash2, FolderOpen, Upload, Paperclip, QrCode, Loader2, ArrowRight, Bell, PenTool, UserPlus, ChevronDown, Scale, Home, Receipt, BarChart3, MessageSquare, Shield, Copy, CheckCircle, MessageCircle, Eye, Inbox, RotateCcw, Hash } from 'lucide-react';
+import { X, User, Phone, CreditCard, LogOut, FileText, Clock, Briefcase, Edit, CheckCircle2, AlertTriangle, MapPin, Building2, Wallet, Plus, Trash2, FolderOpen, Upload, Paperclip, QrCode, Loader2, ArrowRight, Bell, PenTool, UserPlus, ChevronDown, Scale, Home, Receipt, BarChart3, MessageSquare, Shield, Copy, CheckCircle, MessageCircle, Eye, Inbox, RotateCcw, Hash, Mail } from 'lucide-react';
 import CustomerOpenRequests from './CustomerOpenRequests';
 import { CustomerPaymentRequests } from './PaymentRequests';
 import ChatPage from './ChatPage';
@@ -111,7 +111,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
   const [isUploading, setIsUploading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
-  const [isPersonalInfoOpen, setIsPersonalInfoOpen] = useState(true);
+  const [isPersonalInfoOpen, setIsPersonalInfoOpen] = useState(false);
 
   // Fetch unread chat messages count
   useEffect(() => {
