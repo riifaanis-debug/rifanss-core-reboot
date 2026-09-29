@@ -1,3 +1,4 @@
+import { notifyCustomer, notifyAdmins } from '@/lib/notifications';
 import { supabase } from '@/integrations/supabase/client';
 
 export type OpenFieldType = 'text' | 'choice' | 'dropdown' | 'amount' | 'number' | 'date' | 'attachment';
@@ -59,13 +60,11 @@ export const createOpenRequest = async (params: {
   if (error) throw error;
 
   // Notification for the client
-  await supabase.from('notifications').insert({
-    id: `NOT-${Date.now()}-or`,
-    user_id: params.userId,
-    submission_id: id,
+  await notifyCustomer({
+    userId: params.userId, event: 'open_request_created', type: 'open_request',
     title: 'طلب مفتوح جديد',
     message: `وصلك طلب جديد بعنوان: ${params.title}. يرجى الدخول لقسم "الطلبات المفتوحة" لتعبئة البيانات.`,
-    type: 'system',
+    targetType: 'open_request', targetId: id, submissionId: id,
   });
 
   return id;
@@ -110,16 +109,5 @@ export const submitOpenRequestAnswers = async (
     .eq('id', id);
   if (error) throw error;
 
-  // Admin notification in-app (stored under the user for visibility; admin dashboard
-  // reads ALL notifications via getAdminNotifications, so user_id here is fine)
-  const userStr = localStorage.getItem('user');
-  const userId = userStr ? JSON.parse(userStr).id : 'unknown';
-  await supabase.from('notifications').insert({
-    id: `NOT-${Date.now()}-ors`,
-    user_id: userId,
-    submission_id: id,
-    title: 'تم إرسال طلب مفتوح',
-    message: 'قام العميل بتعبئة وإرسال الطلب المفتوح.',
-    type: 'status_update',
-  });
+  await notifyAdmins('documents_submitted', id);
 };
