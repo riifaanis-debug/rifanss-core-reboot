@@ -93,13 +93,15 @@ export const HtmlBlock: React.FC<{ html: string }> = ({ html }) => <div dangerou
 interface A4DocumentProps extends DocMeta {
   blocks: React.ReactNode[];
   showPageLabels?: boolean;
+  labelHeight?: number;
+  labelFontSize?: number;
 }
 
 /**
  * المصدر الموحد: يوزّع كتل المحتوى على صفحات A4 مستقلة بقياس ارتفاعها الفعلي.
  * نفس الصفحات تُعرض وتُطبع وتُحوَّل إلى PDF.
  */
-export const A4Document: React.FC<A4DocumentProps> = ({ blocks, docType, docNumber, showPageLabels }) => {
+export const A4Document: React.FC<A4DocumentProps> = ({ blocks, docType, docNumber, showPageLabels, labelHeight = 34, labelFontSize = 12 }) => {
   const measureRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<number[][] | null>(null);
   const pagesKey = useRef('');
@@ -150,7 +152,7 @@ export const A4Document: React.FC<A4DocumentProps> = ({ blocks, docType, docNumb
         {list.map((idxs, p) => (
           <div key={p} className="a4-page-slot">
             {showPageLabels && (
-              <div className="a4-page-label" style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: DOC_COLORS.purple, padding: '10px 0 6px', fontFamily: FONT }}>
+              <div className="a4-page-label" style={{ height: labelHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: labelFontSize, fontWeight: 700, color: DOC_COLORS.purple, fontFamily: FONT }}>
                 صفحة {p + 1} من {total}
               </div>
             )}

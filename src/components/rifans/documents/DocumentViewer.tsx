@@ -92,11 +92,10 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ blocks, docType, docNum
   );
 };
 
-/* عناوين «صفحة X من Y» بحجم ثابت رغم التصغير */
 const A4DocumentWithLabels: React.FC<DocMeta & { blocks: React.ReactNode[]; scale: number; labelH: number }> = ({ scale, labelH, ...rest }) => (
-  <div style={{ ['--label-h' as any]: `${labelH / scale}px` }} className="a4-with-labels">
-    <style>{`.a4-with-labels .a4-page-label{height:var(--label-h);box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:calc(12px * var(--label-h) / ${labelH}px)!important;padding:0!important}.a4-with-labels .a4-page{box-shadow:0 4px 18px rgba(42,14,50,.14)}`}</style>
-    <A4Document {...rest} showPageLabels />
+  <div className="a4-with-labels">
+    <style>{`.a4-with-labels .a4-page{box-shadow:0 4px 18px rgba(42,14,50,.14)}`}</style>
+    <A4Document {...rest} showPageLabels labelHeight={labelH / scale} labelFontSize={12 / scale} />
   </div>
 );
 
