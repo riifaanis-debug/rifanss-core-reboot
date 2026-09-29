@@ -48,9 +48,23 @@ import {
 } from './utils/scrollManager';
 
 const LandingPage: React.FC = () => {
+  // Homepage only: drop the purple theme colour so Safari shows the video behind the status bar.
+  useEffect(() => {
+    const metas = Array.from(document.querySelectorAll('meta[name="theme-color"]')) as HTMLMetaElement[];
+    const saved = metas.map((m) => m.content);
+    metas.forEach((m) => m.remove());
+    return () => {
+      saved.forEach((c) => {
+        const m = document.createElement('meta');
+        m.name = 'theme-color';
+        m.content = c;
+        document.head.appendChild(m);
+      });
+    };
+  }, []);
   return (
     <>
-      <Header />
+      <Header overlaySafeArea />
       <IntroVideo />
       <CompanyIntro />
       <div className="relative z-10">
