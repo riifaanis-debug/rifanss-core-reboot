@@ -168,6 +168,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({ mode, nationalId, pho
                 key={i}
                 ref={el => { inputRefs.current[i] = el; }}
                 type="text"
+                data-otp="true"
                 inputMode="numeric"
                 maxLength={1}
                 value={digit}
