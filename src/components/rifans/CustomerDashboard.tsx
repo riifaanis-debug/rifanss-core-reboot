@@ -1394,9 +1394,52 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
                             {userData.fileNumber || '—'}
                           </span>
                         </div>
-                      </div>
+                       </div>
 
-                      {/* Quick actions row directly underneath hero card (100% matching attached reference image) */}
+                       {/* Customer data strip — always visible, shows ONLY filled fields */}
+                       {(() => {
+                         const clean = (v: any) => Boolean(v && String(v).trim() && String(v).trim() !== '---');
+                         const hasRegion = clean(userData.region);
+                         const hasCity = clean(userData.city);
+                         const hasBank = clean(userData.bank);
+                         const hasJob = clean(userData.jobStatus);
+                         const hasEmail = clean(userData.email);
+                         const hasAge = clean(userData.age);
+                         const stripItems = [
+                           hasRegion && { label: 'المنطقة', value: userData.region, icon: <MapPin size={11} className="shrink-0" />, ltr: false },
+                           hasCity && { label: 'المدينة', value: userData.city, icon: <MapPin size={11} className="shrink-0" />, ltr: false },
+                           hasBank && { label: 'الجهة المالية', value: userData.bank, icon: <Building2 size={11} className="shrink-0" />, ltr: false },
+                           hasJob && { label: 'الحالة الوظيفية', value: userData.jobStatus, icon: <Briefcase size={11} className="shrink-0" />, ltr: false },
+                           hasEmail && { label: 'البريد الإلكتروني', value: userData.email, icon: <Mail size={11} className="shrink-0" />, ltr: true },
+                           hasAge && { label: 'العمر', value: `${userData.age} سنة`, icon: <User size={11} className="shrink-0" />, ltr: false },
+                         ].filter(Boolean) as { label: string; value: string; icon: React.ReactNode; ltr: boolean }[];
+
+                         if (stripItems.length === 0) return null;
+
+                         return (
+                           <div className="w-full rounded-[14px] px-3 py-2.5 bg-white dark:bg-[#12031a] border border-gold/20 shadow-sm mt-2.5" dir="rtl">
+                             <div className="flex flex-wrap gap-1.5">
+                               {stripItems.map((item, i) => (
+                                 <div
+                                   key={i}
+                                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gold/10 max-w-full"
+                                 >
+                                   <span className="text-gold shrink-0">{item.icon}</span>
+                                   <span className="text-[10px] text-muted font-bold whitespace-nowrap">{item.label}:</span>
+                                   <span
+                                     dir={item.ltr ? 'ltr' : undefined}
+                                     className="text-[12px] font-bold text-brand dark:text-white whitespace-nowrap max-w-[180px] sm:max-w-[260px] overflow-hidden text-ellipsis"
+                                   >
+                                     {item.value}
+                                   </span>
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                         );
+                       })()}
+
+                       {/* Quick actions row directly underneath hero card (100% matching attached reference image) */}
                       <div className="w-full overflow-x-auto scrollbar-none pt-2.5 sm:pt-3 pb-1 mt-2.5 sm:mt-3" dir="rtl">
                         <div className={`grid gap-2 sm:gap-2.5 ${
                           quickActions.length <= 2 
