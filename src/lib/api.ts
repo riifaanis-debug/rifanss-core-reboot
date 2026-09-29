@@ -1,6 +1,7 @@
 import { uploadPrivateFile } from '@/lib/functions';
 import { invokeFunction } from "@/lib/functions";
 import { supabase } from '@/integrations/supabase/client';
+import { notifyCustomer, notifyAdmins, getAdminInbox } from '@/lib/notifications';
 import { resolveContractKind, feeRateFor, calcFee } from '@/lib/contractTemplate';
 
 // Helper to get current user ID from localStorage
@@ -14,7 +15,6 @@ const getCurrentUserId = (): string | null => {
 
 // Local storage resilience helpers for offline / unconfigured database
 const LOCAL_REQUESTS_KEY = 'rifans_offline_requests';
-const LOCAL_NOTIFICATIONS_KEY = 'rifans_offline_notifications';
 
 const getOfflineRequests = (): any[] => {
   try {
@@ -34,25 +34,6 @@ const saveOfflineRequest = (req: any) => {
     localStorage.setItem(LOCAL_REQUESTS_KEY, JSON.stringify(list));
   } catch (err) {
     console.warn('Failed to save offline request', err);
-  }
-};
-
-const getOfflineNotifications = (): any[] => {
-  try {
-    const raw = localStorage.getItem(LOCAL_NOTIFICATIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveOfflineNotification = (notif: any) => {
-  try {
-    const list = getOfflineNotifications();
-    list.unshift(notif);
-    localStorage.setItem(LOCAL_NOTIFICATIONS_KEY, JSON.stringify(list));
-  } catch (err) {
-    console.warn('Failed to save offline notification', err);
   }
 };
 
@@ -108,23 +89,13 @@ export const submitRequest = async (requestData: any) => {
     }
   }
 
-  // Create notification
-  const notif = {
-    id: `NOT-${Date.now()}`,
-    user_id: userId,
-    submission_id: newRequest.id,
+  await notifyCustomer({
+    userId, event: 'request_submitted', type: 'new_request',
     title: 'تم استلام طلبك',
     message: `تم استلام طلبك بنجاح وهو قيد المراجعة الآن. نوع الطلب: ${newRequest.type}`,
-    type: 'new_request',
-    created_at: new Date().toISOString(),
-    is_read: false,
-  };
-  try {
-    await supabase.from('notifications').insert(notif);
-  } catch {
-    saveOfflineNotification(notif);
-  }
-  saveOfflineNotification(notif);
+    targetType: 'request', targetId: newRequest.id, submissionId: newRequest.id,
+  });
+  await notifyAdmins('request_submitted', newRequest.id);
 
   return resultData;
 };
@@ -212,47 +183,7 @@ export const deleteRequest = async (requestId: string) => {
   }
 };
 
-export const getMyNotifications = async () => {
-  const userId = getCurrentUserId();
-  if (!userId) return [];
-  let dbList: any[] = [];
-  try {
-    const { data } = await supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    if (data) dbList = data;
-  } catch {
-    // ignore
-  }
-  const localList = getOfflineNotifications().filter(n => n.user_id === userId);
-  const all = [...localList, ...dbList];
-  const seen = new Set();
-  return all.filter(n => {
-    if (seen.has(n.id)) return false;
-    seen.add(n.id);
-    return true;
-  });
-};
-
-export const markAllNotificationsRead = async () => {
-  const userId = getCurrentUserId();
-  if (!userId) return;
-  const list = getOfflineNotifications().map(n => n.user_id === userId ? { ...n, is_read: true } : n);
-  localStorage.setItem(LOCAL_NOTIFICATIONS_KEY, JSON.stringify(list));
-  try {
-    await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
-  } catch {
-    // ignore
-  }
-};
-
-export const markNotificationRead = async (id: string) => {
-  const list = getOfflineNotifications().map(n => n.id === id ? { ...n, is_read: true } : n);
-  localStorage.setItem(LOCAL_NOTIFICATIONS_KEY, JSON.stringify(list));
-  try {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
-  } catch {
-    // ignore
-  }
-};
+export { getMyNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/notifications';
 
 export const getMyContracts = async () => {
   const userId = getCurrentUserId();
@@ -393,16 +324,7 @@ export const getAdminUsers = async () => {
   }));
 };
 
-export const getAdminNotifications = async () => {
-  const { data: notifications } = await supabase.from('notifications').select('*').order('created_at', { ascending: false });
-  if (!notifications) return [];
-  
-  const userIds = [...new Set(notifications.map(n => n.user_id))];
-  const { data: users } = await supabase.from('app_users').select('id, full_name').in('id', userIds);
-  const userMap = new Map((users || []).map(u => [u.id, u.full_name]));
-  
-  return notifications.map(n => ({ ...n, user_name: userMap.get(n.user_id) || 'غير معروف' }));
-};
+export const getAdminNotifications = getAdminInbox;
 
 export const getAdminContracts = async () => {
   const { data: contracts } = await supabase.from('contracts').select('*').order('created_at', { ascending: false });
@@ -440,14 +362,7 @@ export const updateSubmissionStatus = async (id: string, status: string, comment
     else if (status === 'completed') { title = 'اكتملت معالجة الطلب'; message = 'تهانينا، تم الانتهاء من معالجة طلبك بنجاح.'; }
     else if (status === 'rejected') { title = 'تم رفض الطلب'; message = comment || 'نعتذر، لم يتم قبول طلبك.'; }
 
-    await supabase.from('notifications').insert({
-      id: `NOT-${Date.now()}`,
-      user_id: req.user_id,
-      submission_id: id,
-      title,
-      message,
-      type: 'status_change',
-    });
+    await notifyCustomer({ userId: req.user_id, event: `status_${status}`, type: 'status_change', title, message, targetType: 'request', targetId: id, submissionId: id });
   }
 };
 
@@ -478,13 +393,11 @@ export const sendContract = async (userId: string, submissionId: string) => {
 
   await supabase.from('requests').update({ status: 'contract_signature' }).eq('id', submissionId);
 
-  await supabase.from('notifications').insert({
-    id: `NOT-${Date.now()}`,
-    user_id: userId,
-    submission_id: submissionId,
+  await notifyCustomer({
+    userId, event: 'contract_issued', type: 'contract',
     title: 'عقد جديد بانتظار التوقيع',
     message: 'تم إصدار عقد جديد لطلبك، يرجى المراجعة والتوقيع الإلكتروني.',
-    type: 'contract',
+    targetType: 'contract', targetId: contractId, submissionId,
   });
 
   return contractId;
@@ -534,6 +447,7 @@ export const notifyAdminContractSigned = async (submissionId: string, contractPd
   const { data: req } = await supabase.from('requests').select('*').eq('id', submissionId).single();
 
   const files = contractPdfFile ? [contractPdfFile] : [];
+  await notifyAdmins('contract_signed', submissionId);
 
   await invokeFunction('notify-admin', {
     body: {
@@ -645,13 +559,11 @@ const createInvoiceRecord = async (userId: string, submissionId: string): Promis
   return invoiceId;
 };
 
-const notifyInvoice = (userId: string, submissionId: string) => supabase.from('notifications').insert({
-  id: `NOT-${Date.now()}-inv`,
-  user_id: userId,
-  submission_id: submissionId,
+const notifyInvoice = (userId: string, submissionId: string, invoiceId: string) => notifyCustomer({
+  userId, event: 'invoice_issued', type: 'invoice',
   title: 'فاتورة جديدة',
-  message: 'تم إصدار فاتورة جديدة لطلبك، يرجى المراجعة.',
-  type: 'invoice',
+  message: `تم إصدار فاتورة جديدة لطلبك رقم ${submissionId}، يرجى المراجعة.`,
+  targetType: 'invoice', targetId: invoiceId, submissionId,
 });
 
 export const getActiveInvoice = async (submissionId: string) => {
@@ -664,7 +576,7 @@ export const sendInvoice = async (userId: string, submissionId: string): Promise
   const existing = await getActiveInvoice(submissionId);
   if (existing) return { id: existing.id, existing: true };
   const id = await createInvoiceRecord(userId, submissionId);
-  await notifyInvoice(userId, submissionId);
+  await notifyInvoice(userId, submissionId, id);
   return { id, existing: false };
 };
 
@@ -679,7 +591,7 @@ export const replaceInvoice = async (userId: string, submissionId: string, reaso
   }
   const id = await createInvoiceRecord(userId, submissionId);
   if (old) await supabase.from('invoices').update({ replaced_by: id } as any).eq('id', old.id);
-  await notifyInvoice(userId, submissionId);
+  await notifyInvoice(userId, submissionId, id);
   return { id, existing: false };
 };
 
@@ -725,13 +637,11 @@ const createNoteRecord = async (userId: string, submissionId: string): Promise<s
   return noteId;
 };
 
-const notifyNote = (userId: string, submissionId: string) => supabase.from('notifications').insert({
-  id: `NOT-${Date.now()}-pn`,
-  user_id: userId,
-  submission_id: submissionId,
-  title: 'سند لأمر جديد',
-  message: 'تم إصدار سند لأمر إلكتروني خاص بطلبك، يرجى المراجعة والتوقيع.',
-  type: 'promissory_note',
+const notifyNote = (userId: string, submissionId: string, noteId: string) => notifyCustomer({
+  userId, event: 'note_issued', type: 'promissory_note',
+  title: 'سند لأمر بانتظار التوقيع',
+  message: 'تم إصدار سند لأمر إلكتروني مرتبط بطلبك، يرجى المراجعة والتوقيع.',
+  targetType: 'promissory_note', targetId: noteId, submissionId,
 });
 
 export const getActivePromissoryNote = async (submissionId: string) => {
@@ -744,7 +654,7 @@ export const sendPromissoryNote = async (userId: string, submissionId: string): 
   const existing = await getActivePromissoryNote(submissionId);
   if (existing) return { id: existing.id, existing: true };
   const id = await createNoteRecord(userId, submissionId);
-  await notifyNote(userId, submissionId);
+  await notifyNote(userId, submissionId, id);
   return { id, existing: false };
 };
 
@@ -759,7 +669,7 @@ export const replacePromissoryNote = async (userId: string, submissionId: string
   }
   const id = await createNoteRecord(userId, submissionId);
   if (old) await supabase.from('promissory_notes').update({ replaced_by: id } as any).eq('id', old.id);
-  await notifyNote(userId, submissionId);
+  await notifyNote(userId, submissionId, id);
   return { id, existing: false };
 };
 
@@ -795,6 +705,8 @@ export const signPromissoryNote = async (id: string, signatureData: string) => {
     signed_at: new Date().toISOString(),
     status: 'signed',
   }).eq('id', id);
+  const { data: note } = await supabase.from('promissory_notes').select('submission_id').eq('id', id).single();
+  if (note?.submission_id) await notifyAdmins('note_signed', note.submission_id);
 };
 
 // ---- WAIVE & RESCHEDULING MANAGEMENT HELPERS ----
@@ -935,7 +847,7 @@ export const processWaiveOrRescheduleRequest = async (params: ProcessWaiveResche
       notifType = 'appointment_scheduled';
     } else if (status === 'approved') {
       notifTitle = 'تمت الموافقة على طلبك';
-      notifMsg = `تهانينا! تمت الموافقة على طلبك رقم ${id} من قبل الإدارة.`;
+      notifMsg = `تمت الموافقة على طلبك رقم ${id}.`;
       notifType = 'request_approved';
     } else if (status === 'rejected') {
       notifTitle = 'تحديث بشأن طلبك';
@@ -951,18 +863,11 @@ export const processWaiveOrRescheduleRequest = async (params: ProcessWaiveResche
       notifType = 'status_change';
     } else if (status === 'completed') {
       notifTitle = 'اكتملت معالجة الطلب بنجاح';
-      notifMsg = 'تم إنجاز واكتمال جميع إجراءات طلبك بنجاح.';
+      notifMsg = `تم إنجاز واكتمال جميع إجراءات طلبك رقم ${id} بنجاح.`;
       notifType = 'request_completed';
     }
 
-    await supabase.from('notifications').insert({
-      id: `NOT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      user_id: currentReq.user_id,
-      submission_id: id,
-      title: notifTitle,
-      message: notifMsg,
-      type: notifType,
-    });
+    await notifyCustomer({ userId: currentReq.user_id, event: notifType, type: notifType, title: notifTitle, message: notifMsg, targetType: 'request', targetId: id, submissionId: id });
   }
 
   return { success: true };
@@ -1012,14 +917,7 @@ export const cancelRequestAppointment = async (id: string, reason?: string) => {
   });
 
   if (currentReq.user_id) {
-    await supabase.from('notifications').insert({
-      id: `NOT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      user_id: currentReq.user_id,
-      submission_id: id,
-      title: 'إلغاء الموعد المجدول',
-      message: `تم إلغاء الموعد المحدد مسبقاً لطلبك رقم ${id}.${reason ? ` السبب: ${reason}` : ''}`,
-      type: 'appointment_cancelled',
-    });
+    await notifyCustomer({ userId: currentReq.user_id, event: 'appointment_cancelled', type: 'appointment_cancelled', title: 'إلغاء الموعد المجدول', message: `تم إلغاء الموعد المحدد مسبقاً لطلبك رقم ${id}.${reason ? ` السبب: ${reason}` : ''}`, targetType: 'request', targetId: id, submissionId: id });
   }
 
   return { success: true };
