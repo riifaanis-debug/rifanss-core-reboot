@@ -22,6 +22,17 @@ export const Route = createFileRoute("/api/public/fn/notify-admin")({
         try {
           const { requestData, userData } = (await request.json()) as any;
 
+          // Request, signing and registration emails are now sent by the event email system.
+          const t = requestData?.type;
+          if (t === "contract_signed" || t === "new_client") {
+            return json({ success: true, skipped: true, reason: "handled_by_event_email" });
+          }
+          if (requestData?.id) {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const { data: existing } = await supabaseAdmin.from("requests").select("id").eq("id", String(requestData.id)).maybeSingle();
+            if (existing) return json({ success: true, skipped: true, reason: "handled_by_event_email" });
+          }
+
           const ADMIN_EMAIL = process.env["ADMIN_EMAIL"];
           if (!ADMIN_EMAIL) {
             console.warn("[notify-admin] skipped: ADMIN_EMAIL not configured");

@@ -18,6 +18,9 @@ const currentAppUserId = (): string | null => {
 // Legacy browser copy removed: it produced phantom/duplicate notifications.
 try { localStorage.removeItem('rifans_offline_notifications'); } catch { /* SSR / private mode */ }
 
+// Wakes the server-side email sender (emails are queued by the database itself).
+const kickEmails = () => { try { void fetch('/api/public/email-dispatch', { method: 'POST' }).catch(() => {}); } catch { /* ignore */ } };
+
 // ---------- Customer ----------
 export const notifyCustomer = async (p: {
   userId: string; event: string; title: string; message: string;
@@ -34,6 +37,7 @@ export const notifyCustomer = async (p: {
     submission_id: p.submissionId ?? null,
   } as any);
   if (error) console.error('notifyCustomer', error);
+  kickEmails();
 };
 
 export const getMyNotifications = async () => {
@@ -88,6 +92,7 @@ export const notifyAdmins = async (event: AdminEvent, submissionId?: string | nu
     p_event: event, p_submission_id: submissionId ?? null, p_target_id: null,
   });
   if (error) console.error('notifyAdmins', error);
+  kickEmails();
 };
 
 const authUid = async () => (await supabase.auth.getUser()).data.user?.id ?? null;
