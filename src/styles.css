@@ -85,3 +85,10 @@
     max-width: 1400px;
   }
 }
+
+[data-profile-tab] input,
+[data-profile-tab] textarea,
+[data-profile-tab] select {
+  text-align: right !important;
+  direction: rtl;
+}

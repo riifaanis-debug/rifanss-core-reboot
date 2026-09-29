@@ -1379,87 +1379,20 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
 
                  {/* === Mobile Dashboard Overview (matches mockup 100%) === */}
                  {(() => {
-                   const hasRequests = requests && requests.length > 0;
-                   const profileFields = hasRequests
-                     ? [userData.firstName, userData.lastName, userData.nationalId, userData.mobile, userData.email, userData.jobStatus, userData.region, userData.city, userData.age]
-                     : [userData.firstName, userData.lastName, userData.nationalId, userData.mobile, userData.email];
-                   const rawCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
-                   const completion = rawCompletion;
-                   const circumference = 2 * Math.PI * 41; // ~257.6
-                   const strokeOffset = circumference - (circumference * completion) / 100;
-                   
                    return (
                      <>
-                      {/* Hero — profile completion (100% matching attached reference image) */}
                       <div 
-                        className="relative w-full overflow-hidden rounded-[28px] sm:rounded-[32px] p-6 sm:p-7 pr-6 sm:pr-8 bg-[#18001F] shadow-[0_16px_40px_rgba(0,0,0,0.3)] border border-[#2B0432]" 
+                        className="w-full rounded-[16px] px-4 py-3 bg-[#18001F] shadow-[0_8px_20px_rgba(0,0,0,0.2)] border border-[#2B0432] text-right" 
                         dir="rtl"
                       >
-                        {/* Subtle concentric rings in the background matching reference */}
-                        <div className="absolute -left-10 -top-10 w-[320px] h-[320px] rounded-full border border-white/[0.04] pointer-events-none" />
-                        <div className="absolute -left-24 -top-24 w-[460px] h-[460px] rounded-full border border-white/[0.02] pointer-events-none" />
-                        
-                        <div className="relative z-[1] flex items-center justify-between gap-4 sm:gap-6">
-                          {/* Right side: Greeting, Customer Name, and Customer ID */}
-                          <div className="flex-1 min-w-0 text-right">
-                            <div className="text-[13px] sm:text-[14px] text-[#DEBF83] font-normal mb-1.5">
-                              مرحباً،
-                            </div>
-                            <h1 className="text-[21px] sm:text-[24px] font-bold text-[#DEBF83] leading-tight mb-2.5 truncate">
-                              {userData.fullName || 'ماجد عامر السفياني'}
-                            </h1>
-                            <div className="flex items-center gap-2 text-[13px] sm:text-[14px]">
-                              <span className="text-[#DEBF83] font-normal">رقم العميل :</span>
-                              <span dir="ltr" className="text-white font-bold font-mono tracking-wide text-[13px] sm:text-[14px]">
-                                {userData.fileNumber || 'RF-20260331-7247'}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Left side: Circular Progress Gauge, Label, and "إكمال" Pill Button */}
-                          <div className="flex flex-col items-center shrink-0">
-                            <div className="relative w-[86px] h-[86px] sm:w-[92px] sm:h-[92px]">
-                              <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                                {/* Background Track Circle */}
-                                <circle 
-                                  cx="50" 
-                                  cy="50" 
-                                  r="41" 
-                                  stroke="rgba(222, 191, 131, 0.18)" 
-                                  strokeWidth="7.5" 
-                                  fill="none"
-                                />
-                                {/* Progress Circle */}
-                                <circle 
-                                  cx="50" 
-                                  cy="50" 
-                                  r="41" 
-                                  stroke="#DEBF83" 
-                                  strokeWidth="7.5" 
-                                  fill="none" 
-                                  strokeLinecap="round" 
-                                  strokeDasharray={circumference} 
-                                  strokeDashoffset={strokeOffset} 
-                                  className="transition-all duration-700 ease-out origin-center"
-                                />
-                              </svg>
-                              <div className="absolute inset-0 flex items-center justify-center text-[#DEBF83] text-[20px] sm:text-[22px] font-bold font-sans">
-                                {completion}%
-                              </div>
-                            </div>
-                            
-                            <div className="text-[12px] sm:text-[13px] text-[#DEBF83] font-normal mt-2 whitespace-nowrap">
-                              اكتمال الملف
-                            </div>
-                            
-                            <button 
-                              type="button"
-                              onClick={() => setShowCompleteProfile(true)} 
-                              className="mt-2.5 w-[92px] sm:w-[98px] h-[32px] sm:h-[34px] rounded-[13px] bg-[#DEBF83] hover:bg-[#E8CE96] text-[#18001F] text-[13px] font-bold tracking-wide transition-all active:scale-95 shadow-sm flex items-center justify-center cursor-pointer"
-                            >
-                              إكمال
-                            </button>
-                          </div>
+                        <h1 className="text-[17px] font-bold text-[#DEBF83] leading-tight truncate">
+                          {userData.fullName || '—'}
+                        </h1>
+                        <div className="flex items-center gap-1.5 text-[12px] mt-1">
+                          <span className="text-[#DEBF83]/80 font-normal">رقم العميل:</span>
+                          <span dir="ltr" className="text-white font-bold font-mono tracking-wide">
+                            {userData.fileNumber || '—'}
+                          </span>
                         </div>
                       </div>
 
