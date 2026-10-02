@@ -27,7 +27,8 @@ const ProfileCompletionModal: React.FC = () => {
   const [needsCompletion, setNeedsCompletion] = React.useState(false);
 
   React.useEffect(() => {
-    if (!user) return;
+    // Admin accounts never complete a customer profile (and must never be deleted from here).
+    if (!user || user.role === 'admin') return;
     const checkProfile = async () => {
       const { data } = await supabase
         .from('app_users')
@@ -239,7 +240,7 @@ const ProfileCompletionModal: React.FC = () => {
             onClick={async () => {
               if (!confirm('هل أنت متأكد من إلغاء التسجيل والخروج؟ سيتم حذف حسابك.')) return;
               try {
-                await supabase.from('app_users').delete().eq('id', user.id);
+                if (user.role !== 'admin') await supabase.from('app_users').delete().eq('id', user.id);
               } catch (err) {
                 console.error('Failed to delete account:', err);
               }
