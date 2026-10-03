@@ -266,14 +266,15 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
             {mode === 'admin' && (
               <>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-brand dark:text-gold/80 px-1">user</label>
+                  <label className="text-[11px] font-bold text-brand dark:text-gold/80 px-1">البريد الإلكتروني</label>
                   <div className="relative group">
                     <User className="absolute right-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-gold" size={15} />
                     <input
-                      type="text" name="username" required
+                      type="email" name="username" required
+                      autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username"
                       value={formData.username} onChange={handleChange}
                       className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-lg py-1 pr-9 pl-3 text-[11px] focus:border-gold outline-none dark:text-white text-left dir-ltr font-mono placeholder:text-[11px]"
-                      placeholder="user"
+                      placeholder="example@mail.com"
                     />
                   </div>
                 </div>
