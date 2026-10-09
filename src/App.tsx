@@ -35,6 +35,8 @@ import Vision2030Section from './components/rifans/Vision2030Section';
 import BusinessFieldPage from './components/rifans/BusinessFieldPage';
 import ElectronicServicesPage from './components/rifans/ElectronicServicesPage';
 import DynamicServiceForm from './components/rifans/DynamicServiceForm';
+import ConsentBanner from './components/rifans/ConsentBanner';
+import { initSnapPixel, trackPageView, trackViewContent, trackStartCheckout } from './lib/snapPixel';
 import { getSubServiceById, SubServiceItem, BusinessFieldItem } from './data/businessFieldsData';
 import { 
   initGlobalScrollRestoration, 
@@ -152,6 +154,16 @@ const AppContent: React.FC = () => {
       window.removeEventListener('popstate', handleHashChange);
     };
   }, []);
+
+  // Snap Pixel: init once, PAGE_VIEW per route (deduped), VIEW_CONTENT on service pages, START_CHECKOUT on new request
+  useEffect(() => initSnapPixel(), []);
+  useEffect(() => {
+    trackPageView();
+    const m = route.match(/^#\/(service|category|product|business-field|electronic-services?|section)\b/);
+    if (m && !route.endsWith('/apply')) trackViewContent(m[1]);
+    if (route.startsWith('#/service-apply/') || (route.startsWith('#/product/') && route.endsWith('/apply'))) trackStartCheckout();
+  }, [route]);
+  useEffect(() => { if (showWaiveForm || activeServiceForm) trackStartCheckout(); }, [showWaiveForm, activeServiceForm]);
 
   // Scroll Restoration when route changes
   useEffect(() => {
@@ -382,6 +394,7 @@ const AppContent: React.FC = () => {
         />
       )}
       <ProfileCompletionModal />
+      <ConsentBanner />
 
       {/* Login Warning Modal */}
       {showLoginWarning && (

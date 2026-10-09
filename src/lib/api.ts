@@ -1,3 +1,4 @@
+import { trackApplicationSubmitted } from './snapPixel';
 import { uploadPrivateFile } from '@/lib/functions';
 import { invokeFunction } from "@/lib/functions";
 import { supabase } from '@/integrations/supabase/client';
@@ -58,6 +59,7 @@ export const submitRequest = async (requestData: any) => {
     const { data, error } = await supabase.from('requests').insert(newRequest).select().single();
     if (!error && data) {
       resultData = data;
+      trackApplicationSubmitted();
     } else {
       saveOfflineRequest(newRequest);
     }
