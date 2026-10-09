@@ -1,3 +1,4 @@
+import { trackSignUp } from '../../lib/snapPixel';
 import { invokeFunction } from "@/lib/functions";
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -120,6 +121,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose, initialMode = 'login' }) =
         onVerified={async (result: any) => {
           const u: any = await login({ token_hash: result?.token_hash });
           if (otpFlow.mode === 'register') {
+            if (u) trackSignUp();
             invokeFunction('hubspot-sync', {
               body: {
                 action: 'upsert_contact',
