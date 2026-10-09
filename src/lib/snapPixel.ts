@@ -60,6 +60,8 @@ function safePageUrl() {
 
 function send(event: string, params: Record<string, string> = {}) {
   if (!hasConsent()) return; // read consent at send time
+  // Snap reads the page URL itself — never fire on pages whose URL carries record IDs or private areas.
+  if (/^#\/(contract|invoice|promissory|dashboard|admin)/.test(window.location.hash)) return;
   loadPixel();
   const w = window as any;
   if (!w.snaptr) return;
