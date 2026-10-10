@@ -80,8 +80,25 @@ export function trackPageView() {
 export const trackViewContent = (category: string) => send('VIEW_CONTENT', { item_category: category });
 export const trackStartCheckout = () => send('START_CHECKOUT');
 export const trackSignUp = () => send('SIGN_UP');
-export const trackApplicationSubmitted = () =>
-  send('CUSTOM_EVENT_1', { description: 'FinanceApplicationSubmitted' });
+const SENT_KEY = 'rifans_snap_sent_requests';
+const REQUEST_EVENTS: Record<string, string> = {
+  waive_request: 'CUSTOM_EVENT_1',
+  rescheduling_request: 'CUSTOM_EVENT_2',
+  scheduling_request: 'CUSTOM_EVENT_2',
+};
+
+/** Call only after the database returned the saved request. Sends once per request ID; no data attached. */
+export function trackRequestSaved(type: string | undefined, requestId: string | undefined) {
+  if (typeof window === 'undefined' || !type || !requestId) return;
+  const event = REQUEST_EVENTS[type];
+  if (!event || !hasConsent()) return;
+  let sent: string[] = [];
+  try { sent = JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); } catch { sent = []; }
+  if (sent.includes(requestId)) return;
+  sent.push(requestId);
+  try { localStorage.setItem(SENT_KEY, JSON.stringify(sent.slice(-200))); } catch { /* ignore */ }
+  send(event);
+}
 
 /** Call once on app mount. */
 export function initSnapPixel() {

@@ -1,4 +1,4 @@
-import { trackApplicationSubmitted } from '../../lib/snapPixel';
+import { trackRequestSaved } from '../../lib/snapPixel';
 import { notifyCustomer, notifyAdmins } from '@/lib/notifications';
 import { invokeFunction } from "@/lib/functions";
 import React, { useState, useRef, useEffect } from 'react';
@@ -424,7 +424,7 @@ const WaiveRequestForm: React.FC<WaiveRequestFormProps> = ({ onClose, prefill })
         }).eq('id', prefill.draftId).select().single();
         if (error) throw error;
         result = updated;
-        trackApplicationSubmitted();
+        trackRequestSaved(result.type, String(result.id));
         
         // Create notification
         await notifyCustomer({
