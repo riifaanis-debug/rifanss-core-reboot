@@ -536,15 +536,6 @@ export const Footer: React.FC = () => {
               ملفات تعريف الارتباط
             </a>
           </div>
-          <div className="mt-1">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('open-ad-consent'))}
-              className="text-[12.5px] sm:text-[13px] text-gray-300 hover:text-gold transition-colors py-0.5 inline-block focus:outline-none"
-            >
-              إعدادات الإعلانات
-            </button>
-          </div>
 
           {/* Subtle bottom micro-divider */}
           <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-gold/30 to-transparent mt-4 mb-2.5" />
