@@ -754,6 +754,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       case 'pending': return 'جديد';
       case 'processing': return 'تحت الإجراء';
       case 'executing': return 'قيد التنفيذ';
+      case 'contract_signature': return 'بانتظار التوقيع';
+      case 'on_hold': return 'متوقف';
       case 'completed': return 'مكتمل';
       case 'rejected': return 'مرفوض';
       default: return status;
@@ -765,6 +767,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       case 'pending': return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'processing': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
       case 'executing': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'contract_signature': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'on_hold': return 'bg-gray-100 text-gray-700 border-gray-200';
       case 'completed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'rejected': return 'bg-rose-50 text-rose-600 border-rose-100';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
@@ -4119,6 +4123,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                     )}
 
                     {/* Attachments */}
+                    {(() => {
+                      const known = new Set(['mobile','nationalId','region','city','jobStatus','bank','totalAmount','products','attachments','signature','firstName','lastName','fullName','email']);
+                      const labels: Record<string,string> = { currentAccountNumber: 'رقم الحساب الجاري', seizedAmount: 'المبلغ المحجوز', notes: 'ملاحظات', description: 'الوصف', salary: 'الراتب', age: 'العمر', serviceType: 'نوع الخدمة' };
+                      const rest = Object.entries(selectedSubmission.data || {}).filter(([k, v]) => !known.has(k) && v !== null && v !== '' && typeof v !== 'object');
+                      const extraText = selectedSubmission.details;
+                      if (rest.length === 0 && !extraText) return null;
+                      return (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-bold text-brand dark:text-gold">بيانات إضافية</h3>
+                          <div className="grid grid-cols-2 gap-2">
+                            {rest.map(([k, v]) => (
+                              <InfoItem key={k} icon={<Hash size={14} />} label={labels[k] || k} value={String(v)} />
+                            ))}
+                          </div>
+                          {extraText && <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-xs text-brand dark:text-white whitespace-pre-wrap">{extraText}</div>}
+                        </div>
+                      );
+                    })()}
+
                     {((selectedSubmission.data?.attachments && Array.isArray(selectedSubmission.data.attachments) && selectedSubmission.data.attachments.length > 0) || 
                       (selectedSubmission.files && Array.isArray(selectedSubmission.files) && selectedSubmission.files.length > 0)) && (
                       <div className="space-y-4">
@@ -4180,7 +4203,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   <div className="space-y-8">
                     {/* Status Update Card */}
                     <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-[24px] border border-gold/10 space-y-4">
-                      <h3 className="text-sm font-bold text-brand dark:text-gold">تحديث حالة الطلب</h3>
+                      <h3 className="text-sm font-bold text-brand dark:text-gold">إجراءات الطلب</h3>
                       <div className="space-y-3">
                         <select 
                           value={selectedSubmission.status}
@@ -4192,10 +4215,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                           className={`w-full text-sm font-bold px-4 py-3 rounded-xl border outline-none shadow-sm transition-all ${getStatusColor(selectedSubmission.status)}`}
                         >
                           <option value="pending">جديد</option>
-                          <option value="processing">تحت الإجراء</option>
-                          <option value="executing">قيد التنفيذ</option>
-                          <option value="completed">مكتمل</option>
-                          <option value="rejected">مرفوض</option>
+                          <option value="processing">قيد المعالجة</option>
+                          <option value="contract_signature">بانتظار التوقيع</option>
+                          <option value="completed">مكتملة</option>
+                          <option value="on_hold">متوقفة</option>
+                          {['executing','rejected'].includes(selectedSubmission.status) && (
+                            <option value={selectedSubmission.status}>{getStatusLabel(selectedSubmission.status)}</option>
+                          )}
                         </select>
                         
                         <button 
@@ -4234,6 +4260,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                           <ScrollText size={18} />
                           إرسال سند لأمر
                         </button>
+
+                        <button
+                          onClick={async () => {
+                            const uid = selectedSubmission.user_id ?? selectedSubmission.userId;
+                            const what = prompt('اكتب المستندات المطلوبة من العميل:');
+                            if (!what || !uid) return;
+                            try {
+                              const { createOpenRequest } = await import('../../lib/openRequestsApi');
+                              await createOpenRequest({
+                                userId: String(uid),
+                                title: `مستندات مطلوبة للطلب ${selectedSubmission.id}`,
+                                description: what,
+                                fields: [{ id: 'docs', label: what, type: 'attachment', required: true }],
+                                createdBy: authUser?.id ? String(authUser.id) : undefined,
+                              });
+                              await fetchAllData();
+                              alert('تم إرسال طلب المستندات للعميل');
+                            } catch (e) { console.error(e); alert('تعذر إرسال طلب المستندات'); }
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold/10 text-gold rounded-xl text-sm font-bold hover:bg-gold/20 transition-all border border-gold/20"
+                        >
+                          <FileText size={18} />
+                          طلب مستندات من العميل
+                        </button>
+
+                        <button
+                          onClick={async () => {
+                            const note = prompt('اكتب الملاحظة الإدارية:');
+                            if (!note) return;
+                            try {
+                              const { supabase } = await import('@/integrations/supabase/client');
+                              const { error } = await supabase.from('request_history').insert({
+                                id: `HIST-${Date.now()}`, request_id: selectedSubmission.id,
+                                status: 'admin_note', comment: note,
+                                changed_by: authUser?.id ? String(authUser.id) : null,
+                              });
+                              if (error) throw error;
+                              fetchSubmissionHistory(selectedSubmission.id);
+                            } catch (e) { console.error(e); alert('تعذر حفظ الملاحظة'); }
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-white/10 text-brand dark:text-white rounded-xl text-sm font-bold hover:bg-gray-200 transition-all border border-gray-200 dark:border-white/10"
+                        >
+                          <PenTool size={18} />
+                          إضافة ملاحظة إدارية
+                        </button>
                       </div>
                     </div>
 
@@ -4252,7 +4323,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                             <div key={h.id} className="relative pr-6">
                               <div className="absolute top-1 right-[-5px] w-[12px] h-[12px] rounded-full bg-gold border-2 border-white dark:border-[#12031a] z-10"></div>
                               <div className="text-xs font-bold text-brand dark:text-white mb-0.5">
-                                {getStatusLabel(h.status)}
+                                {h.status === 'admin_note' ? 'ملاحظة إدارية' : getStatusLabel(h.status)}
                               </div>
                               <div className="text-[10px] text-muted mb-1">{h.comment}</div>
                               <div className="flex items-center justify-between text-[9px] text-muted/70">
