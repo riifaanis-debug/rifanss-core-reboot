@@ -754,6 +754,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       case 'pending': return 'جديد';
       case 'processing': return 'تحت الإجراء';
       case 'executing': return 'قيد التنفيذ';
+      case 'contract_signature': return 'بانتظار التوقيع';
+      case 'on_hold': return 'متوقف';
       case 'completed': return 'مكتمل';
       case 'rejected': return 'مرفوض';
       default: return status;
@@ -765,6 +767,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       case 'pending': return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'processing': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
       case 'executing': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'contract_signature': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'on_hold': return 'bg-gray-100 text-gray-700 border-gray-200';
       case 'completed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'rejected': return 'bg-rose-50 text-rose-600 border-rose-100';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
@@ -2807,7 +2811,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   )}
                   <td className="p-4 text-xs text-brand dark:text-gray-300 whitespace-nowrap">{s.data?.bank || '---'}</td>
                   <td className="p-4 text-xs font-bold text-brand dark:text-white whitespace-nowrap">{s.data?.totalAmount ? `${formatAmount(s.data.totalAmount)} ر.س` : '---'}</td>
-                  <td className="p-4 text-xs text-muted whitespace-nowrap">{new Date(s.timestamp).toLocaleDateString('ar-SA')}</td>
+                  <td className="p-4 text-xs text-muted whitespace-nowrap">{new Date(s.created_at || s.timestamp).toLocaleDateString('ar-SA')}</td>
                   <td className="p-4">
                     <select 
                       value={s.status}
@@ -2867,7 +2871,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 )}
                 <div><span className="text-muted">الجهة:</span> <span className="text-brand dark:text-gray-300">{s.data?.bank || '---'}</span></div>
                 <div><span className="text-muted">المبلغ:</span> <span className="font-bold text-brand dark:text-white">{s.data?.totalAmount ? `${formatAmount(s.data.totalAmount)} ر.س` : '---'}</span></div>
-                <div><span className="text-muted">التاريخ:</span> <span className="text-muted">{new Date(s.timestamp).toLocaleDateString('ar-SA')}</span></div>
+                <div><span className="text-muted">التاريخ:</span> <span className="text-muted">{new Date(s.created_at || s.timestamp).toLocaleDateString('ar-SA')}</span></div>
               </div>
             </div>
           ))}
@@ -4000,6 +4004,600 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     </div>
   );
 
+  const renderOverlays = () => (
+    <div className="relative z-[260]">
+      {/* Request Details Modal */}
+      <AnimatePresence>
+        {selectedSubmission && (
+          <div className="fixed inset-0 z-[110] flex items-start sm:items-center justify-center p-0 sm:p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-brand/40 backdrop-blur-md" 
+              onClick={() => setSelectedSubmission(null)} 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full sm:w-[95%] max-w-6xl max-h-screen sm:max-h-[92vh] bg-white dark:bg-[#12031a] rounded-none sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="p-3 sm:p-5 border-b border-gold/10 flex items-center justify-between bg-brand text-white">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center text-gold border border-white/10">
+                    <FileText size={16} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm sm:text-lg font-bold">تفاصيل الطلب: {selectedSubmission.id}</h2>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-[7px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${getStatusColor(selectedSubmission.status)}`}>
+                        {getStatusLabel(selectedSubmission.status)}
+                      </span>
+                      <span className="text-[7px] sm:text-[9px] text-gold/80">
+                        {selectedSubmission.type === 'waive_request' ? 'طلب إعفاء' : 
+                         selectedSubmission.type === 'rescheduling_request' ? 'إعادة جدولة' : 
+                         selectedSubmission.type === 'service_request' ? 'طلب خدمة' : 'طلب'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedSubmission(null)} className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-3 sm:p-6 custom-scrollbar" dir="rtl">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {/* Left Column: Client & Request Info */}
+                  <div className="lg:col-span-2 space-y-8">
+                    {/* Client Info Card */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
+                        <Users size={18} />
+                        بيانات العميل
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InfoItem icon={<Users size={14} />} label="الاسم الكامل" value={selectedSubmission.user_name} />
+                        <InfoItem icon={<Mail size={14} />} label="البريد الإلكتروني" value={selectedSubmission.user_email} />
+                        <InfoItem icon={<Phone size={14} />} label="رقم الجوال" value={selectedSubmission.data?.mobile} isLtr />
+                        <InfoItem icon={<IdCard size={14} />} label="رقم الهوية" value={selectedSubmission.data?.nationalId} />
+                        <InfoItem icon={<MapPin size={14} />} label="المنطقة / المدينة" value={`${selectedSubmission.data?.region} - ${selectedSubmission.data?.city}`} />
+                        <InfoItem icon={<Briefcase size={14} />} label="الحالة الوظيفية" value={selectedSubmission.data?.jobStatus} />
+                      </div>
+                    </div>
+
+                    {/* Financial Info Card */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
+                        <CreditCard size={18} />
+                        التفاصيل المالية
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InfoItem icon={<Briefcase size={14} />} label="الجهة التمويلية" value={selectedSubmission.data?.bank} />
+                        <InfoItem icon={<TrendingUp size={14} />} label="إجمالي الالتزامات" value={`${formatAmount(selectedSubmission.data?.totalAmount)} ر.س`} isBold />
+                        <InfoItem 
+                          icon={<Calendar size={14} />} 
+                          label="تاريخ التقديم" 
+                          value={(selectedSubmission.created_at || selectedSubmission.timestamp) ? new Date(selectedSubmission.created_at || selectedSubmission.timestamp).toLocaleString('ar-SA') : '---'} 
+                        />
+                        <InfoItem icon={<Hash size={14} />} label="رقم الطلب" value={selectedSubmission.id} />
+                      </div>
+                    </div>
+
+                    {/* Products Table */}
+                    {selectedSubmission.data?.products && Array.isArray(selectedSubmission.data.products) && (
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold text-brand dark:text-gold">المنتجات والالتزامات</h3>
+                        <div className="bg-gray-50 dark:bg-white/5 rounded-2xl border border-gold/10 overflow-hidden">
+                          <table className="w-full text-right text-xs">
+                            <thead>
+                              <tr className="bg-gold/5 text-muted font-bold">
+                                <th className="p-3">نوع المنتج</th>
+                                <th className="p-3">رقم الحساب</th>
+                                <th className="p-3">المبلغ</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gold/5">
+                              {selectedSubmission.data.products.map((p: any, i: number) => (
+                                <tr key={i}>
+                                  <td className="p-3 text-brand dark:text-white">{p.type}</td>
+                                  <td className="p-3 text-muted font-mono">{p.accountNumber || '---'}</td>
+                                  <td className="p-3 font-bold text-brand dark:text-white">{formatAmount(p.amount)} ر.س</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="bg-brand/5 dark:bg-gold/10 border-t-2 border-gold/20">
+                                <td colSpan={2} className="p-3 text-sm font-black text-brand dark:text-gold text-right">المبلغ الإجمالي</td>
+                                <td className="p-3 text-sm font-black text-brand dark:text-gold">
+                                  {formatAmount(selectedSubmission.data.products.reduce((acc: number, p: any) => acc + (parseFloat(p.amount || '0')), 0))} ر.س
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Attachments */}
+                    {(() => {
+                      const known = new Set(['mobile','nationalId','region','city','jobStatus','bank','totalAmount','products','attachments','signature','firstName','lastName','fullName','email']);
+                      const labels: Record<string,string> = { currentAccountNumber: 'رقم الحساب الجاري', seizedAmount: 'المبلغ المحجوز', notes: 'ملاحظات', description: 'الوصف', salary: 'الراتب', age: 'العمر', serviceType: 'نوع الخدمة' };
+                      const rest = Object.entries(selectedSubmission.data || {}).filter(([k, v]) => !known.has(k) && v !== null && v !== '' && typeof v !== 'object');
+                      const extraText = selectedSubmission.details;
+                      if (rest.length === 0 && !extraText) return null;
+                      return (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-bold text-brand dark:text-gold">بيانات إضافية</h3>
+                          <div className="grid grid-cols-2 gap-2">
+                            {rest.map(([k, v]) => (
+                              <InfoItem key={k} icon={<Hash size={14} />} label={labels[k] || k} value={String(v)} />
+                            ))}
+                          </div>
+                          {extraText && <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-xs text-brand dark:text-white whitespace-pre-wrap">{extraText}</div>}
+                        </div>
+                      );
+                    })()}
+
+                    {((selectedSubmission.data?.attachments && Array.isArray(selectedSubmission.data.attachments) && selectedSubmission.data.attachments.length > 0) || 
+                      (selectedSubmission.files && Array.isArray(selectedSubmission.files) && selectedSubmission.files.length > 0)) && (
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold text-brand dark:text-gold">المرفقات والمستندات</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Display files from standard 'files' array */}
+                          {selectedSubmission.files && Array.isArray(selectedSubmission.files) && selectedSubmission.files.map((file: any, i: number) => (
+                            <div key={`file-${i}`} className="flex items-center justify-between bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gold/10 text-gold flex items-center justify-center">
+                                  <Download size={18} />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-xs font-bold text-brand dark:text-white truncate">{file.type || file.fileName || file.name || 'مرفق'}</div>
+                                  <div className="text-[10px] text-muted truncate">{file.fileName || file.name || 'ملف'}</div>
+                                </div>
+                              </div>
+                              <a href={file.filePath || file.path || file.publicUrl || file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-gold font-bold hover:underline">عرض</a>
+                            </div>
+                          ))}
+                          
+                          {/* Display files from 'data.attachments' (legacy or specific format) */}
+                          {selectedSubmission.data?.attachments && Array.isArray(selectedSubmission.data.attachments) && selectedSubmission.data.attachments.map((att: any, i: number) => (
+                            <div key={`att-${i}`} className="flex items-center justify-between bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gold/10 text-gold flex items-center justify-center">
+                                  <Download size={18} />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-xs font-bold text-brand dark:text-white truncate">{att.type || att.fileName}</div>
+                                  <div className="text-[10px] text-muted truncate">{att.fileName}</div>
+                                </div>
+                              </div>
+                              <a href={att.content} download={att.fileName} className="text-xs text-gold font-bold hover:underline">تحميل</a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Signature */}
+                    {selectedSubmission.data?.signature && (
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold text-brand dark:text-gold">توقيع العميل</h3>
+                        <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 flex flex-col items-center">
+                          <img 
+                            src={selectedSubmission.data.signature} 
+                            alt="توقيع العميل" 
+                            className="max-h-[120px] object-contain bg-white rounded-lg p-2 border border-gray-100"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="mt-2 text-[10px] text-muted font-bold">تم التوقيع إلكترونياً عند تقديم الطلب</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: History & Actions */}
+                  <div className="space-y-8">
+                    {/* Status Update Card */}
+                    <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-[24px] border border-gold/10 space-y-4">
+                      <h3 className="text-sm font-bold text-brand dark:text-gold">إجراءات الطلب</h3>
+                      <div className="space-y-3">
+                        <select 
+                          value={selectedSubmission.status}
+                          onChange={(e) => {
+                            const newStatus = e.target.value;
+                            const comment = prompt('أدخل ملاحظة لهذا التحديث (اختياري):') || '';
+                            updateStatus(selectedSubmission.id, newStatus, comment);
+                          }}
+                          className={`w-full text-sm font-bold px-4 py-3 rounded-xl border outline-none shadow-sm transition-all ${getStatusColor(selectedSubmission.status)}`}
+                        >
+                          <option value="pending">جديد</option>
+                          <option value="processing">قيد المعالجة</option>
+                          <option value="contract_signature">بانتظار التوقيع</option>
+                          <option value="completed">مكتملة</option>
+                          <option value="on_hold">متوقفة</option>
+                          {['executing','rejected'].includes(selectedSubmission.status) && (
+                            <option value={selectedSubmission.status}>{getStatusLabel(selectedSubmission.status)}</option>
+                          )}
+                        </select>
+                        
+                        <button 
+                          onClick={() => sendContract((selectedSubmission.user_id ?? selectedSubmission.userId), selectedSubmission.id)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand text-gold rounded-xl text-sm font-bold hover:bg-brand/90 transition-all shadow-lg"
+                        >
+                          <PenTool size={18} />
+                          إرسال العقد للتوقيع
+                        </button>
+
+                        {contracts.some(c => c.submission_id === selectedSubmission.id) && (
+                          <button 
+                            onClick={() => {
+                              const contract = contracts.find(c => c.submission_id === selectedSubmission.id);
+                              setSelectedContract(contract);
+                            }}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold/10 text-gold rounded-xl text-sm font-bold hover:bg-gold/20 transition-all border border-gold/20"
+                          >
+                            <FileCheck size={18} />
+                            عرض العقد الموثق
+                          </button>
+                        )}
+
+                        <button 
+                          onClick={() => sendInvoice((selectedSubmission.user_id ?? selectedSubmission.userId), selectedSubmission.id)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold text-brand rounded-xl text-sm font-bold hover:bg-gold/90 transition-all shadow-lg"
+                        >
+                          <FileText size={18} />
+                          إرسال فاتورة الطلب
+                        </button>
+
+                        <button 
+                          onClick={() => sendPromissory((selectedSubmission.user_id ?? selectedSubmission.userId), selectedSubmission.id)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand text-gold border-2 border-gold rounded-xl text-sm font-bold hover:bg-brand/90 transition-all shadow-lg"
+                        >
+                          <ScrollText size={18} />
+                          إرسال سند لأمر
+                        </button>
+
+                        <button
+                          onClick={async () => {
+                            const uid = selectedSubmission.user_id ?? selectedSubmission.userId;
+                            const what = prompt('اكتب المستندات المطلوبة من العميل:');
+                            if (!what || !uid) return;
+                            try {
+                              const { createOpenRequest } = await import('../../lib/openRequestsApi');
+                              await createOpenRequest({
+                                userId: String(uid),
+                                title: `مستندات مطلوبة للطلب ${selectedSubmission.id}`,
+                                description: what,
+                                fields: [{ id: 'docs', label: what, type: 'attachment', required: true }],
+                                createdBy: authUser?.id ? String(authUser.id) : undefined,
+                              });
+                              await fetchAllData();
+                              alert('تم إرسال طلب المستندات للعميل');
+                            } catch (e) { console.error(e); alert('تعذر إرسال طلب المستندات'); }
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold/10 text-gold rounded-xl text-sm font-bold hover:bg-gold/20 transition-all border border-gold/20"
+                        >
+                          <FileText size={18} />
+                          طلب مستندات من العميل
+                        </button>
+
+                        <button
+                          onClick={async () => {
+                            const note = prompt('اكتب الملاحظة الإدارية:');
+                            if (!note) return;
+                            try {
+                              const { supabase } = await import('@/integrations/supabase/client');
+                              const { error } = await supabase.from('request_history').insert({
+                                id: `HIST-${Date.now()}`, request_id: selectedSubmission.id,
+                                status: 'admin_note', comment: note,
+                                changed_by: authUser?.id ? String(authUser.id) : null,
+                              });
+                              if (error) throw error;
+                              fetchSubmissionHistory(selectedSubmission.id);
+                            } catch (e) { console.error(e); alert('تعذر حفظ الملاحظة'); }
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-white/10 text-brand dark:text-white rounded-xl text-sm font-bold hover:bg-gray-200 transition-all border border-gray-200 dark:border-white/10"
+                        >
+                          <PenTool size={18} />
+                          إضافة ملاحظة إدارية
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* History Timeline */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
+                        <History size={18} />
+                        سجل التحديثات
+                      </h3>
+                      <div className="relative pr-4 space-y-6">
+                        <div className="absolute top-0 bottom-0 right-0 w-[2px] bg-gold/20"></div>
+                        {isHistoryLoading ? (
+                          <div className="text-right py-4 text-xs text-muted">جاري تحميل السجل...</div>
+                        ) : (
+                          submissionHistory.map((h, i) => (
+                            <div key={h.id} className="relative pr-6">
+                              <div className="absolute top-1 right-[-5px] w-[12px] h-[12px] rounded-full bg-gold border-2 border-white dark:border-[#12031a] z-10"></div>
+                              <div className="text-xs font-bold text-brand dark:text-white mb-0.5">
+                                {h.status === 'admin_note' ? 'ملاحظة إدارية' : getStatusLabel(h.status)}
+                              </div>
+                              <div className="text-[10px] text-muted mb-1">{h.comment}</div>
+                              <div className="flex items-center justify-between text-[9px] text-muted/70">
+                                <span>بواسطة: {h.changed_by_name || 'مدير'}</span>
+                                <span>{new Date(h.created_at).toLocaleString('ar-SA')}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                        {submissionHistory.length === 0 && !isHistoryLoading && (
+                          <div className="text-[10px] text-muted italic">لا يوجد سجل تحديثات حالياً</div>
+                        )}
+                      </div>
+                     </div>
+
+                     {/* Client Contracts for this submission */}
+                     {contracts.filter(c => c.submission_id === selectedSubmission.id).length > 0 && (
+                       <div className="space-y-4">
+                         <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
+                           <PenTool size={18} />
+                           عقود العميل
+                         </h3>
+                         <div className="space-y-3">
+                           {contracts.filter(c => c.submission_id === selectedSubmission.id).map(c => (
+                             <div key={c.id} className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all">
+                               <div className="flex items-center justify-between mb-2">
+                                 <span className="text-xs font-bold text-brand dark:text-white">عقد رقم {c.file_number || c.id}</span>
+                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${c.signed_at ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                                   {c.signed_at ? 'تم التوقيع' : 'بانتظار التوقيع'}
+                                 </span>
+                               </div>
+                               <div className="text-[10px] text-muted space-y-1">
+                                 <div>نوع العقد: {c.type === 'waive_request' ? 'عقد إعفاء' : c.type === 'rescheduling_request' ? 'عقد جدولة' : 'عقد خدمة'}</div>
+                                 <div>تاريخ الإرسال: {new Date(c.created_at).toLocaleDateString('ar-SA')}</div>
+                                 {c.signed_at && <div>تاريخ التوقيع: {new Date(c.signed_at).toLocaleString('ar-SA')}</div>}
+                               </div>
+                               <button 
+                                 onClick={() => setSelectedContract(c)}
+                                 className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 bg-gold/10 text-gold rounded-xl text-xs font-bold hover:bg-gold/20 transition-all border border-gold/20"
+                               >
+                                 <Eye size={14} />
+                                 عرض العقد
+                               </button>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+
+                     {/* Client Invoices for this submission */}
+                     {adminInvoices.filter(inv => inv.submission_id === selectedSubmission.id).length > 0 && (
+                       <div className="space-y-4">
+                         <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
+                           <CreditCard size={18} />
+                           فواتير العميل
+                         </h3>
+                         <div className="space-y-3">
+                           {adminInvoices.filter(inv => inv.submission_id === selectedSubmission.id).map(inv => (
+                             <div key={inv.id} className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all">
+                               <div className="flex items-center justify-between mb-2">
+                                 <span className="text-xs font-bold text-brand dark:text-white">فاتورة رقم {inv.id}</span>
+                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${inv.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                                   {inv.status === 'paid' ? 'مسددة' : 'بانتظار السداد'}
+                                 </span>
+                               </div>
+                               <div className="text-[10px] text-muted space-y-1">
+                                 <div>المبلغ: <span className="font-bold text-brand dark:text-white">{formatAmount(inv.amount)} ر.س</span></div>
+                                 <div>نوع الخدمة: {inv.type === 'rescheduling_request' ? 'إعادة جدولة' : inv.type === 'seized_amounts_request' ? 'مبالغ محجوزة' : 'إعفاء'}</div>
+                                 <div>تاريخ الإصدار: {new Date(inv.created_at).toLocaleDateString('ar-SA')}</div>
+                                 {inv.paid_at && <div>تاريخ السداد: {new Date(inv.paid_at).toLocaleDateString('ar-SA')}</div>}
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-gold/10 bg-gray-50 dark:bg-black/20 flex items-center justify-end">
+                <Button onClick={() => setSelectedSubmission(null)} variant="outline">إغلاق</Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Client File — full-page (mobile + desktop) */}
+
+
+      {/* Contract View — نفس مصدر عقد العميل (شاشة/طباعة/PDF) */}
+      {selectedContract && (
+        <div className="fixed inset-0 z-[120] overflow-y-auto bg-white">
+          <ContractPage submissionId={selectedContract.submission_id} onClose={() => setSelectedContract(null)} />
+        </div>
+      )}
+
+      {/* Confirmation Modal for Sending Contract */}
+      <AnimatePresence>
+        {isConfirmingSendContract && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-brand/60 backdrop-blur-md" 
+              onClick={() => setIsConfirmingSendContract(false)} 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#12031a] rounded-[32px] shadow-2xl overflow-hidden p-8 text-right"
+            >
+              <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6 text-gold">
+                <PenTool size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-brand dark:text-white mb-4">تأكيد إرسال العقد</h3>
+              <p className="text-muted mb-8">هل ترغب بإرسال العقد للعميل؟</p>
+              
+              <div className="flex items-center gap-4">
+                <Button 
+                  onClick={handleConfirmSendContract}
+                  className="flex-1 bg-brand text-gold py-4 rounded-2xl font-bold shadow-lg shadow-brand/20"
+                >
+                  إرسال
+                </Button>
+                <Button 
+                  onClick={() => setIsConfirmingSendContract(false)}
+                  variant="outline"
+                  className="flex-1 py-4 rounded-2xl font-bold border-gray-200"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal for Sending Invoice */}
+      <AnimatePresence>
+        {isConfirmingSendInvoice && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-brand/60 backdrop-blur-md" 
+              onClick={() => setIsConfirmingSendInvoice(false)} 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#12031a] rounded-[32px] shadow-2xl overflow-hidden p-8 text-right"
+            >
+              <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6 text-gold">
+                <FileText size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-brand dark:text-white mb-4">تأكيد إرسال الفاتورة</h3>
+              <p className="text-muted mb-8">هل ترغب بإرسال فاتورة الطلب للعميل؟ سيتم احتساب الأتعاب تلقائياً حسب نوع الخدمة.</p>
+              
+              <div className="flex items-center gap-4">
+                <Button 
+                  onClick={handleConfirmSendInvoice}
+                  className="flex-1 bg-gold text-brand py-4 rounded-2xl font-bold shadow-lg shadow-gold/20"
+                >
+                  إرسال الفاتورة
+                </Button>
+                <Button 
+                  onClick={() => setIsConfirmingSendInvoice(false)}
+                  variant="outline"
+                  className="flex-1 py-4 rounded-2xl font-bold border-gray-200"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal for Sending Promissory Note */}
+      <AnimatePresence>
+        {isConfirmingSendPromissory && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-brand/60 backdrop-blur-md" onClick={() => setIsConfirmingSendPromissory(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#12031a] rounded-[32px] shadow-2xl overflow-hidden p-8 text-right">
+              <div className="w-20 h-20 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-6 text-brand dark:text-gold">
+                <ScrollText size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-brand dark:text-white mb-4">تأكيد إرسال سند لأمر</h3>
+              <p className="text-muted mb-8">سيتم إصدار سند لأمر إلكتروني للعميل بقيمة الأتعاب المحتسبة، وإرسال إشعار له للتوقيع.</p>
+              <div className="flex items-center gap-4">
+                <Button onClick={handleConfirmSendPromissory} className="flex-1 bg-brand text-gold py-4 rounded-2xl font-bold shadow-lg shadow-brand/20">
+                  إصدار السند
+                </Button>
+                <Button onClick={() => setIsConfirmingSendPromissory(false)} variant="outline" className="flex-1 py-4 rounded-2xl font-bold border-gray-200">
+                  إلغاء
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {statPopup && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setStatPopup(null)}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative z-10 bg-white dark:bg-[#12031a] rounded-2xl border border-gold/20 shadow-2xl w-full max-w-md max-h-[70vh] flex flex-col overflow-hidden"
+              dir="rtl"
+            >
+              <div className="p-4 border-b border-gold/10 flex items-center justify-between bg-brand text-white rounded-t-2xl">
+                <h3 className="text-sm font-bold">{statPopup.label} ({statPopup.items.length})</h3>
+                <button onClick={() => setStatPopup(null)} className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20"><X size={14} /></button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {statPopup.items.length === 0 ? (
+                  <div className="text-center text-muted text-sm py-8">لا توجد عناصر</div>
+                ) : (
+                  statPopup.items.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-brand text-gold flex items-center justify-center font-bold text-[10px]">
+                          {(item.name || '؟')[0]}
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-brand dark:text-white">{item.name}</div>
+                          {item.type && <div className="text-[9px] text-muted">{item.type === 'waive_request' ? 'إعفاء' : item.type === 'rescheduling_request' ? 'جدولة' : item.type}</div>}
+                        </div>
+                      </div>
+                      <div className="text-[9px] text-muted">{new Date(item.date || '').toLocaleDateString('ar-SA')}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Message Toast */}
+      <AnimatePresence>
+        {showSuccessMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[210] bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold"
+          >
+            <CheckCircle size={24} />
+            تم ارسال العقد للعميل بنجاح
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   // Render Mobile View if on Mobile viewport
   if (isMobile) {
     return (
@@ -4065,6 +4663,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
         </AnimatePresence>
 
         {selectedUser && renderClientFile(selectedUser)}
+        {renderOverlays()}
       </div>
     );
   }
@@ -4275,529 +4874,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
         </AnimatePresence>
       </div>
 
-      {/* Request Details Modal */}
-      <AnimatePresence>
-        {selectedSubmission && (
-          <div className="fixed inset-0 z-[110] flex items-start sm:items-center justify-center p-0 sm:p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand/40 backdrop-blur-md" 
-              onClick={() => setSelectedSubmission(null)} 
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full sm:w-[95%] max-w-6xl max-h-screen sm:max-h-[92vh] bg-white dark:bg-[#12031a] rounded-none sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
-            >
-              {/* Modal Header */}
-              <div className="p-3 sm:p-5 border-b border-gold/10 flex items-center justify-between bg-brand text-white">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center text-gold border border-white/10">
-                    <FileText size={16} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm sm:text-lg font-bold">تفاصيل الطلب: {selectedSubmission.id}</h2>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-[7px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${getStatusColor(selectedSubmission.status)}`}>
-                        {getStatusLabel(selectedSubmission.status)}
-                      </span>
-                      <span className="text-[7px] sm:text-[9px] text-gold/80">
-                        {selectedSubmission.type === 'waive_request' ? 'طلب إعفاء' : 
-                         selectedSubmission.type === 'rescheduling_request' ? 'إعادة جدولة' : 
-                         selectedSubmission.type === 'service_request' ? 'طلب خدمة' : 'طلب'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <button onClick={() => setSelectedSubmission(null)} className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
-                  <X size={14} />
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto p-3 sm:p-6 custom-scrollbar" dir="rtl">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {/* Left Column: Client & Request Info */}
-                  <div className="lg:col-span-2 space-y-8">
-                    {/* Client Info Card */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
-                        <Users size={18} />
-                        بيانات العميل
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <InfoItem icon={<Users size={14} />} label="الاسم الكامل" value={selectedSubmission.user_name} />
-                        <InfoItem icon={<Mail size={14} />} label="البريد الإلكتروني" value={selectedSubmission.user_email} />
-                        <InfoItem icon={<Phone size={14} />} label="رقم الجوال" value={selectedSubmission.data?.mobile} isLtr />
-                        <InfoItem icon={<IdCard size={14} />} label="رقم الهوية" value={selectedSubmission.data?.nationalId} />
-                        <InfoItem icon={<MapPin size={14} />} label="المنطقة / المدينة" value={`${selectedSubmission.data?.region} - ${selectedSubmission.data?.city}`} />
-                        <InfoItem icon={<Briefcase size={14} />} label="الحالة الوظيفية" value={selectedSubmission.data?.jobStatus} />
-                      </div>
-                    </div>
-
-                    {/* Financial Info Card */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
-                        <CreditCard size={18} />
-                        التفاصيل المالية
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <InfoItem icon={<Briefcase size={14} />} label="الجهة التمويلية" value={selectedSubmission.data?.bank} />
-                        <InfoItem icon={<TrendingUp size={14} />} label="إجمالي الالتزامات" value={`${formatAmount(selectedSubmission.data?.totalAmount)} ر.س`} isBold />
-                        <InfoItem 
-                          icon={<Calendar size={14} />} 
-                          label="تاريخ التقديم" 
-                          value={selectedSubmission.timestamp ? new Date(selectedSubmission.timestamp).toLocaleString('ar-SA') : '---'} 
-                        />
-                        <InfoItem icon={<Hash size={14} />} label="رقم الطلب" value={selectedSubmission.id} />
-                      </div>
-                    </div>
-
-                    {/* Products Table */}
-                    {selectedSubmission.data?.products && Array.isArray(selectedSubmission.data.products) && (
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-brand dark:text-gold">المنتجات والالتزامات</h3>
-                        <div className="bg-gray-50 dark:bg-white/5 rounded-2xl border border-gold/10 overflow-hidden">
-                          <table className="w-full text-right text-xs">
-                            <thead>
-                              <tr className="bg-gold/5 text-muted font-bold">
-                                <th className="p-3">نوع المنتج</th>
-                                <th className="p-3">رقم الحساب</th>
-                                <th className="p-3">المبلغ</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gold/5">
-                              {selectedSubmission.data.products.map((p: any, i: number) => (
-                                <tr key={i}>
-                                  <td className="p-3 text-brand dark:text-white">{p.type}</td>
-                                  <td className="p-3 text-muted font-mono">{p.accountNumber || '---'}</td>
-                                  <td className="p-3 font-bold text-brand dark:text-white">{formatAmount(p.amount)} ر.س</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                            <tfoot>
-                              <tr className="bg-brand/5 dark:bg-gold/10 border-t-2 border-gold/20">
-                                <td colSpan={2} className="p-3 text-sm font-black text-brand dark:text-gold text-right">المبلغ الإجمالي</td>
-                                <td className="p-3 text-sm font-black text-brand dark:text-gold">
-                                  {formatAmount(selectedSubmission.data.products.reduce((acc: number, p: any) => acc + (parseFloat(p.amount || '0')), 0))} ر.س
-                                </td>
-                              </tr>
-                            </tfoot>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Attachments */}
-                    {((selectedSubmission.data?.attachments && Array.isArray(selectedSubmission.data.attachments) && selectedSubmission.data.attachments.length > 0) || 
-                      (selectedSubmission.files && Array.isArray(selectedSubmission.files) && selectedSubmission.files.length > 0)) && (
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-brand dark:text-gold">المرفقات والمستندات</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Display files from standard 'files' array */}
-                          {selectedSubmission.files && Array.isArray(selectedSubmission.files) && selectedSubmission.files.map((file: any, i: number) => (
-                            <div key={`file-${i}`} className="flex items-center justify-between bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all group">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gold/10 text-gold flex items-center justify-center">
-                                  <Download size={18} />
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="text-xs font-bold text-brand dark:text-white truncate">{file.type || file.fileName || file.name || 'مرفق'}</div>
-                                  <div className="text-[10px] text-muted truncate">{file.fileName || file.name || 'ملف'}</div>
-                                </div>
-                              </div>
-                              <a href={file.filePath || file.path || file.publicUrl || file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-gold font-bold hover:underline">عرض</a>
-                            </div>
-                          ))}
-                          
-                          {/* Display files from 'data.attachments' (legacy or specific format) */}
-                          {selectedSubmission.data?.attachments && Array.isArray(selectedSubmission.data.attachments) && selectedSubmission.data.attachments.map((att: any, i: number) => (
-                            <div key={`att-${i}`} className="flex items-center justify-between bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all group">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gold/10 text-gold flex items-center justify-center">
-                                  <Download size={18} />
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="text-xs font-bold text-brand dark:text-white truncate">{att.type || att.fileName}</div>
-                                  <div className="text-[10px] text-muted truncate">{att.fileName}</div>
-                                </div>
-                              </div>
-                              <a href={att.content} download={att.fileName} className="text-xs text-gold font-bold hover:underline">تحميل</a>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Signature */}
-                    {selectedSubmission.data?.signature && (
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-brand dark:text-gold">توقيع العميل</h3>
-                        <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 flex flex-col items-center">
-                          <img 
-                            src={selectedSubmission.data.signature} 
-                            alt="توقيع العميل" 
-                            className="max-h-[120px] object-contain bg-white rounded-lg p-2 border border-gray-100"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="mt-2 text-[10px] text-muted font-bold">تم التوقيع إلكترونياً عند تقديم الطلب</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right Column: History & Actions */}
-                  <div className="space-y-8">
-                    {/* Status Update Card */}
-                    <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-[24px] border border-gold/10 space-y-4">
-                      <h3 className="text-sm font-bold text-brand dark:text-gold">تحديث حالة الطلب</h3>
-                      <div className="space-y-3">
-                        <select 
-                          value={selectedSubmission.status}
-                          onChange={(e) => {
-                            const newStatus = e.target.value;
-                            const comment = prompt('أدخل ملاحظة لهذا التحديث (اختياري):') || '';
-                            updateStatus(selectedSubmission.id, newStatus, comment);
-                          }}
-                          className={`w-full text-sm font-bold px-4 py-3 rounded-xl border outline-none shadow-sm transition-all ${getStatusColor(selectedSubmission.status)}`}
-                        >
-                          <option value="pending">جديد</option>
-                          <option value="processing">تحت الإجراء</option>
-                          <option value="executing">قيد التنفيذ</option>
-                          <option value="completed">مكتمل</option>
-                          <option value="rejected">مرفوض</option>
-                        </select>
-                        
-                        <button 
-                          onClick={() => sendContract(selectedSubmission.userId, selectedSubmission.id)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand text-gold rounded-xl text-sm font-bold hover:bg-brand/90 transition-all shadow-lg"
-                        >
-                          <PenTool size={18} />
-                          إرسال العقد للتوقيع
-                        </button>
-
-                        {contracts.some(c => c.submission_id === selectedSubmission.id) && (
-                          <button 
-                            onClick={() => {
-                              const contract = contracts.find(c => c.submission_id === selectedSubmission.id);
-                              setSelectedContract(contract);
-                            }}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold/10 text-gold rounded-xl text-sm font-bold hover:bg-gold/20 transition-all border border-gold/20"
-                          >
-                            <FileCheck size={18} />
-                            عرض العقد الموثق
-                          </button>
-                        )}
-
-                        <button 
-                          onClick={() => sendInvoice(selectedSubmission.userId, selectedSubmission.id)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold text-brand rounded-xl text-sm font-bold hover:bg-gold/90 transition-all shadow-lg"
-                        >
-                          <FileText size={18} />
-                          إرسال فاتورة الطلب
-                        </button>
-
-                        <button 
-                          onClick={() => sendPromissory(selectedSubmission.userId, selectedSubmission.id)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand text-gold border-2 border-gold rounded-xl text-sm font-bold hover:bg-brand/90 transition-all shadow-lg"
-                        >
-                          <ScrollText size={18} />
-                          إرسال سند لأمر
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* History Timeline */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
-                        <History size={18} />
-                        سجل التحديثات
-                      </h3>
-                      <div className="relative pr-4 space-y-6">
-                        <div className="absolute top-0 bottom-0 right-0 w-[2px] bg-gold/20"></div>
-                        {isHistoryLoading ? (
-                          <div className="text-right py-4 text-xs text-muted">جاري تحميل السجل...</div>
-                        ) : (
-                          submissionHistory.map((h, i) => (
-                            <div key={h.id} className="relative pr-6">
-                              <div className="absolute top-1 right-[-5px] w-[12px] h-[12px] rounded-full bg-gold border-2 border-white dark:border-[#12031a] z-10"></div>
-                              <div className="text-xs font-bold text-brand dark:text-white mb-0.5">
-                                {getStatusLabel(h.status)}
-                              </div>
-                              <div className="text-[10px] text-muted mb-1">{h.comment}</div>
-                              <div className="flex items-center justify-between text-[9px] text-muted/70">
-                                <span>بواسطة: {h.changed_by_name || 'مدير'}</span>
-                                <span>{new Date(h.created_at).toLocaleString('ar-SA')}</span>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                        {submissionHistory.length === 0 && !isHistoryLoading && (
-                          <div className="text-[10px] text-muted italic">لا يوجد سجل تحديثات حالياً</div>
-                        )}
-                      </div>
-                     </div>
-
-                     {/* Client Contracts for this submission */}
-                     {contracts.filter(c => c.submission_id === selectedSubmission.id).length > 0 && (
-                       <div className="space-y-4">
-                         <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
-                           <PenTool size={18} />
-                           عقود العميل
-                         </h3>
-                         <div className="space-y-3">
-                           {contracts.filter(c => c.submission_id === selectedSubmission.id).map(c => (
-                             <div key={c.id} className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all">
-                               <div className="flex items-center justify-between mb-2">
-                                 <span className="text-xs font-bold text-brand dark:text-white">عقد رقم {c.file_number || c.id}</span>
-                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${c.signed_at ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                                   {c.signed_at ? 'تم التوقيع' : 'بانتظار التوقيع'}
-                                 </span>
-                               </div>
-                               <div className="text-[10px] text-muted space-y-1">
-                                 <div>نوع العقد: {c.type === 'waive_request' ? 'عقد إعفاء' : c.type === 'rescheduling_request' ? 'عقد جدولة' : 'عقد خدمة'}</div>
-                                 <div>تاريخ الإرسال: {new Date(c.created_at).toLocaleDateString('ar-SA')}</div>
-                                 {c.signed_at && <div>تاريخ التوقيع: {new Date(c.signed_at).toLocaleString('ar-SA')}</div>}
-                               </div>
-                               <button 
-                                 onClick={() => setSelectedContract(c)}
-                                 className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 bg-gold/10 text-gold rounded-xl text-xs font-bold hover:bg-gold/20 transition-all border border-gold/20"
-                               >
-                                 <Eye size={14} />
-                                 عرض العقد
-                               </button>
-                             </div>
-                           ))}
-                         </div>
-                       </div>
-                     )}
-
-                     {/* Client Invoices for this submission */}
-                     {adminInvoices.filter(inv => inv.submission_id === selectedSubmission.id).length > 0 && (
-                       <div className="space-y-4">
-                         <h3 className="text-sm font-bold text-brand dark:text-gold flex items-center gap-2">
-                           <CreditCard size={18} />
-                           فواتير العميل
-                         </h3>
-                         <div className="space-y-3">
-                           {adminInvoices.filter(inv => inv.submission_id === selectedSubmission.id).map(inv => (
-                             <div key={inv.id} className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gold/10 hover:border-gold/30 transition-all">
-                               <div className="flex items-center justify-between mb-2">
-                                 <span className="text-xs font-bold text-brand dark:text-white">فاتورة رقم {inv.id}</span>
-                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${inv.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                                   {inv.status === 'paid' ? 'مسددة' : 'بانتظار السداد'}
-                                 </span>
-                               </div>
-                               <div className="text-[10px] text-muted space-y-1">
-                                 <div>المبلغ: <span className="font-bold text-brand dark:text-white">{formatAmount(inv.amount)} ر.س</span></div>
-                                 <div>نوع الخدمة: {inv.type === 'rescheduling_request' ? 'إعادة جدولة' : inv.type === 'seized_amounts_request' ? 'مبالغ محجوزة' : 'إعفاء'}</div>
-                                 <div>تاريخ الإصدار: {new Date(inv.created_at).toLocaleDateString('ar-SA')}</div>
-                                 {inv.paid_at && <div>تاريخ السداد: {new Date(inv.paid_at).toLocaleDateString('ar-SA')}</div>}
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       </div>
-                     )}
-                   </div>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-6 border-t border-gold/10 bg-gray-50 dark:bg-black/20 flex items-center justify-end">
-                <Button onClick={() => setSelectedSubmission(null)} variant="outline">إغلاق</Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Client File — full-page (mobile + desktop) */}
       {selectedUser && renderClientFile(selectedUser)}
-
-
-      {/* Contract View — نفس مصدر عقد العميل (شاشة/طباعة/PDF) */}
-      {selectedContract && (
-        <div className="fixed inset-0 z-[120] overflow-y-auto bg-white">
-          <ContractPage submissionId={selectedContract.submission_id} onClose={() => setSelectedContract(null)} />
-        </div>
-      )}
-
-      {/* Confirmation Modal for Sending Contract */}
-      <AnimatePresence>
-        {isConfirmingSendContract && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand/60 backdrop-blur-md" 
-              onClick={() => setIsConfirmingSendContract(false)} 
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-[#12031a] rounded-[32px] shadow-2xl overflow-hidden p-8 text-right"
-            >
-              <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6 text-gold">
-                <PenTool size={40} />
-              </div>
-              <h3 className="text-xl font-bold text-brand dark:text-white mb-4">تأكيد إرسال العقد</h3>
-              <p className="text-muted mb-8">هل ترغب بإرسال العقد للعميل؟</p>
-              
-              <div className="flex items-center gap-4">
-                <Button 
-                  onClick={handleConfirmSendContract}
-                  className="flex-1 bg-brand text-gold py-4 rounded-2xl font-bold shadow-lg shadow-brand/20"
-                >
-                  إرسال
-                </Button>
-                <Button 
-                  onClick={() => setIsConfirmingSendContract(false)}
-                  variant="outline"
-                  className="flex-1 py-4 rounded-2xl font-bold border-gray-200"
-                >
-                  إلغاء
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Confirmation Modal for Sending Invoice */}
-      <AnimatePresence>
-        {isConfirmingSendInvoice && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand/60 backdrop-blur-md" 
-              onClick={() => setIsConfirmingSendInvoice(false)} 
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-[#12031a] rounded-[32px] shadow-2xl overflow-hidden p-8 text-right"
-            >
-              <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6 text-gold">
-                <FileText size={40} />
-              </div>
-              <h3 className="text-xl font-bold text-brand dark:text-white mb-4">تأكيد إرسال الفاتورة</h3>
-              <p className="text-muted mb-8">هل ترغب بإرسال فاتورة الطلب للعميل؟ سيتم احتساب الأتعاب تلقائياً حسب نوع الخدمة.</p>
-              
-              <div className="flex items-center gap-4">
-                <Button 
-                  onClick={handleConfirmSendInvoice}
-                  className="flex-1 bg-gold text-brand py-4 rounded-2xl font-bold shadow-lg shadow-gold/20"
-                >
-                  إرسال الفاتورة
-                </Button>
-                <Button 
-                  onClick={() => setIsConfirmingSendInvoice(false)}
-                  variant="outline"
-                  className="flex-1 py-4 rounded-2xl font-bold border-gray-200"
-                >
-                  إلغاء
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Confirmation Modal for Sending Promissory Note */}
-      <AnimatePresence>
-        {isConfirmingSendPromissory && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand/60 backdrop-blur-md" onClick={() => setIsConfirmingSendPromissory(false)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-[#12031a] rounded-[32px] shadow-2xl overflow-hidden p-8 text-right">
-              <div className="w-20 h-20 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-6 text-brand dark:text-gold">
-                <ScrollText size={40} />
-              </div>
-              <h3 className="text-xl font-bold text-brand dark:text-white mb-4">تأكيد إرسال سند لأمر</h3>
-              <p className="text-muted mb-8">سيتم إصدار سند لأمر إلكتروني للعميل بقيمة الأتعاب المحتسبة، وإرسال إشعار له للتوقيع.</p>
-              <div className="flex items-center gap-4">
-                <Button onClick={handleConfirmSendPromissory} className="flex-1 bg-brand text-gold py-4 rounded-2xl font-bold shadow-lg shadow-brand/20">
-                  إصدار السند
-                </Button>
-                <Button onClick={() => setIsConfirmingSendPromissory(false)} variant="outline" className="flex-1 py-4 rounded-2xl font-bold border-gray-200">
-                  إلغاء
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {statPopup && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setStatPopup(null)}>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/40"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative z-10 bg-white dark:bg-[#12031a] rounded-2xl border border-gold/20 shadow-2xl w-full max-w-md max-h-[70vh] flex flex-col overflow-hidden"
-              dir="rtl"
-            >
-              <div className="p-4 border-b border-gold/10 flex items-center justify-between bg-brand text-white rounded-t-2xl">
-                <h3 className="text-sm font-bold">{statPopup.label} ({statPopup.items.length})</h3>
-                <button onClick={() => setStatPopup(null)} className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20"><X size={14} /></button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {statPopup.items.length === 0 ? (
-                  <div className="text-center text-muted text-sm py-8">لا توجد عناصر</div>
-                ) : (
-                  statPopup.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-brand text-gold flex items-center justify-center font-bold text-[10px]">
-                          {(item.name || '؟')[0]}
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-brand dark:text-white">{item.name}</div>
-                          {item.type && <div className="text-[9px] text-muted">{item.type === 'waive_request' ? 'إعفاء' : item.type === 'rescheduling_request' ? 'جدولة' : item.type}</div>}
-                        </div>
-                      </div>
-                      <div className="text-[9px] text-muted">{new Date(item.date || '').toLocaleDateString('ar-SA')}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Success Message Toast */}
-      <AnimatePresence>
-        {showSuccessMessage && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[210] bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold"
-          >
-            <CheckCircle size={24} />
-            تم ارسال العقد للعميل بنجاح
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {renderOverlays()}
     </div>
   );
 };

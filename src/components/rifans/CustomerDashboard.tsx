@@ -714,6 +714,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
       draft: 'bg-gray-100 text-gray-600 border-gray-200',
       pending: 'bg-amber-100 text-amber-700 border-amber-200',
       processing: 'bg-blue-100 text-blue-700 border-blue-200',
+      on_hold: 'bg-gray-100 text-gray-700 border-gray-200',
       executing: 'bg-purple-100 text-purple-700 border-purple-200',
       contract_signature: 'bg-gold/20 text-brand border-gold/30',
       completed: 'bg-green-100 text-green-700 border-green-200',
@@ -722,7 +723,8 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
     const labels: Record<string, string> = {
       draft: 'مسودة',
       pending: 'جديد',
-      processing: 'تحت الإجراء',
+      processing: 'قيد المعالجة',
+      on_hold: 'متوقف',
       executing: 'قيد التنفيذ',
       contract_signature: 'بانتظار التوقيع',
       completed: 'مكتمل',
