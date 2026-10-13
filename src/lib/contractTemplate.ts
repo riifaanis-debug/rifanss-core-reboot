@@ -520,7 +520,7 @@ export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
 
     return `
       <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden; margin-top: 8px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
           <thead>
             <tr style="background: #F3EFF5; border-bottom: 1.5px solid #D1D5DB;">
               <th style="padding: 6px 10px; font-weight: 800; color: #22042C; text-align: right; border-left: 1px solid #D1D5DB;">الجهة التمويلية</th>
@@ -543,7 +543,7 @@ export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
 
   const accountBlock = () => `
     <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden; margin-top: 8px;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
         <tbody>
           <tr style="background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
             <td style="padding: 6px 12px; font-weight: 700; color: #4B5563; width: 45%; border-left: 1px solid #E5E7EB;">الجهة المالية:</td>
@@ -563,9 +563,9 @@ export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
   `;
 
   const P = (p: string) =>
-    `<p style="font-size: 12px; line-height: 1.75; text-align: right; margin: 0; color: #1f2937;">${p}</p>`;
+    `<p style="font-size: 14px; line-height: 2; text-align: right; margin: 0; color: #1f2937;">${p}</p>`;
   const H = (t: string) =>
-    `<h3 style="font-size: 13.5px; font-weight: 800; color: #22042C; margin: 0 0 4px 0;">${t}</h3>`;
+    `<h3 style="font-size: 16px; font-weight: 800; color: #22042C; margin: 6px 0 6px 0; text-align: right;">${t}</h3>`;
 
   const blocks: string[] = [];
 
@@ -585,7 +585,7 @@ export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
   /* الأطراف */
   blocks.push(`
     <div style="border: 1px solid #D1D5DB; border-radius: 8px; overflow: hidden;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
         <thead>
           <tr style="background: #F3EFF5; border-bottom: 1.5px solid #D1D5DB;">
             <th style="padding: 6px 12px; font-weight: 800; color: #22042C; text-align: right; width: 50%; border-left: 1px solid #D1D5DB;">الطرف الأول</th>
@@ -618,7 +618,7 @@ export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
     const paras = s.paragraphs || [];
     const items = s.items || [];
     const itemHtml = (it: string, i: number) =>
-      `<div style="padding-right: 8px; font-size: 12px; line-height: 1.75; color: #1f2937;"><strong>${i + 1}.</strong> ${it}</div>`;
+      `<div style="padding-right: 8px; font-size: 14px; line-height: 2; color: #1f2937;"><strong>${i + 1}.</strong> ${it}</div>`;
     if (paras.length) {
       blocks.push(H(s.title) + P(paras[0]));
       paras.slice(1).forEach((p) => blocks.push(P(p)));
@@ -646,8 +646,8 @@ export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
             <img src="${rifansStampImg}" alt="ختم ريفانس المالية" style="max-height: 90px; width: auto; object-fit: contain; mix-blend-mode: multiply;" />
           </div>
           <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-top: 2px;">${FIRST_PARTY.name}</div>
-          <div style="font-size: 10px; color: #4B5563;">الرقم الوطني الموحد: ${FIRST_PARTY.unifiedNumber}</div>
-          <div style="font-size: 10px; color: #4B5563;">يمثلها: ${FIRST_PARTY.representative} – ${FIRST_PARTY.title}</div>
+          <div style="font-size: 11.5px; color: #4B5563;">الرقم الوطني الموحد: ${FIRST_PARTY.unifiedNumber}</div>
+          <div style="font-size: 11.5px; color: #4B5563;">يمثلها: ${FIRST_PARTY.representative} – ${FIRST_PARTY.title}</div>
         </div>
         <div style="text-align: center; padding-right: 8px;">
           <div style="font-size: 12px; font-weight: 800; color: #22042C; margin-bottom: 3px;">توقيع الطرف الثاني (العميل)</div>
@@ -661,8 +661,8 @@ export function buildContractBlocks(raw: HTMLElement | ContractData): string[] {
             }
           </div>
           <div style="font-size: 11.5px; font-weight: 800; color: #22042C; margin-top: 3px;">${c.clientName}</div>
-          <div style="font-size: 10px; color: #4B5563;">رقم الهوية: ${c.nationalId}</div>
-          <div style="font-size: 10px; color: #4B5563;">${
+          <div style="font-size: 11.5px; color: #4B5563;">رقم الهوية: ${c.nationalId}</div>
+          <div style="font-size: 11.5px; color: #4B5563;">${
             c.signedAt ? `تاريخ ووقت التوقيع: ${new Date(c.signedAt).toLocaleString('ar-SA')}` : 'تاريخ ووقت التوقيع: —'
           }</div>
         </div>

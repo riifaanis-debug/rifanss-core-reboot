@@ -1224,15 +1224,22 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
                                عقد تقديم خدمات رقم {contract.submission_id}
                              </h3>
                            </div>
-                           {getStatusBadge(req.status)}
+                           {contract.signed_at ? (
+                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">تم التوقيع</span>
+                           ) : (
+                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">بانتظار التوقيع</span>
+                           )}
                         </div>
+                        {contract.signed_at && (
+                          <p className="text-[11px] text-green-700 mb-2">وُقّع في: {new Date(contract.signed_at).toLocaleString('ar-SA-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                        )}
                          <p className="text-[11px] text-muted mb-3">
                           {contract.type === 'waive_request' ? 'طلب إعفاء من الالتزامات' : 
                            contract.type === 'rescheduling_request' ? 'إعادة جدولة المنتجات التمويلية' : 
                            contract.type === 'seized_amounts_request' ? 'إتاحة النسبة النظامية والمبالغ المستثناه' : 'طلب استشارة مالية'}
                          </p>
                         
-                        {req.status === 'contract_signature' ? (
+                        {!contract.signed_at ? (
                           <div className="mt-3 p-3 bg-brand/5 border border-gold/20 rounded-xl flex items-center justify-between animate-pulse">
                              <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-gold rounded-full"></div>
