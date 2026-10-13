@@ -407,7 +407,8 @@ export const getSubmission = async (id: string) => {
   const { data: req } = await supabase.from('requests').select('*').eq('id', id).single();
   if (!req) return null;
   
-  const { data: contracts } = await supabase.from('contracts').select('*').eq('submission_id', id).limit(1);
+  const { data: contracts } = await supabase.from('contracts').select('*').eq('submission_id', id)
+    .order('signed_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).limit(1);
   const contract = contracts && contracts.length > 0 ? contracts[0] : null;
   
   return {
@@ -427,16 +428,18 @@ export const submitSignature = async (submissionId: string, signatureData: strin
     .select('*')
     .eq('submission_id', submissionId)
     .eq('user_id', userId)
-    .limit(1);
+    .order('created_at', { ascending: false });
   
   if (!contracts || contracts.length === 0) throw new Error('العقد غير موجود');
-  
-  await supabase.from('contracts').update({
+  if (contracts.some((c: any) => c.signed_at)) return; // موقّع مسبقًا — لا توقيع مرتين
+
+  // حالة الطلب تُحدَّث في قاعدة البيانات تلقائيًا بعد التوقيع
+  const { data: updated, error } = await supabase.from('contracts').update({
     signature_data: signatureData,
     signed_at: new Date().toISOString(),
-  }).eq('id', contracts[0].id);
-
-  await supabase.from('requests').update({ status: 'executing' }).eq('id', submissionId);
+  }).eq('id', contracts[0].id).is('signed_at', null).select('id, signed_at');
+  if (error) throw error;
+  if (!updated || updated.length === 0) throw new Error('تعذر حفظ التوقيع');
 };
 
 export const notifyAdminContractSigned = async (submissionId: string, contractPdfFile?: { fileName: string; filePath: string }) => {
