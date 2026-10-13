@@ -44,17 +44,20 @@ export function renderRifansEmail(o: {
   const note = o.note ? `<div style="background:${C.off};border-right:4px solid ${C.gold};padding:12px;margin:16px 0;font-size:13px;color:#444;white-space:pre-wrap;">${esc(o.note)}</div>` : "";
   return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#ffffff;font-family:Tahoma,Arial,sans-serif;">
-<div dir="rtl" style="max-width:600px;margin:0 auto;background:${C.white};">
-  <div style="background:${C.purple};padding:22px;text-align:center;"><img src="${LOGO}" alt="ريفانس المالية" style="max-height:56px;max-width:180px;"></div>
-  <div style="height:4px;background:${C.gold};"></div>
-  <div style="padding:24px 20px;background:${C.off};">
+<div dir="rtl" style="max-width:600px;margin:0 auto;background:${C.white};color:${C.purple};padding:16px;">
+  <div style="text-align:center;padding:12px 0 14px;border-bottom:2px solid ${C.gold};">
+    <img src="${LOGO}" alt="ريفانس المالية" style="height:64px;width:auto;display:inline-block;">
+    <div style="margin-top:6px;font-size:15px;font-weight:bold;color:${C.purple};">ريفانس المالية</div>
+    <div style="font-size:11px;letter-spacing:2px;color:${C.gold};font-weight:bold;">RIFANIS FINANCE</div>
+  </div>
+  <div style="padding:20px 6px;text-align:right;">
     <h1 style="margin:0 0 12px;color:${C.purple};font-size:20px;">${esc(o.title)}</h1>
-    <p style="margin:0 0 16px;color:#333;font-size:14px;line-height:1.8;">${esc(o.intro)}</p>
-    ${rows ? `<table style="width:100%;border-collapse:collapse;background:${C.white};border-radius:10px;">${rows}</table>` : ""}
+    <p style="margin:0 0 16px;color:#333;font-size:14px;line-height:1.9;">${esc(o.intro)}</p>
+    ${rows ? `<table dir="rtl" style="width:100%;border-collapse:collapse;background:${C.off};border:1px solid #eee;border-radius:10px;">${rows}</table>` : ""}
     ${note}${cta}
   </div>
-  <div style="background:${C.purple};color:#d9cfe0;padding:16px;text-align:center;font-size:12px;line-height:1.8;">
-    <div style="color:${C.gold};font-weight:bold;">شركة ريفانس المالية</div>
+  <div style="text-align:center;padding:12px;border-top:1px solid #eee;font-size:11px;color:#888;line-height:1.8;">
+    <div style="color:${C.purple};font-weight:bold;">شركة ريفانس المالية — RIFANIS FINANCE</div>
     <div>رسالة آلية، يرجى عدم الرد عليها.</div>
     <div><a href="${SITE}" style="color:${C.gold};text-decoration:none;">rifanss.com</a></div>
   </div>
@@ -119,13 +122,17 @@ export async function buildEmail(admin: any, ev: { event: string; entity_id: str
       const { data: c } = await admin.from("contracts").select("id, submission_id, user_id, type, signed_at, created_at").eq("id", baseId).maybeSingle();
       if (!c) return { skip: "not_found" };
       const u = await user(c.user_id); const r = await request(c.submission_id);
+      if (ev.event === "contract_signed" && !forAdmin) return { to: toFor(u), subject: `تم توقيع العقد بنجاح | ${c.id}`, html: renderRifansEmail({
+        title: "تم توقيع العقد بنجاح", intro: `شكرًا ${u?.full_name || ""}، تم توثيق توقيعك الإلكتروني على العقد واعتماده.`,
+        rows: [["رقم العقد", c.id], ["رقم الطلب", c.submission_id], ["تاريخ ووقت التوقيع", fmtDate(c.signed_at)], ["حالة العقد", "تم التوقيع"]],
+        cta: { label: "عرض / تحميل العقد النهائي", url: portal(`#/contract/${c.submission_id}`) } }) };
       if (ev.event === "contract_signed") return { to: adminEmail, subject: `تم توقيع العقد | ${c.id}`, html: renderRifansEmail({
         title: "تم توقيع العقد", intro: "قام العميل بتوقيع العقد إلكترونيًا.",
         rows: [["اسم العميل", u?.full_name], ["رقم العميل", u?.file_number || u?.id], ["رقم الطلب", c.submission_id], ["رقم العقد", c.id], ["تاريخ ووقت التوقيع", fmtDate(c.signed_at)]],
         cta: { label: "عرض الطلب", url: portal("#/admin") } }) };
       return { to: toFor(u), subject: `عقد جديد بانتظار توقيعك | ${c.id}`, html: renderRifansEmail({
         title: "عقد جديد بانتظار توقيعك", intro: `تم إصدار عقد مرتبط بطلبك رقم ${c.submission_id}، وهو متاح الآن للمراجعة والتوقيع الإلكتروني من خلال بوابة العميل.`,
-        rows: [["رقم العقد", c.id], ["رقم الطلب", c.submission_id], ["نوع الطلب", typeAr(r?.type || c.type)], ["تاريخ الإصدار", fmtDate(c.created_at)]],
+        rows: [["رقم العقد", c.id], ["رقم الطلب", c.submission_id], ["اسم العميل", u?.full_name], ["نوع الطلب", typeAr(r?.type || c.type)], ["تاريخ الإصدار", fmtDate(c.created_at)], ["حالة العقد", c.signed_at ? "تم التوقيع" : "بانتظار التوقيع"]],
         cta: { label: "مراجعة وتوقيع العقد", url: portal(`#/contract/${c.submission_id}`) } }) };
     }
     case "promissory_issued": case "promissory_signed": {
