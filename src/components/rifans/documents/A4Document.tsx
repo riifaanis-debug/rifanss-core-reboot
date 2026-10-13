@@ -143,6 +143,7 @@ export const A4Document: React.FC<A4DocumentProps> = ({ blocks, docType, docNumb
       <div
         ref={measureRef}
         aria-hidden
+        className="a4-page a4-measure"
         style={{ position: 'fixed', left: -20000, top: 0, width: A4_CONTENT_W, visibility: 'hidden', fontFamily: FONT, direction: 'rtl', pointerEvents: 'none' }}
       >
         {blocks.map((b, i) => <div key={i} style={{ display: 'flow-root' }}>{b}</div>)}

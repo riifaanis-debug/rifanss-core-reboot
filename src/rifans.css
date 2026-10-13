@@ -603,6 +603,7 @@ label:has(+ div > input:not([type=checkbox]):not([type=radio])) {
 
 /* ═══ طباعة المستندات: خط أوضح داخل صفحات A4 (يُطبَّق على الشاشة والـ PDF والطباعة معًا) ═══ */
 .a4-page { line-height: 1.85; }
+.a4-measure { height: auto !important; overflow: visible !important; }
 .a4-page .text-\[9px\], .a4-page .text-\[10px\] { font-size: 12px !important; }
 .a4-page .text-\[11px\], .a4-page .text-xs { font-size: 13px !important; line-height: 1.85 !important; }
 .a4-page .text-\[12px\], .a4-page .text-sm { font-size: 14px !important; line-height: 1.85 !important; }
