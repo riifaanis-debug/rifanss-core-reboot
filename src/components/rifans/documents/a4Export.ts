@@ -19,7 +19,7 @@ function clonePages(source: HTMLElement, hostId: string): HTMLElement {
   const host = document.createElement('div');
   host.id = hostId;
   host.setAttribute('dir', 'rtl');
-  const pages = Array.from(source.querySelectorAll('.a4-page')) as HTMLElement[];
+  const pages = Array.from(source.querySelectorAll('.a4-page:not(.a4-measure)')) as HTMLElement[];
   pages.forEach((p) => host.appendChild(p.cloneNode(true)));
   document.body.appendChild(host);
   return host;
@@ -31,7 +31,7 @@ export async function exportA4Pdf(source: HTMLElement): Promise<Blob> {
   try {
     await waitForAssets(host);
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-    const pages = Array.from(host.querySelectorAll('.a4-page')) as HTMLElement[];
+    const pages = Array.from(host.querySelectorAll('.a4-page:not(.a4-measure)')) as HTMLElement[];
     for (let i = 0; i < pages.length; i++) {
       const canvas = await html2canvas(pages[i], {
         scale: 2.5, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', logging: false,
