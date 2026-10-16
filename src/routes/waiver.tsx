@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import HealthDisabilityWaiverPage from "@/components/rifans/HealthDisabilityWaiverPage";
 import GuestWaiverForm from "@/components/rifans/GuestWaiverForm";
-import "@/rifans.css";
 
 const title = "طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي | ريفانس المالية";
 const description = "قدّم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي مع فريق ريفانس المالية المختص، دون الحاجة لتسجيل الدخول.";
