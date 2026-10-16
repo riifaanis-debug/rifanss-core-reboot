@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as WaiverRouteImport } from './routes/waiver'
 import { Route as ApiPublicEmailDispatchRouteImport } from './routes/api/public/email-dispatch'
 import { Route as ApiPublicFnCheckDomainVerificationRouteImport } from './routes/api/public/fn/check-domain-verification'
+import { Route as ApiPublicFnGuestWaiverRouteImport } from './routes/api/public/fn/guest-waiver'
 import { Route as ApiPublicFnHubspotSyncRouteImport } from './routes/api/public/fn/hubspot-sync'
 import { Route as ApiPublicFnNotifyAdminRouteImport } from './routes/api/public/fn/notify-admin'
 import { Route as ApiPublicFnSendExemptionRequestRouteImport } from './routes/api/public/fn/send-exemption-request'
@@ -31,6 +33,11 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WaiverRoute = WaiverRouteImport.update({
+  id: '/waiver',
+  path: '/waiver',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicEmailDispatchRoute = ApiPublicEmailDispatchRouteImport.update({
   id: '/api/public/email-dispatch',
   path: '/api/public/email-dispatch',
@@ -42,6 +49,11 @@ const ApiPublicFnCheckDomainVerificationRoute =
     path: '/api/public/fn/check-domain-verification',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicFnGuestWaiverRoute = ApiPublicFnGuestWaiverRouteImport.update({
+  id: '/api/public/fn/guest-waiver',
+  path: '/api/public/fn/guest-waiver',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFnHubspotSyncRoute = ApiPublicFnHubspotSyncRouteImport.update({
   id: '/api/public/fn/hubspot-sync',
   path: '/api/public/fn/hubspot-sync',
@@ -82,8 +94,10 @@ const ApiPublicUploadsSplatRoute = ApiPublicUploadsSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/waiver': typeof WaiverRoute
   '/api/public/email-dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
+  '/api/public/fn/guest-waiver': typeof ApiPublicFnGuestWaiverRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
   '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
@@ -95,8 +109,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/waiver': typeof WaiverRoute
   '/api/public/email-dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
+  '/api/public/fn/guest-waiver': typeof ApiPublicFnGuestWaiverRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
   '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
@@ -109,8 +125,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/waiver': typeof WaiverRoute
   '/api/public/email-dispatch': typeof ApiPublicEmailDispatchRoute
   '/api/public/fn/check-domain-verification': typeof ApiPublicFnCheckDomainVerificationRoute
+  '/api/public/fn/guest-waiver': typeof ApiPublicFnGuestWaiverRoute
   '/api/public/fn/hubspot-sync': typeof ApiPublicFnHubspotSyncRoute
   '/api/public/fn/notify-admin': typeof ApiPublicFnNotifyAdminRoute
   '/api/public/fn/send-exemption-request': typeof ApiPublicFnSendExemptionRequestRoute
@@ -124,8 +142,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/waiver'
     | '/api/public/email-dispatch'
     | '/api/public/fn/check-domain-verification'
+    | '/api/public/fn/guest-waiver'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
     | '/api/public/fn/send-exemption-request'
@@ -137,8 +157,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/waiver'
     | '/api/public/email-dispatch'
     | '/api/public/fn/check-domain-verification'
+    | '/api/public/fn/guest-waiver'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
     | '/api/public/fn/send-exemption-request'
@@ -150,8 +172,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/waiver'
     | '/api/public/email-dispatch'
     | '/api/public/fn/check-domain-verification'
+    | '/api/public/fn/guest-waiver'
     | '/api/public/fn/hubspot-sync'
     | '/api/public/fn/notify-admin'
     | '/api/public/fn/send-exemption-request'
@@ -164,8 +188,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  WaiverRoute: typeof WaiverRoute
   ApiPublicEmailDispatchRoute: typeof ApiPublicEmailDispatchRoute
   ApiPublicFnCheckDomainVerificationRoute: typeof ApiPublicFnCheckDomainVerificationRoute
+  ApiPublicFnGuestWaiverRoute: typeof ApiPublicFnGuestWaiverRoute
   ApiPublicFnHubspotSyncRoute: typeof ApiPublicFnHubspotSyncRoute
   ApiPublicFnNotifyAdminRoute: typeof ApiPublicFnNotifyAdminRoute
   ApiPublicFnSendExemptionRequestRoute: typeof ApiPublicFnSendExemptionRequestRoute
@@ -191,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/waiver': {
+      id: '/waiver'
+      path: '/waiver'
+      fullPath: '/waiver'
+      preLoaderRoute: typeof WaiverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/email-dispatch': {
       id: '/api/public/email-dispatch'
       path: '/api/public/email-dispatch'
@@ -203,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/fn/check-domain-verification'
       fullPath: '/api/public/fn/check-domain-verification'
       preLoaderRoute: typeof ApiPublicFnCheckDomainVerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fn/guest-waiver': {
+      id: '/api/public/fn/guest-waiver'
+      path: '/api/public/fn/guest-waiver'
+      fullPath: '/api/public/fn/guest-waiver'
+      preLoaderRoute: typeof ApiPublicFnGuestWaiverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/fn/hubspot-sync': {
@@ -260,9 +300,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  WaiverRoute: WaiverRoute,
   ApiPublicEmailDispatchRoute: ApiPublicEmailDispatchRoute,
   ApiPublicFnCheckDomainVerificationRoute:
     ApiPublicFnCheckDomainVerificationRoute,
+  ApiPublicFnGuestWaiverRoute: ApiPublicFnGuestWaiverRoute,
   ApiPublicFnHubspotSyncRoute: ApiPublicFnHubspotSyncRoute,
   ApiPublicFnNotifyAdminRoute: ApiPublicFnNotifyAdminRoute,
   ApiPublicFnSendExemptionRequestRoute: ApiPublicFnSendExemptionRequestRoute,

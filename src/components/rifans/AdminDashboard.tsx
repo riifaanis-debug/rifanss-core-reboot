@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { SubmissionHistory, Notification, Contract, UserProfile } from '../../types';
 import { safeStringify, safeParse } from '../../utils/safeJson';
 import { supabase } from '@/integrations/supabase/client';
+import GuestWaiverRequests from './GuestWaiverRequests';
 import { getAdminSubmissions, getAdminUsers, getAdminNotifications, getAdminContracts, updateSubmissionStatus, sendContract as apiSendContract, sendInvoice as apiSendInvoice, getSubmissionHistory as apiGetSubmissionHistory, getAdminInvoices, uploadDocument, sendPromissoryNote as apiSendPromissoryNote, getAdminPromissoryNotes } from '../../lib/api';
 import { formatAmount } from '../../lib/formatNumber';
 import { adminMarkRead, adminMarkAllRead, adminArchive, subscribeAdminNotifications, formatBadge } from '../../lib/notifications';
@@ -55,7 +56,8 @@ type DashboardTab =
   | 'open_request' 
   | 'mobile_requests' 
   | 'mobile_documents' 
-  | 'mobile_more';
+  | 'mobile_more'
+  | 'guest_waivers';
 
 const MOBILE_INLINE_TABS = new Set<DashboardTab>(['home','mobile_requests','clients','mobile_documents','mobile_more']);
 
@@ -2275,6 +2277,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       { icon: <CreditCard size={18} />, label: 'سداد المدفوعات', onClick: () => setActiveTab('payments') },
       { icon: <FileCheck size={18} />, label: 'طلب مستند', onClick: () => setActiveTab('document_request') },
       { icon: <FileText size={18} />, label: 'طلب مفتوح', onClick: () => setActiveTab('open_request') },
+      { icon: <FileSpreadsheet size={18} className="text-gold" />, label: 'طلبات الإعفاء من صفحة الهبوط', onClick: () => setActiveTab('guest_waivers') },
       { icon: <RefreshCw size={18} />, label: 'تحديث البيانات', onClick: () => fetchAllData() },
       { icon: <LogOut size={18} />, label: 'تسجيل الخروج', onClick: () => logout(), danger: true },
     ];
@@ -4655,6 +4658,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 {activeTab === 'settings' && renderSettings()}
                 {activeTab === 'promissory_notes' && renderPromissoryNotes()}
                 {activeTab === 'payments' && <AdminPaymentRequests />}
+{activeTab === 'guest_waivers' && <GuestWaiverRequests />}
                 {activeTab === 'document_request' && renderDocumentRequest()}
                 {activeTab === 'open_request' && <OpenRequestBuilder clients={users} onCreated={fetchAllData} />}
               </div>
@@ -4859,6 +4863,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   {activeTab === 'settings' && renderSettings()}
                   {activeTab === 'promissory_notes' && renderPromissoryNotes()}
                   {activeTab === 'payments' && <AdminPaymentRequests />}
+{activeTab === 'guest_waivers' && <GuestWaiverRequests />}
                   {activeTab === 'document_request' && renderDocumentRequest()}
                   {activeTab === 'open_request' && (
                     <OpenRequestBuilder
