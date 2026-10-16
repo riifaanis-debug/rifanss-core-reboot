@@ -409,6 +409,63 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_waiver_requests: {
+        Row: {
+          age: number
+          bank: string
+          city: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          job_status: string
+          national_id: string
+          notes: string | null
+          phone: string
+          products: Json
+          region: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          bank: string
+          city: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id: string
+          job_status: string
+          national_id: string
+          notes?: string | null
+          phone: string
+          products?: Json
+          region: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          bank?: string
+          city?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          job_status?: string
+          national_id?: string
+          notes?: string | null
+          phone?: string
+          products?: Json
+          region?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           actual_amount: number | null
