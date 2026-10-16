@@ -14,11 +14,13 @@ import {
 } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
+import Logo from './Logo';
 import healthWaiverBanner from '@/assets/health-waiver-banner.jpg';
 import { navigateTo } from '../../utils/scrollManager';
 
-export const HealthDisabilityWaiverPage: React.FC = () => {
+export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?: () => void }> = ({ landing, onApply }) => {
   const handleApplyClick = () => {
+    if (onApply) { onApply(); return; }
     window.dispatchEvent(
       new CustomEvent('open-waive-form', {
         detail: {
@@ -74,11 +76,15 @@ export const HealthDisabilityWaiverPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FCFBF8] dark:bg-[#08010C] text-gray-900 dark:text-gray-100 font-['Tajawal']" dir="rtl">
-      <Header />
+      {landing ? (
+        <header className="sticky top-0 z-50 bg-white/95 dark:bg-brand/95 backdrop-blur border-b border-gold/15 h-16 flex items-center justify-center pt-[env(safe-area-inset-top)]">
+          <Logo className="h-11 w-auto" />
+        </header>
+      ) : <Header />}
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-5 sm:py-8">
         {/* Back Button */}
-        <div className="flex justify-end mb-4">
+        {!landing && <div className="flex justify-end mb-4">
           <button
             onClick={() => {
               if (window.history.length > 1) {
@@ -92,7 +98,7 @@ export const HealthDisabilityWaiverPage: React.FC = () => {
             <span>رجوع</span>
             <ChevronLeft size={14} className="text-gold" />
           </button>
-        </div>
+        </div>}
 
         {/* 1. صورة الخدمة الموجودة في الصفحة الرئيسية */}
         <div className="image-wrapper w-full max-w-4xl mx-auto mb-8 sm:mb-10 shadow-sm">
