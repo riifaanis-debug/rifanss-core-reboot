@@ -7,7 +7,7 @@ import GuestWaiverForm from "@/components/rifans/GuestWaiverForm";
 
 const title = "طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي | ريفانس المالية";
 const description = "قدّم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي مع فريق ريفانس المالية المختص، دون الحاجة لتسجيل الدخول.";
-const img = "https://rifanss.com/og-share.jpg";
+const img = "https://rifanss.com/og-waiver.jpg";
 
 export const Route = createFileRoute("/waiver")({
   ssr: false,
@@ -18,7 +18,11 @@ export const Route = createFileRoute("/waiver")({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://rifanss.com/waiver" },
       { property: "og:image", content: img },
+      { property: "og:image:width", content: "1448" },
+      { property: "og:image:height", content: "1086" },
+      { property: "og:image:type", content: "image/jpeg" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: img },
     ],
