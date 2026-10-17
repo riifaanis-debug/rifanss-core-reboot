@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import HealthDisabilityWaiverPage from "@/components/rifans/HealthDisabilityWaiverPage";
 import GuestWaiverForm from "@/components/rifans/GuestWaiverForm";
 
@@ -27,7 +29,11 @@ export const Route = createFileRoute("/waiver")({
 function WaiverLanding() {
   const [showForm, setShowForm] = useState(false);
   const toggle = (v: boolean) => { setShowForm(v); window.scrollTo({ top: 0 }); };
-  return showForm
-    ? <GuestWaiverForm onBack={() => toggle(false)} />
-    : <HealthDisabilityWaiverPage landing onApply={() => toggle(true)} />;
+  return (
+    <LanguageProvider><AuthProvider>
+      {showForm
+        ? <GuestWaiverForm onBack={() => toggle(false)} />
+        : <HealthDisabilityWaiverPage landing onApply={() => toggle(true)} />}
+    </AuthProvider></LanguageProvider>
+  );
 }
