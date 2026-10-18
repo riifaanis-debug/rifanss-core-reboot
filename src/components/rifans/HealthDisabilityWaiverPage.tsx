@@ -100,7 +100,12 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
           </button>
         </div>}
 
-        {/* 1. صورة الخدمة الموجودة في الصفحة الرئيسية */}
+        {/* 1. صورة الخدمة */}
+        {landing ? (
+          <div className="-mx-4 sm:-mx-6 md:-mx-8 -mt-5 sm:-mt-8 mb-8 sm:mb-10">
+            <img src={landingHero.url} alt="تقديم طلب إعفاء من المنتجات التمويلية - ريفانس المالية" className="block w-full h-auto" />
+          </div>
+        ) : (
         <div className="image-wrapper w-full max-w-4xl mx-auto mb-8 sm:mb-10 shadow-sm">
           <img 
             src={healthWaiverBanner} 
@@ -109,8 +114,34 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
             referrerPolicy="no-referrer"
           />
         </div>
+        )}
 
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12">
+          {landing && (
+            <section className="space-y-8">
+              <div className="p-5 sm:p-7 rounded-2xl bg-gradient-to-br from-white to-[#F6F2EA] dark:from-[#14031c] dark:to-[#14031c] border border-gold/30 shadow-sm space-y-4">
+                <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white">هل لديك عارض صحي أو عجز طبي ؟</h2>
+                <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">
+                  تسبب في عدم لياقتك الطبية للعمل، مَما أدى إلى إنهاء خدمتك، ولا زال لديك تمويل عقاري أو تمويل شخصي أو تأجيري قائم، وتعذر عليك السداد !
+                </p>
+                <div className="border-t border-gold/25" />
+                <h3 className="text-base sm:text-xl font-black text-gold">نحن في ريفانس المالية</h3>
+                <p className="text-sm sm:text-lg leading-loose font-bold text-[#240738] dark:text-white">
+                  نؤمن أن الحلول المالية ليست مجرد أرقام أو معاملات، بل هي وسيلة لخلق أثر إنساني يعيد التوازن والاستقرار لحياة عملائنا.
+                </p>
+              </div>
+              <div className="pr-4 border-r-4 border-gold space-y-4">
+                <h3 className="text-base sm:text-xl font-black text-[#240738] dark:text-white">مبادرة ريفانس لرفع طلب الإعفاء</h3>
+                <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">
+                  جاءت مبادرة رفع طلب الإعفاء من جميع الالتزامات التمويلية لدى البنوك والمصارف والشركات التمويلية كأحد أهم مساراتنا لدعم العملاء الذين لديهم عجز طبي مثبت بموجب تقارير رسمية صادرة أو معتمدة من الجهات الطبية المختصة.
+                </p>
+                <p className="text-sm sm:text-lg leading-loose font-bold text-[#240738] dark:text-white">
+                  بحكم خبرتنا وكفاءة فريقنا في ريفانس المكوَّن من نخبة متخصصة في المنازعات المصرفية والتمويلية، نؤكد لك قوة موقفنا ومتابعتنا الدقيقة حتى استلام خطاب المخالصة المالية
+                </p>
+              </div>
+            </section>
+          )}
+
           {/* 2. تعريف بالخدمة */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
@@ -132,6 +163,28 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
               </p>
             </div>
           </section>
+
+          {landing && (
+            <section className="space-y-4">
+              <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
+                <div className="w-2.5 h-6 rounded-full bg-gold" />
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#240738] dark:text-gold">شروط ومتطلبات تقديم الطلب</h2>
+              </div>
+              <ul className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#14031c] border border-gold/25 space-y-4 text-sm sm:text-lg text-gray-800 dark:text-gray-200 leading-loose">
+                {[
+                  'تقرير طبي يوضح العارض الصحي وعدم القدرة على ممارسة الحياة اليومية بصورة طبيعية ويحتاج إلى مساعدة الآخرين',
+                  'قرار إنهاء الخدمة أو التقاعد الطبي',
+                  'تفويض ريفانس المالية لمتابعة الإجراءات لدى الجهة التمويلية وفق الأنظمة والتعليمات المعمول بها.',
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-gold shrink-0 mt-1" />
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
 
           {/* 3. من يمكنه الاستفادة من الخدمة */}
           <section className="space-y-4">
