@@ -115,6 +115,7 @@ const Header: React.FC<{ overlaySafeArea?: boolean }> = ({ overlaySafeArea = fal
 
   return (
     <>
+      {!overlaySafeArea && <div aria-hidden className="h-[52px] sm:h-[60px] md:h-[70px]" />}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${overlaySafeArea ? 'pt-[env(safe-area-inset-top)] h-[calc(52px+env(safe-area-inset-top))] sm:h-[calc(60px+env(safe-area-inset-top))] md:h-[calc(70px+env(safe-area-inset-top))]' : 'h-[52px] sm:h-[60px] md:h-[70px]'} flex items-center
         ${isScrolled 
           ? 'bg-white/85 dark:bg-black/80 backdrop-blur-xl border-b border-gold/20 shadow-sm' 
