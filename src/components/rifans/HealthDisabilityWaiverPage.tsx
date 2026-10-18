@@ -16,6 +16,7 @@ import Header from './Header';
 import Footer from './Footer';
 import Logo from './Logo';
 import healthWaiverBanner from '@/assets/health-waiver-banner.jpg';
+import landingHero from '@/assets/waiver-landing-hero.jpg.asset.json';
 import { navigateTo } from '../../utils/scrollManager';
 
 export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?: () => void }> = ({ landing, onApply }) => {
@@ -186,7 +187,7 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
           )}
 
 
-          {/* 3. من يمكنه الاستفادة من الخدمة */}
+          {!landing && (<>{/* 3. من يمكنه الاستفادة من الخدمة */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
               <div className="w-2.5 h-6 rounded-full bg-gold" />
@@ -258,12 +259,14 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
             </div>
           </section>
 
+          </>)}
+
           {/* ميثاق الشفافية والمصداقية */}
           <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#1C0624] via-[#2A0835] to-[#160320] text-white border-2 border-gold/50 shadow-md space-y-3">
             <h3 className="text-base sm:text-lg font-bold text-gold">المصداقية والشفافية</h3>
             <div className="space-y-2 text-xs sm:text-sm leading-relaxed text-gray-200">
               <p>
-                حرصًا من ريفانس المالية على الشفافية والمصداقية، فإن خدمة تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي لا تتطلب أي رسوم أو مبالغ مقدمًا.
+                حرصًا من ريفانس المالية على الشفافية والمصداقية، فإن خدمة تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي <span className="text-gold font-bold">لا تتطلب أي رسوم أو مبالغ مقدمًا</span>.
               </p>
               <p>
                 وفي حال عدم قبول طلب الإعفاء، لن يتحمل العميل أي رسوم مقابل تقديم الطلب، وتكون أي مستحقات مالية مرتبطة بالخدمة — إن وجدت — بعد قبول طلب الإعفاء رسميًا وإصدار خطاب المخالصة النهائية من الجهة التمويلية المختصة.
