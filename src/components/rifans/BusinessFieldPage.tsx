@@ -86,6 +86,10 @@ export const BusinessFieldPage: React.FC<BusinessFieldPageProps> = ({ fieldId, o
   };
 
   const handleApplyNow = (subService: SubServiceItem) => {
+    if (subService.id === 'waiver-request') {
+      window.location.hash = '#/health-waiver';
+      return;
+    }
     // If user is not authenticated: preserve chosen service and prompt auth
     if (!user) {
       sessionStorage.setItem('pending_service_request', JSON.stringify({

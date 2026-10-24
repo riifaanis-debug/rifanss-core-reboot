@@ -207,11 +207,7 @@ export const MostRequestedServices: React.FC = () => {
     }
 
     if (card.serviceId === 'waiver-request') {
-      window.dispatchEvent(
-        new CustomEvent('open-waive-form', {
-          detail: { notes: `طلب خدمة: ${card.title}` },
-        })
-      );
+      window.location.hash = '#/health-waiver';
       return;
     }
 
