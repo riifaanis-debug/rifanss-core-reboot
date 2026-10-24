@@ -77,7 +77,11 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
     const cleanShort = typeof shortDescription === 'string' ? shortDescription.trim() : '';
     const cleanAbout = typeof aboutText === 'string' ? aboutText.trim() : '';
     if (!cleanShort) return false;
-    if (cleanShort === cleanAbout  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    if (cleanShort === cleanAbout) return false;
+    return true;
+  }, [shortDescription, aboutText]);
+
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
       <div className="w-2.5 h-7 rounded-full bg-gold shrink-0" />
       <h2 className="text-xl sm:text-3xl font-black text-[#240738] dark:text-gold m-0">{children}</h2>
