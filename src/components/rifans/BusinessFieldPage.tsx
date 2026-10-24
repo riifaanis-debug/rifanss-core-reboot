@@ -81,6 +81,10 @@ export const BusinessFieldPage: React.FC<BusinessFieldPageProps> = ({ fieldId, o
   }, [fieldId]);
 
   const handleSubServiceClick = (sub: SubServiceItem) => {
+    if (sub.id === 'waiver-request') {
+      window.location.hash = '#/health-waiver';
+      return;
+    }
     setSelectedSubService(sub);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
