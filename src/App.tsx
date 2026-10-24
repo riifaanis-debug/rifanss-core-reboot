@@ -284,6 +284,17 @@ const AppContent: React.FC = () => {
         );
       }
     }
+    if (route.startsWith('#/service-page/')) {
+      const sid = route.replace('#/service-page/', '');
+      const found = getSubServiceById(sid);
+      if (found) {
+        if (found.subService.id === 'waiver-request') return <HealthDisabilityWaiverPage />;
+        if (found.field.id === 'electronic') {
+          return <ElectronicServicesPage initialServiceId={sid} onBack={() => navigateTo('#/electronic-services')} />;
+        }
+        return <BusinessFieldPage fieldId={found.field.id} serviceId={sid} onBack={() => navigateTo('#business-fields')} />;
+      }
+    }
     if (route.startsWith('#/electronic-service/')) {
       const serviceId = route.replace('#/electronic-service/', '');
       return <ElectronicServicesPage initialServiceId={serviceId} onBack={() => navigateTo('#/electronic-services')} />;

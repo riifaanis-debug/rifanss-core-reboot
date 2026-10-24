@@ -26,6 +26,7 @@ import {
   ServiceItemCard,
   ServiceDetailLayout,
 } from './services';
+import { getServiceImage } from '../../data/serviceImages';
 
 // Category tab definitions
 export type ServiceCategoryKey = 'all' | 'cv-employment' | 'government' | 'financing-support' | 'documents-submission';
@@ -261,6 +262,7 @@ export const ElectronicServicesPage: React.FC<ElectronicServicesPageProps> = ({
               </button>
             </div>
             <ServiceDetailLayout
+            heroImage={getServiceImage(selectedService.id)}
             title={selectedService.name}
             badge={selectedService.isMostRequested ? 'الأكثر طلباً' : undefined}
             shortDescription={selectedService.subtitle}
