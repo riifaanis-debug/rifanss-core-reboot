@@ -275,14 +275,6 @@ const AppContent: React.FC = () => {
         if (found.subService.id === 'waiver-request') {
           return <HealthDisabilityWaiverPage />;
         }
-        if (false) {
-          return (
-            <WaiveRequestForm
-              prefill={{ notes: `طلب خدمة: ${found.subService.name}` }}
-              onClose={() => { window.location.hash = '#/'; }}
-            />
-          );
-        }
         return (
           <DynamicServiceForm
             subService={found.subService}
