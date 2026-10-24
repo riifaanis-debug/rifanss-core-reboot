@@ -144,7 +144,7 @@ export const SectionPage: React.FC<SectionPageProps> = ({ sectionId }) => {
                 description={p.shortDesc}
                 ctaText="الانتقال للخدمة وتفاصيلها"
                 onSelect={() => {
-                  window.location.hash = `#/product/${p.id}`;
+                  window.location.hash = p.id === 'bnk-6' ? '#/health-waiver' : `#/product/${p.id}`;
                 }}
               />
             ))}

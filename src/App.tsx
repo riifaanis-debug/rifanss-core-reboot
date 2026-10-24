@@ -273,6 +273,9 @@ const AppContent: React.FC = () => {
       const found = getSubServiceById(serviceId);
       if (found) {
         if (found.subService.id === 'waiver-request') {
+          return <HealthDisabilityWaiverPage />;
+        }
+        if (false) {
           return (
             <WaiveRequestForm
               prefill={{ notes: `طلب خدمة: ${found.subService.name}` }}
@@ -310,6 +313,9 @@ const AppContent: React.FC = () => {
     if (route.startsWith('#/category/')) {
       const categoryId = route.replace('#/category/', '');
       return <ServiceCategoryPage categoryId={categoryId} />;
+    }
+    if (route === '#/product/bnk-6' || route === '#/product/bnk-6/apply') {
+      return <HealthDisabilityWaiverPage />;
     }
     if (route.startsWith('#/product/') && route.endsWith('/apply')) {
       const productId = route.replace('#/product/', '').replace('/apply', '');
