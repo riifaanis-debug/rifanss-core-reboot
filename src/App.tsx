@@ -27,7 +27,6 @@ import InvoicePage from './components/rifans/InvoicePage';
 import PromissoryNotePage from './components/rifans/PromissoryNotePage';
 import ClientCard from './components/rifans/ClientCard';
 import ProfileCompletionModal from './components/rifans/ProfileCompletionModal';
-import { WaiveInfoPage, SchedulingInfoPage, SeizedAmountsInfoPage } from './components/rifans/ServiceInfoPage';
 import DomainVerificationCheck from './components/rifans/DomainVerificationCheck';
 import BusinessFields from './components/rifans/BusinessFields';
 import MostRequestedServices from './components/rifans/MostRequestedServices';
@@ -284,6 +283,17 @@ const AppContent: React.FC = () => {
         );
       }
     }
+    if (route.startsWith('#/service-page/')) {
+      const sid = route.replace('#/service-page/', '');
+      const found = getSubServiceById(sid);
+      if (found) {
+        if (found.subService.id === 'waiver-request') return <HealthDisabilityWaiverPage />;
+        if (found.field.id === 'electronic') {
+          return <ElectronicServicesPage initialServiceId={sid} onBack={() => navigateTo('#/electronic-services')} />;
+        }
+        return <BusinessFieldPage fieldId={found.field.id} serviceId={sid} onBack={() => navigateTo('#business-fields')} />;
+      }
+    }
     if (route.startsWith('#/electronic-service/')) {
       const serviceId = route.replace('#/electronic-service/', '');
       return <ElectronicServicesPage initialServiceId={serviceId} onBack={() => navigateTo('#/electronic-services')} />;
@@ -355,9 +365,9 @@ const AppContent: React.FC = () => {
       case '#/waive-landing': return <LandingPage />;
       case '#/health-waiver':
       case '#/waiver-health': return <HealthDisabilityWaiverPage />;
-      case '#/waive-info': return <WaiveInfoPage />;
-      case '#/scheduling-info': return <SchedulingInfoPage />;
-      case '#/seized-amounts-info': return <SeizedAmountsInfoPage />;
+      case '#/waive-info': return <HealthDisabilityWaiverPage />;
+      case '#/scheduling-info': return <BusinessFieldPage fieldId="banking" serviceId="rescheduling-request" />;
+      case '#/seized-amounts-info': return <BusinessFieldPage fieldId="banking" serviceId="statutory-ratio-request" />;
       case '#/client-card': return <ClientCard />;
       case '#/domain-check': return <DomainVerificationCheck />;
       case '#/admin': return <LandingPage />;

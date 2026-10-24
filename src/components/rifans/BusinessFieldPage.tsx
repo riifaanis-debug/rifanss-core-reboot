@@ -32,9 +32,11 @@ import {
   ServiceItemCard,
   ServiceDetailLayout,
 } from './services';
+import { getServiceImage } from '../../data/serviceImages';
 
 interface BusinessFieldPageProps {
   fieldId?: string;
+  serviceId?: string;
   onBack?: () => void;
 }
 
@@ -65,11 +67,13 @@ const getSubServiceIcon = (iconName: string) => {
   }
 };
 
-export const BusinessFieldPage: React.FC<BusinessFieldPageProps> = ({ fieldId, onBack }) => {
+export const BusinessFieldPage: React.FC<BusinessFieldPageProps> = ({ fieldId, serviceId, onBack }) => {
   const { user } = useAuth();
   // Match current field or default to 'financial'
   const currentField = BUSINESS_FIELDS_DATA.find(f => f.id === fieldId) || BUSINESS_FIELDS_DATA[0];
-  const [selectedSubService, setSelectedSubService] = useState<SubServiceItem | null>(null);
+  const [selectedSubService, setSelectedSubService] = useState<SubServiceItem | null>(
+    () => (serviceId ? currentField.subServices.find(s => s.id === serviceId) || null : null)
+  );
 
   if (currentField.id === 'electronic') {
     return <ElectronicServicesPage onBack={onBack} initialServiceId={selectedSubService?.id} />;
@@ -77,16 +81,16 @@ export const BusinessFieldPage: React.FC<BusinessFieldPageProps> = ({ fieldId, o
 
   // Reset selected sub-service when switching fields
   useEffect(() => {
-    setSelectedSubService(null);
-  }, [fieldId]);
+    setSelectedSubService(serviceId ? currentField.subServices.find(s => s.id === serviceId) || null : null);
+    window.scrollTo({ top: 0 });
+  }, [fieldId, serviceId]);
 
   const handleSubServiceClick = (sub: SubServiceItem) => {
     if (sub.id === 'waiver-request') {
       window.location.hash = '#/health-waiver';
       return;
     }
-    setSelectedSubService(sub);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.location.hash = `#/service-page/${sub.id}`;
   };
 
   const handleApplyNow = (subService: SubServiceItem) => {
@@ -141,8 +145,7 @@ export const BusinessFieldPage: React.FC<BusinessFieldPageProps> = ({ fieldId, o
             <button
               type="button"
               onClick={() => {
-                setSelectedSubService(null);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.location.hash = `#/business-field/${currentField.id}`;
               }}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] sm:text-[12px] font-medium text-gray-700 dark:text-gray-300 bg-black/5 dark:bg-white/5 hover:bg-gold/10 hover:text-gold dark:hover:text-gold border border-black/5 dark:border-white/10 transition-colors cursor-pointer"
             >
@@ -151,6 +154,7 @@ export const BusinessFieldPage: React.FC<BusinessFieldPageProps> = ({ fieldId, o
             </button>
           </div>
           <ServiceDetailLayout
+            heroImage={getServiceImage(selectedSubService.id)}
             title={selectedSubService.name}
             aboutTitle="نبذة عن الخدمة"
             aboutText={selectedSubService.description}

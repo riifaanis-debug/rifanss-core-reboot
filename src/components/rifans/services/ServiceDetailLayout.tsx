@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, CheckCircle2, ShieldCheck, HeartHandshake } from 'lucide-react';
 
 export interface DetailTimelineStep {
   title: string;
@@ -44,6 +44,7 @@ export interface ServiceDetailLayoutProps {
   ctaSlot?: React.ReactNode;
 
   className?: string;
+  heroImage?: string;
 }
 
 export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
@@ -67,6 +68,7 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
   onCtaClick,
   ctaSlot,
   className = '',
+  heroImage,
 }) => {
   // Check if shortDescription is duplicate of aboutText to prevent unnecessary visual repetition
   const shouldShowShortDesc = React.useMemo(() => {
@@ -79,208 +81,151 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
     return true;
   }, [shortDescription, aboutText]);
 
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
+      <div className="w-2.5 h-7 rounded-full bg-gold shrink-0" />
+      <h2 className="text-xl sm:text-3xl font-black text-[#240738] dark:text-gold m-0">{children}</h2>
+    </div>
+  );
+  const Card = ({ children }: { children: React.ReactNode }) => (
+    <div className="p-5 sm:p-7 rounded-2xl bg-white dark:bg-[#14031c] border border-gold/25 text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">
+      {children}
+    </div>
+  );
+  const CheckList = ({ items }: { items: string[] }) => (
+    <ul className="space-y-4 m-0 p-0 list-none">
+      {items.map((t, i) => (
+        <li key={i} className="flex items-start gap-3 text-gray-800 dark:text-gray-200">
+          <CheckCircle2 className="w-6 h-6 text-gold shrink-0 mt-1" />
+          <span className="flex-1">{t}</span>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <article
-      className={`font-cairo text-right max-w-[800px] mx-auto space-y-6 sm:space-y-7 ${className}`}
-      dir="rtl"
-    >
-      {/* ===================================================================== */}
-      {/* 1. SERVICE HEADER (No icon before title)                               */}
-      {/* العنوان الأول: 16px على الجوال (md: 22px)، line-height: 1.375            */}
-      {/* ===================================================================== */}
-      <header className="pb-5 border-b border-gray-200/80 dark:border-white/10">
-        <div className="w-full">
-          <div className="flex items-start gap-2 flex-wrap">
-            <h1 className="text-[16px] md:text-[22px] font-bold text-[#2A0E32] dark:text-white leading-[1.375] m-0 break-words">
+    <article className={`font-cairo text-right ${className}`} dir="rtl">
+      {heroImage && (
+        <div className="relative -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8 mb-8 sm:mb-10 overflow-hidden">
+          <img src={heroImage} alt={title} className="block w-full h-auto max-h-[560px] object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#12021a]/95 via-[#12021a]/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-10 max-w-4xl mx-auto">
+            <h1 className="text-2xl sm:text-5xl font-black leading-tight m-0 bg-gradient-to-l from-[#F3DEA0] via-[#D6B56A] to-[#B99A55] bg-clip-text text-transparent drop-shadow">
               {title}
             </h1>
-
-            {badge && (
-              <span className="text-[12px] font-semibold text-gold shrink-0 mt-0.5">
-                • {badge}
-              </span>
-            )}
           </div>
+        </div>
+      )}
 
-          {/* حجم النص: 13px على الجوال، line-height: 1.625 */}
+      <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12">
+        <section className="pr-4 border-r-4 border-gold space-y-3">
+          <div className="flex items-start gap-2 flex-wrap">
+            <h2 className="text-xl sm:text-3xl font-black leading-snug text-[#240738] dark:text-white m-0">{title}</h2>
+            {badge && <span className="text-xs font-bold text-gold mt-2">• {badge}</span>}
+          </div>
           {shouldShowShortDesc && (
-            <p className="text-[13px] leading-[1.625] text-gray-700 dark:text-gray-300 font-normal mt-1.5 m-0">
-              {shortDescription}
-            </p>
+            <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300 m-0">{shortDescription}</p>
           )}
+          {notice && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border-r-4 border-amber-500 text-amber-900 dark:text-amber-200 text-sm leading-relaxed flex items-start gap-2.5">
+              <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1">{notice}</div>
+            </div>
+          )}
+        </section>
+
+        {aboutText && (
+          <section className="space-y-4">
+            <SectionTitle>شرح الخدمة</SectionTitle>
+            <Card>
+              {typeof aboutText === 'string' ? <p className="m-0 whitespace-pre-line">{aboutText}</p> : aboutText}
+            </Card>
+          </section>
+        )}
+
+        {optionsSlot && <section>{optionsSlot}</section>}
+
+        {benefits && benefits.length > 0 && (
+          <section className="space-y-4">
+            <SectionTitle>{benefitsTitle}</SectionTitle>
+            <Card><CheckList items={benefits} /></Card>
+          </section>
+        )}
+
+        {requirements && requirements.length > 0 && (
+          <section className="space-y-4">
+            <SectionTitle>{requirementsTitle}</SectionTitle>
+            <Card><CheckList items={requirements} /></Card>
+          </section>
+        )}
+
+        {timelineSteps && timelineSteps.length > 0 && (
+          <section className="space-y-4">
+            <SectionTitle>{timelineTitle}</SectionTitle>
+            <Card>
+              <ol className="space-y-5 m-0 p-0 list-none">
+                {timelineSteps.map((step, index) => {
+                  const stepTitle = typeof step === 'string' ? step : step.title;
+                  const stepDesc = typeof step === 'string' ? null : step.description;
+                  return (
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="w-8 h-8 rounded-full bg-gold/15 text-gold font-black text-sm flex items-center justify-center shrink-0">{index + 1}</span>
+                      <div className="flex-1">
+                        <h3 className="text-sm sm:text-lg font-bold text-[#240738] dark:text-white m-0 leading-relaxed">{stepTitle}</h3>
+                        {stepDesc && <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 m-0 mt-1 leading-relaxed">{stepDesc}</p>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </Card>
+          </section>
+        )}
+
+        <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-[#2A0835] to-[#160320] text-white border-2 border-gold/70 shadow-lg space-y-4">
+          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+            <ShieldCheck className="w-7 h-7 text-gold shrink-0" />
+            <h3 className="text-lg sm:text-2xl font-black m-0">المصداقية والشفافية</h3>
+          </div>
+          <p className="text-sm sm:text-base leading-loose text-gray-200 m-0">
+            حرصًا من ريفانس المالية على الشفافية والمصداقية، نوضح لك جميع تفاصيل الخدمة وإجراءاتها ومتطلباتها قبل البدء، ونتابع طلبك خطوة بخطوة حتى إنجازه.
+          </p>
+          <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4 text-xs sm:text-sm">
+            <span className="font-bold text-gold">«ريفانس المالية»</span>
+            <span className="text-gray-300">«وضوح في الإجراءات، وشفافية في التعامل»</span>
+          </div>
         </div>
 
-        {/* Notice box if available */}
-        {notice && (
-          <div className="mt-3.5 p-3.5 rounded-xl bg-amber-500/10 border-r-4 border-amber-500 text-amber-900 dark:text-amber-200 text-[13px] leading-[1.625] flex items-start gap-2.5">
-            <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="flex-1">{notice}</div>
-          </div>
-        )}
-      </header>
-
-      {/* ===================================================================== */}
-      {/* 2. نبذة عن الخدمة (About Section)                                      */}
-      {/* العنوان الثاني: 14px، line-height: 1.375                                */}
-      {/* حجم النص: 13px، line-height: 1.625                                    */}
-      {/* ===================================================================== */}
-      {aboutText && (
-        <section className="space-y-2">
-          <h2 className="text-[14px] md:text-[18px] font-bold text-[#2A0E32] dark:text-white leading-[1.375] m-0">
-            {aboutTitle}
-          </h2>
-
-          <div className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.625] font-normal">
-            {typeof aboutText === 'string' ? (
-              <p className="m-0 whitespace-pre-line">{aboutText}</p>
-            ) : (
-              aboutText
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Optional Custom Slot (e.g. Transaction options / paths) */}
-      {optionsSlot && (
-        <section className="pt-1">
-          {optionsSlot}
-        </section>
-      )}
-
-      {/* ===================================================================== */}
-      {/* 3. أبرز مزايا الخدمة للأفراد (Key Benefits)                            */}
-      {/* العنوان الثاني: 14px، line-height: 1.375                                */}
-      {/* حجم النص: 13px، line-height: 1.625                                    */}
-      {/* ===================================================================== */}
-      {benefits && benefits.length > 0 && (
-        <section className="pt-5 border-t border-gray-200/80 dark:border-white/10 space-y-2.5">
-          <h2 className="text-[14px] md:text-[18px] font-bold text-[#2A0E32] dark:text-white leading-[1.375] m-0">
-            {benefitsTitle}
-          </h2>
-
-          <ul className="space-y-2.5 m-0 p-0 list-none">
-            {benefits.map((benefit, index) => (
-              <li
-                key={index}
-                className="flex items-start gap-2.5 text-[13px] text-gray-700 dark:text-gray-300 leading-[1.625] font-normal"
-              >
-                <div className="w-[18px] h-[18px] rounded-full bg-gold/15 text-gold flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={11} strokeWidth={3} />
-                </div>
-                <span className="flex-1">{benefit}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* ===================================================================== */}
-      {/* 4. المستندات والمتطلبات (Documents & Requirements)                    */}
-      {/* العنوان الثاني: 14px، line-height: 1.375                                */}
-      {/* حجم النص: 13px، line-height: 1.625                                    */}
-      {/* ===================================================================== */}
-      {requirements && requirements.length > 0 && (
-        <section className="pt-5 border-t border-gray-200/80 dark:border-white/10 space-y-2.5">
-          <h2 className="text-[14px] md:text-[18px] font-bold text-[#2A0E32] dark:text-white leading-[1.375] m-0">
-            {requirementsTitle}
-          </h2>
-
-          <ul className="space-y-2.5 m-0 p-0 list-none">
-            {requirements.map((req, index) => (
-              <li
-                key={index}
-                className="flex items-start gap-2.5 text-[13px] text-gray-700 dark:text-gray-300 leading-[1.625] font-normal"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-gold shrink-0 mt-1.5" />
-                <span className="flex-1">{req}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* ===================================================================== */}
-      {/* 5. مراحل وإجراءات تنفيذ الطلب (Process Timeline)                      */}
-      {/* العنوان الثاني: 14px، line-height: 1.375                                */}
-      {/* حجم النص: 13px، line-height: 1.625                                    */}
-      {/* ===================================================================== */}
-      {timelineSteps && timelineSteps.length > 0 && (
-        <section className="pt-5 border-t border-gray-200/80 dark:border-white/10 space-y-3">
-          <h2 className="text-[14px] md:text-[18px] font-bold text-[#2A0E32] dark:text-white leading-[1.375] m-0">
-            {timelineTitle}
-          </h2>
-
-          <div className="relative pr-4 mr-0.5 space-y-4 before:content-[''] before:absolute before:top-2 before:bottom-2 before:right-[3px] before:w-[1px] before:bg-gold/40">
-            {timelineSteps.map((step, index) => {
-              const stepTitle = typeof step === 'string' ? step : step.title;
-              const stepDesc = typeof step === 'string' ? null : step.description;
-
-              return (
-                <div key={index} className="relative">
-                  <span className="absolute -right-[16px] top-1.5 w-2 h-2 rounded-full bg-gold ring-4 ring-[#FCFBF8] dark:ring-[#08010C]" />
-
-                  <div>
-                    <span className="text-[12px] font-bold text-gold block mb-0.5 leading-[1.375]">
-                      المرحلة {index + 1}
-                    </span>
-                    <h3 className="text-[13px] md:text-[15px] font-bold text-[#2A0E32] dark:text-white leading-[1.375] m-0">
-                      {stepTitle}
-                    </h3>
-                    {stepDesc && (
-                      <p className="text-[13px] text-gray-600 dark:text-gray-400 mt-1 leading-[1.625] m-0 font-normal">
-                        {stepDesc}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ===================================================================== */}
-      {/* 6. تنفيذ الطلب (CTA)                                                   */}
-      {/* العنوان الثاني: 14px، line-height: 1.375                                */}
-      {/* زر الإجراء: 54px ارتفاع، نص 14px عريض                                  */}
-      {/* ===================================================================== */}
-      <footer className="pt-5 border-t border-gray-200/80 dark:border-white/10">
-        {ctaSlot ? (
-          ctaSlot
-        ) : (
-          <div>
-            <h2 className="text-[14px] md:text-[18px] font-bold text-[#2A0E32] dark:text-white leading-[1.375] m-0">
-              {ctaTitle}
-            </h2>
-
-            {ctaNote && (
-              <p className="text-[13px] text-gray-600 dark:text-gray-400 font-medium mt-1 mb-0 leading-[1.625]">
-                {ctaNote}
+        <footer className="pt-8 pb-10 text-center space-y-4 border-t border-gold/30">
+          {ctaSlot ? ctaSlot : (
+            <>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold/15 text-gold mb-1">
+                <HeartHandshake className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white m-0">جاهز لبدء الطلب؟</h3>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 max-w-xl mx-auto m-0">
+                {ctaNote || 'فريقنا المختص جاهز لمراجعة طلبك والبدء في تنفيذ الخدمة ومتابعتها حتى الإنجاز.'}
               </p>
-            )}
-
-            <div className="mt-2.5">
-              {isUnavailable ? (
-                <div className="p-3 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 text-center font-bold text-[13px]">
-                  الخدمة غير متاحة حالياً
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onCtaClick}
-                  className="w-full sm:w-auto min-w-[240px] h-[54px] px-8 rounded-[12px] bg-gold hover:bg-[#D8B979] text-[#180020] font-bold text-[14px] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer group leading-[1.375]"
-                >
-                  <span>{ctaButtonText}</span>
-                  <ArrowLeft
-                    size={16}
-                    className="transition-transform group-hover:-translate-x-1"
-                  />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </footer>
+              <div className="pt-4">
+                {isUnavailable ? (
+                  <div className="p-3 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 text-center font-bold text-sm">
+                    الخدمة غير متاحة حالياً
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onCtaClick}
+                    className="inline-flex items-center justify-center gap-3 rounded-full px-12 sm:px-16 py-4 bg-[#2A0E32] border-2 border-gold text-white text-base sm:text-lg font-black shadow-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <span>طلب الخدمة الآن</span>
+                    <ArrowLeft className="w-5 h-5 text-gold" />
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </footer>
+      </div>
     </article>
   );
 };

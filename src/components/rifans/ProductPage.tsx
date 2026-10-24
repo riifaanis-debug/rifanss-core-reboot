@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { PageLayout } from './StaticPages';
 import { getProduct, INITIAL_FEE_SAR } from '../../data/sectionsCatalog';
 import { ServiceDetailLayout } from './services';
+import { getServiceImage } from '../../data/serviceImages';
 
 interface ProductPageProps {
   productId: string;
@@ -41,19 +42,9 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productId }) => {
             <ChevronLeft size={13} className="text-gold" />
           </a>
         </div>
-        {/* Banner image: compact aspect ratio to avoid eating mobile screen */}
-        <div className="max-w-[800px] mx-auto mb-6 aspect-[21/9] sm:aspect-[16/9] max-h-[220px] sm:max-h-[300px]">
-          <div className="image-wrapper w-full h-full">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-
         {/* Master Service Detail Layout */}
         <ServiceDetailLayout
+          heroImage={getServiceImage(product.id)}
           title={product.name}
           shortDescription={product.shortDesc}
           aboutTitle="تفاصيل الخدمة"
