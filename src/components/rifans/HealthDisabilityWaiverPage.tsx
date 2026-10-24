@@ -10,12 +10,12 @@ import {
   ArrowLeft, 
   ChevronLeft,
   CheckCircle2,
-  HeartHandshake
+  HeartHandshake,
+  ShieldCheck
 } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
 import Logo from './Logo';
-import healthWaiverBanner from '@/assets/health-waiver-banner.jpg';
 import landingHero from '@/assets/waiver-landing-hero.jpg.asset.json';
 import { navigateTo } from '../../utils/scrollManager';
 
@@ -101,200 +101,85 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
           </button>
         </div>}
 
-        {/* 1. صورة الخدمة */}
-        {landing ? (
-          <div className="-mx-4 sm:-mx-6 md:-mx-8 -mt-5 sm:-mt-8 mb-8 sm:mb-10">
-            <img src={landingHero.url} alt="تقديم طلب إعفاء من المنتجات التمويلية - ريفانس المالية" className="block w-full h-auto" />
-          </div>
-        ) : (
-        <div className="image-wrapper w-full max-w-4xl mx-auto mb-8 sm:mb-10 shadow-sm">
-          <img 
-            src={healthWaiverBanner} 
-            alt="تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي - شركة ريفانس المالية" 
-            className="w-full h-auto object-cover" 
-            referrerPolicy="no-referrer"
-          />
+        <div className="-mx-4 sm:-mx-6 md:-mx-8 mb-8 sm:mb-10">
+          <img src={landingHero.url} alt="تقديم طلب إعفاء من المنتجات التمويلية - ريفانس المالية" className="block w-full h-auto" />
         </div>
-        )}
 
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12">
-          {landing && (
-            <section className="space-y-8">
-              <div className="p-5 sm:p-7 rounded-2xl bg-gradient-to-br from-white to-[#F6F2EA] dark:from-[#14031c] dark:to-[#14031c] border border-gold/30 shadow-sm space-y-4">
-                <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white">هل لديك عارض صحي أو عجز طبي ؟</h2>
-                <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">
-                  تسبب في عدم لياقتك الطبية للعمل، مَما أدى إلى إنهاء خدمتك، ولا زال لديك تمويل عقاري أو تمويل شخصي أو تأجيري قائم، وتعذر عليك السداد !
-                </p>
-                <div className="border-t border-gold/25" />
-                <h3 className="text-base sm:text-xl font-black text-gold">نحن في ريفانس المالية</h3>
-                <p className="text-sm sm:text-lg leading-loose font-bold text-[#240738] dark:text-white">
-                  نؤمن أن الحلول المالية ليست مجرد أرقام أو معاملات، بل هي وسيلة لخلق أثر إنساني يعيد التوازن والاستقرار لحياة عملائنا.
-                </p>
-              </div>
-              <div className="pr-4 border-r-4 border-gold space-y-4">
-                <h3 className="text-base sm:text-xl font-black text-[#240738] dark:text-white">مبادرة ريفانس لرفع طلب الإعفاء</h3>
-                <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">
-                  جاءت مبادرة رفع طلب الإعفاء من جميع الالتزامات التمويلية لدى البنوك والمصارف والشركات التمويلية كأحد أهم مساراتنا لدعم العملاء الذين لديهم عجز طبي مثبت بموجب تقارير رسمية صادرة أو معتمدة من الجهات الطبية المختصة.
-                </p>
-                <p className="text-sm sm:text-lg leading-loose font-bold text-[#240738] dark:text-white">
-                  بحكم خبرتنا وكفاءة فريقنا في ريفانس المكوَّن من نخبة متخصصة في المنازعات المصرفية والتمويلية، نؤكد لك قوة موقفنا ومتابعتنا الدقيقة حتى استلام خطاب المخالصة المالية
-                </p>
-              </div>
-            </section>
-          )}
-
-          {/* 2. تعريف بالخدمة */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
-              <div className="w-2.5 h-6 rounded-full bg-gold" />
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#240738] dark:text-gold">
-                تعريف بالخدمة
-              </h2>
+          <section className="pr-4 border-r-4 border-gold space-y-8">
+            <h1 className="text-xl sm:text-3xl font-black leading-snug text-[#240738] dark:text-white">تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي</h1>
+            <div className="p-5 sm:p-7 rounded-2xl bg-gradient-to-br from-white to-[#F6F2EA] dark:from-[#14031c] dark:to-[#14031c] border border-gold/30 shadow-sm space-y-4">
+              <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white">هل لديك عارض صحي أو عجز طبي ؟</h2>
+              <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">تسبب في عدم لياقتك الطبية للعمل، مَما أدى إلى إنهاء خدمتك، ولا زال لديك تمويل عقاري أو تمويل شخصي أو تأجيري قائم، وتعذر عليك السداد !</p>
+              <div className="border-t border-gold/25" />
+              <h3 className="text-base sm:text-xl font-black text-gold">نحن في ريفانس المالية</h3>
+              <p className="text-sm sm:text-lg leading-loose font-bold text-[#240738] dark:text-white">نؤمن أن الحلول المالية ليست مجرد أرقام أو معاملات، بل هي وسيلة لخلق أثر إنساني يعيد التوازن والاستقرار لحياة عملائنا.</p>
             </div>
-
-            <div className="pr-4 border-r-4 border-gold space-y-3.5 text-gray-700 dark:text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed font-medium">
-              <h3 className="font-bold text-[#240738] dark:text-white text-base sm:text-xl">
-                خدمة تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي
-              </h3>
-              <p>
-                هي خدمة متخصصة وموجّهة للعملاء الذين لديهم التزامات أو منتجات تمويلية قائمة (تمويل عقاري، تمويل شخصي، أو تمويل تأجيري) وتعذر عليهم السداد نتيجة عارض صحي أو عجز طبي مثبت بموجب تقارير رسمية صادرة من الجهات الطبية المختصة أدى إلى عدم لياقتهم الطبية للعمل وإنهاء خدمتهم.
-              </p>
-              <p>
-                تتولى ريفانس من خلال فريقها المتخصص مراجعة الحالة والتقارير الطبية، وإعداد وصياغة ملف طلب الإعفاء بصورة نظامية متوافقة مع لوائح البنوك والجهات التمويلية، ورفع الطلب ومتابعته رسمياً حتى استلام خطاب إخلاء الطرف والمخالصة المالية النهائية.
-              </p>
+            <div className="space-y-4">
+              <h3 className="text-base sm:text-xl font-black text-[#240738] dark:text-white">مبادرة ريفانس لرفع طلب الإعفاء</h3>
+              <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">جاءت مبادرة رفع طلب الإعفاء من جميع الالتزامات التمويلية لدى البنوك والمصارف والشركات التمويلية كأحد أهم مساراتنا لدعم العملاء الذين لديهم عجز طبي مثبت بموجب تقارير رسمية صادرة أو معتمدة من الجهات الطبية المختصة.</p>
+              <p className="text-sm sm:text-lg leading-loose font-bold text-[#240738] dark:text-white">بحكم خبرتنا وكفاءة فريقنا في ريفانس المكوَّن من نخبة متخصصة في المنازعات المصرفية والتمويلية، نؤكد لك قوة موقفنا ومتابعتنا الدقيقة حتى استلام خطاب المخالصة المالية</p>
             </div>
           </section>
 
-          {landing && (
-            <section className="space-y-4">
-              <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
-                <div className="w-2.5 h-6 rounded-full bg-gold" />
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#240738] dark:text-gold">شروط ومتطلبات تقديم الطلب</h2>
-              </div>
-              <ul className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#14031c] border border-gold/25 space-y-4 text-sm sm:text-lg text-gray-800 dark:text-gray-200 leading-loose">
-                {[
-                  'تقرير طبي يوضح العارض الصحي وعدم القدرة على ممارسة الحياة اليومية بصورة طبيعية ويحتاج إلى مساعدة الآخرين',
-                  'قرار إنهاء الخدمة أو التقاعد الطبي',
-                  'تفويض ريفانس المالية لمتابعة الإجراءات لدى الجهة التمويلية وفق الأنظمة والتعليمات المعمول بها.',
-                ].map((t) => (
-                  <li key={t} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-gold shrink-0 mt-1" />
-                    <span>{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-
-          {!landing && (<>{/* 3. من يمكنه الاستفادة من الخدمة */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
-              <div className="w-2.5 h-6 rounded-full bg-gold" />
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#240738] dark:text-gold">
-                من يمكنه الاستفادة من الخدمة؟
-              </h2>
+              <div className="w-2.5 h-7 rounded-full bg-gold" />
+              <h2 className="text-xl sm:text-3xl font-black text-[#240738] dark:text-gold">شرح الخدمة</h2>
             </div>
-
-            <div className="flex items-start gap-4 p-5 sm:p-6 rounded-2xl bg-gold/10 dark:bg-white/[0.03] border border-gold/30 dark:border-white/10">
-              <div className="w-12 h-12 rounded-xl bg-gold-gradient text-brand flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                <Users className="w-6 h-6" />
-              </div>
-              <div className="space-y-2 flex-1">
-                <p className="text-sm sm:text-base md:text-lg leading-relaxed text-gray-800 dark:text-gray-200 font-medium">
-                  الخدمة مخصصة ومتاحة لكل عميل تنطبق عليه المعايير التالية:
-                </p>
-                <ul className="space-y-2.5 text-sm sm:text-base text-gray-700 dark:text-gray-300">
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-5 h-5 text-gold shrink-0 mt-0.5" />
-                    <span>لديه التزامات أو منتجات تمويلية قائمة لدى البنوك أو الشركات التمويلية بالمملكة.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-5 h-5 text-gold shrink-0 mt-0.5" />
-                    <span>يعاني من عجز صحي أو عارض طبي مثبت بموجب تقرير طبي رسمي صادر أو معتمد من جهة طبية مختصة.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-5 h-5 text-gold shrink-0 mt-0.5" />
-                    <span>أدى العجز الطبي إلى عدم لياقته الطبية للعمل أو إنهاء خدمته وتعذر سداد الأقساط.</span>
-                  </li>
-                </ul>
-              </div>
+            <div className="p-5 sm:p-7 rounded-2xl bg-white dark:bg-[#14031c] border border-gold/25 space-y-5 text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">
+              <p><strong className="text-[#240738] dark:text-white">خدمة تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي:</strong> هي خدمة متخصصة وموجّهة للعملاء الذين لديهم التزامات أو منتجات تمويلية قائمة (تمويل عقاري، تمويل شخصي، أو تمويل تأجيري) لدى أي بنك أو جهة تمويلية في المملكة، وتعذر عليهم السداد نتيجة عارض صحي أو عجز طبي مثبت بموجب تقارير رسمية صادرة من الجهات الطبية المختصة أدى إلى عدم لياقتهم الطبية للعمل وإنهاء خدمتهم.</p>
+              <p>تتولى ريفانس المالية من خلال فريقها المتخصص مراجعة الحالة والتقارير الطبية، وإعداد وصياغة ملف طلب الإعفاء بصورة نظامية متوافقة مع لوائح البنك المركزي السعودي وسياسات الجهات التمويلية، ورفع الطلب ومتابعته رسميًا حتى صدور قرار الإعفاء واستلام خطاب المخالصة النهائية.</p>
             </div>
           </section>
 
-          {/* 4. ماذا تشمل الخدمة */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
-              <div className="w-2.5 h-6 rounded-full bg-gold" />
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#240738] dark:text-gold">
-                ماذا تشمل الخدمة؟
-              </h2>
+              <div className="w-2.5 h-7 rounded-full bg-gold" />
+              <h2 className="text-xl sm:text-3xl font-black text-[#240738] dark:text-gold">شروط ومتطلبات تقديم الطلب</h2>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {servicesList.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div 
-                    key={item.title}
-                    className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#14031c] border border-gold/25 dark:border-white/10 shadow-xs flex items-start gap-3.5"
-                  >
-                    <div className="shrink-0 w-10 h-10 rounded-xl bg-gold/15 text-gold flex items-center justify-center font-bold text-sm">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gold">{item.num}</span>
-                        <h4 className="text-base sm:text-lg font-bold text-brand dark:text-white">
-                          {item.title}
-                        </h4>
-                      </div>
-                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <ul className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#14031c] border border-gold/25 space-y-4 text-sm sm:text-lg text-gray-800 dark:text-gray-200 leading-loose">
+              {[
+                'تقرير طبي يوضح العارض الصحي وعدم القدرة على ممارسة الحياة اليومية بصورة طبيعية ويحتاج إلى مساعدة الآخرين',
+                'قرار إنهاء الخدمة أو التقاعد الطبي',
+                'تفويض ريفانس المالية لمتابعة الإجراءات لدى الجهة التمويلية وفق الأنظمة والتعليمات المعمول بها.',
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-gold shrink-0 mt-1" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
           </section>
 
-          </>)}
-
-          {/* ميثاق الشفافية والمصداقية */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#1C0624] via-[#2A0835] to-[#160320] text-white border-2 border-gold/50 shadow-md space-y-3">
-            <h3 className="text-base sm:text-lg font-bold text-gold">المصداقية والشفافية</h3>
-            <div className="space-y-2 text-xs sm:text-sm leading-relaxed text-gray-200">
-              <p>
-                حرصًا من ريفانس المالية على الشفافية والمصداقية، فإن خدمة تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي <span className="text-gold font-bold">لا تتطلب أي رسوم أو مبالغ مقدمًا</span>.
-              </p>
-              <p>
-                وفي حال عدم قبول طلب الإعفاء، لن يتحمل العميل أي رسوم مقابل تقديم الطلب، وتكون أي مستحقات مالية مرتبطة بالخدمة — إن وجدت — بعد قبول طلب الإعفاء رسميًا وإصدار خطاب المخالصة النهائية من الجهة التمويلية المختصة.
-              </p>
+          <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-[#2A0835] to-[#160320] text-white border-2 border-gold/70 shadow-lg space-y-4">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+              <ShieldCheck className="w-7 h-7 text-gold shrink-0" />
+              <h3 className="text-lg sm:text-2xl font-black">المصداقية والشفافية</h3>
+            </div>
+            <div className="space-y-4 text-sm sm:text-base leading-loose text-gray-200">
+              <p>حرصًا من ريفانس المالية على الشفافية والمصداقية، فإن خدمة تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي <span className="text-gold font-bold">لا تتطلب أي رسوم أو مبالغ مقدمًا</span>.</p>
+              <p>وفي حال عدم قبول طلب الإعفاء، لن يتحمل العميل أي رسوم مقابل تقديم الطلب، وتكون أي مستحقات مالية مرتبطة بالخدمة – إن وجدت – بعد قبول طلب الإعفاء رسميًا وإصدار خطاب المخالصة النهائية من الجهة التمويلية المختصة.</p>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4 text-xs sm:text-sm">
+              <span className="font-bold text-gold">«ريفانس المالية»</span>
+              <span className="text-gray-300">«وضوح في الإجراءات، وشفافية في التعامل»</span>
             </div>
           </div>
 
-          {/* 5. زر طلب الخدمة */}
-          <div className="pt-4 pb-10 text-center space-y-4 border-t border-gold/30">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gold/15 text-gold mb-1">
-              <HeartHandshake className="w-6 h-6" />
+          <div className="pt-8 pb-10 text-center space-y-4 border-t border-gold/30">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold/15 text-gold mb-1">
+              <HeartHandshake className="w-8 h-8" />
             </div>
-
-            <h3 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white">
-              جاهز لبدء إجراءات تقديم طلب الإعفاء؟
-            </h3>
-
-            <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
-              فريقنا المختص جاهز لمراجعة حالتك والبدء في إعداد ملفك ومتابعته لدى الجهة التمويلية.
-            </p>
-
-            <div className="pt-2">
+            <h3 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white">جاهز لبدء إجراءات تقديم طلب الإعفاء؟</h3>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 max-w-xl mx-auto">فريقنا المختص جاهز لمراجعة حالتك والبدء في إعداد ملفك ومتابعته لدى الجهة التمويلية المختصة.</p>
+            <div className="pt-4">
               <button
                 onClick={handleApplyClick}
-                className="inline-flex items-center justify-center gap-2.5 rounded-full px-8 sm:px-10 py-3.5 sm:py-4 bg-gold-gradient text-brand text-sm sm:text-base font-black shadow-lg hover:brightness-105 active:scale-95 transition-all cursor-pointer group"
+                className="inline-flex items-center justify-center gap-3 rounded-full px-12 sm:px-16 py-4 bg-[#2A0E32] border-2 border-gold text-white text-base sm:text-lg font-black shadow-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer"
               >
                 <span>طلب الخدمة الآن</span>
-                <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                <ArrowLeft className="w-5 h-5 text-gold" />
               </button>
             </div>
           </div>
