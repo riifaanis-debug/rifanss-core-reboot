@@ -27,7 +27,6 @@ import InvoicePage from './components/rifans/InvoicePage';
 import PromissoryNotePage from './components/rifans/PromissoryNotePage';
 import ClientCard from './components/rifans/ClientCard';
 import ProfileCompletionModal from './components/rifans/ProfileCompletionModal';
-import { WaiveInfoPage, SchedulingInfoPage, SeizedAmountsInfoPage } from './components/rifans/ServiceInfoPage';
 import DomainVerificationCheck from './components/rifans/DomainVerificationCheck';
 import BusinessFields from './components/rifans/BusinessFields';
 import MostRequestedServices from './components/rifans/MostRequestedServices';
@@ -366,9 +365,9 @@ const AppContent: React.FC = () => {
       case '#/waive-landing': return <LandingPage />;
       case '#/health-waiver':
       case '#/waiver-health': return <HealthDisabilityWaiverPage />;
-      case '#/waive-info': return <WaiveInfoPage />;
-      case '#/scheduling-info': return <SchedulingInfoPage />;
-      case '#/seized-amounts-info': return <SeizedAmountsInfoPage />;
+      case '#/waive-info': return <HealthDisabilityWaiverPage />;
+      case '#/scheduling-info': return <BusinessFieldPage fieldId="banking" serviceId="rescheduling-request" />;
+      case '#/seized-amounts-info': return <BusinessFieldPage fieldId="banking" serviceId="statutory-ratio-request" />;
       case '#/client-card': return <ClientCard />;
       case '#/domain-check': return <DomainVerificationCheck />;
       case '#/admin': return <LandingPage />;
