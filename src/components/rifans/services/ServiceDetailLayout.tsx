@@ -106,7 +106,7 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
   return (
     <article className={`font-cairo text-right ${className}`} dir="rtl">
       {heroImage && (
-        <div className="relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2 mb-8 sm:mb-10 overflow-hidden">
+        <div className="relative -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8 mb-8 sm:mb-10 overflow-hidden">
           <img src={heroImage} alt={title} className="block w-full h-auto max-h-[560px] object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#12021a]/95 via-[#12021a]/30 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-5 sm:p-10 max-w-4xl mx-auto">
