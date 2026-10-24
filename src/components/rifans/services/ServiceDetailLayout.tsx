@@ -226,12 +226,4 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
   );
 };
 
-v>
-          </div>
-        )}
-      </footer>
-    </article>
-  );
-};
-
 export default ServiceDetailLayout;
