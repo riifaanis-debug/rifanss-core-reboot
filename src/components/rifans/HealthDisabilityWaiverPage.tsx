@@ -83,7 +83,7 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
         </header>
       ) : <Header />}
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-5 sm:py-8">
+      <main className={`max-w-5xl mx-auto px-4 sm:px-6 md:px-8 ${landing ? "pt-0" : "pt-5 sm:pt-8"} pb-5 sm:pb-8`}>
         {/* Back Button */}
         {!landing && <div className="flex justify-end mb-4">
           <button
