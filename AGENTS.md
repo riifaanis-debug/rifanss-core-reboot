@@ -15,3 +15,4 @@
 - In-site notifications go only through src/lib/notifications.ts: customer rows in notifications (target_type/target_id), admin alerts via notify_admins() into shared admin_notifications with per-admin admin_notification_states. Why: explicit destinations and independent read/archive state per admin.
 - Emails are queued by database triggers into email_events (unique event+entity+recipient_role) and sent by /api/public/email-dispatch (src/lib/email-events.server.ts). Why: reliable, deduplicated, never tied to the browser or blocking the main action.
 - Contract status is derived only from contracts.signed_at; a DB trigger blocks re-signing and moves the request out of contract_signature after signing. Why: one source of truth, idempotent signing.
+- Every service detail page renders through src/components/rifans/services/ServiceDetailLayout with a hero image from src/data/serviceImages.ts (id → image, catalog ids aliased). Why: one design for all services.
