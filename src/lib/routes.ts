@@ -56,3 +56,10 @@ export function navigate(to: string) {
 }
 
 export const SITE_URL = 'https://rifanss.com';
+
+/** Current page as the internal legacy key ("#/dashboard?tab=contracts"), whatever the URL form. */
+export function currentRouteKey(): string {
+  const { pathname, search, hash } = window.location;
+  if (hash.startsWith('#/')) return hash;
+  return cleanToLegacy(pathname + search) || hash;
+}

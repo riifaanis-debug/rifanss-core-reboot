@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { currentRouteKey } from '@/lib/routes';
 import { UserProfile, CustomerRequest, UserProduct, UserDocument } from '../../types';
 import { X, User, Phone, CreditCard, LogOut, FileText, Clock, Briefcase, Edit, CheckCircle2, AlertTriangle, MapPin, Building2, Wallet, Plus, Trash2, FolderOpen, Upload, Paperclip, QrCode, Loader2, ArrowRight, Bell, PenTool, UserPlus, ChevronDown, Scale, Home, Receipt, BarChart3, MessageSquare, Shield, Copy, CheckCircle, MessageCircle, Eye, Inbox, RotateCcw, Hash, Mail } from 'lucide-react';
 import CustomerOpenRequests from './CustomerOpenRequests';
@@ -79,7 +80,7 @@ const InvoiceReceiptIcon: React.FC<{ size?: number; className?: string; strokeWi
 const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, onLogout }) => {
   const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'requests' | 'contracts' | 'invoices' | 'payments' | 'open_requests' | 'promissory'>(() => {
-    const hash = window.location.hash;
+    const hash = currentRouteKey();
     if (hash.includes('tab=contracts')) return 'contracts';
     if (hash.includes('tab=requests')) return 'requests';
     if (hash.includes('tab=invoices')) return 'invoices';
@@ -96,11 +97,11 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
   const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
   const [openRequests, setOpenRequests] = useState<any[]>([]);
   const [targetOpenRequestId, setTargetOpenRequestId] = useState<string | null>(() => {
-    const match = window.location.hash.match(/[?&]openReq=([^&]+)/);
+    const match = currentRouteKey().match(/[?&]openReq=([^&]+)/);
     return match ? decodeURIComponent(match[1]) : null;
   });
   const [targetRequestId, setTargetRequestId] = useState<string | null>(() => {
-    const match = window.location.hash.match(/[?&]reqId=([^&]+)/);
+    const match = currentRouteKey().match(/[?&]reqId=([^&]+)/);
     return match ? decodeURIComponent(match[1]) : null;
   });
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -196,18 +197,20 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
     window.addEventListener('signature-submitted', handleRefresh);
 
     const handleHashChange = () => {
-      const hash = window.location.hash;
+      const hash = currentRouteKey();
       if (hash.includes('tab=contracts')) setActiveTab('contracts');
       else if (hash.includes('tab=requests')) setActiveTab('requests');
       else if (hash.includes('tab=invoices')) setActiveTab('invoices');
       else if (hash.includes('tab=promissory')) setActiveTab('promissory');
     };
     window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
 
     return () => {
       window.removeEventListener('request-submitted', handleRefresh);
       window.removeEventListener('signature-submitted', handleRefresh);
       window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
     };
   }, [authUser]);
 
@@ -403,7 +406,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
   // Hash change listener for deep navigation
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash;
+      const hash = currentRouteKey();
       if (hash.includes('tab=contracts')) setActiveTab('contracts');
       else if (hash.includes('tab=requests')) setActiveTab('requests');
       else if (hash.includes('tab=invoices')) setActiveTab('invoices');
@@ -423,7 +426,9 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onClose, on
       }
     };
     window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
   }, []);
 
   // Event listener for request submissions & refresh requests

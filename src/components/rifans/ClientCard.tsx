@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { currentRouteKey } from '@/lib/routes';
 import { Copy, CheckCircle, Download } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toPng } from 'html-to-image';
@@ -18,7 +19,7 @@ const ClientCard: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.split('?')[1] || window.location.search);
+    const params = new URLSearchParams(currentRouteKey().split('?')[1] || window.location.search);
     const name = params.get("name") || data.name;
     const file = params.get("file") || data.file;
     const id = params.get("id") || data.id;
