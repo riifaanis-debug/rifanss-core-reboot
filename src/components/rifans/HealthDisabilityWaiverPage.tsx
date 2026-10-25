@@ -108,7 +108,7 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
 
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12">
           <section className="pr-4 border-r-4 border-gold space-y-8">
-            <h1 className="text-xl sm:text-3xl font-black leading-snug text-[#240738] dark:text-white">تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي</h1>
+            <h1 className="text-lg sm:text-2xl font-black leading-snug text-[#240738] dark:text-white">تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي</h1>
             <ShareButton title="تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي" />
             <div className="p-5 sm:p-7 rounded-2xl bg-gradient-to-br from-white to-[#F6F2EA] dark:from-[#14031c] dark:to-[#14031c] border border-gold/30 shadow-sm space-y-4">
               <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white">هل لديك عارض صحي أو عجز طبي ؟</h2>
@@ -127,7 +127,7 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
               <div className="w-2.5 h-7 rounded-full bg-gold" />
-              <h2 className="text-xl sm:text-3xl font-black text-[#240738] dark:text-gold">شرح الخدمة</h2>
+              <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-gold">شرح الخدمة</h2>
             </div>
             <div className="p-5 sm:p-7 rounded-2xl bg-white dark:bg-[#14031c] border border-gold/25 space-y-5 text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">
               <p><strong className="text-[#240738] dark:text-white">خدمة تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي:</strong> هي خدمة متخصصة وموجّهة للعملاء الذين لديهم التزامات أو منتجات تمويلية قائمة (تمويل عقاري، تمويل شخصي، أو تمويل تأجيري) لدى أي بنك أو جهة تمويلية في المملكة، وتعذر عليهم السداد نتيجة عارض صحي أو عجز طبي مثبت بموجب تقارير رسمية صادرة من الجهات الطبية المختصة أدى إلى عدم لياقتهم الطبية للعمل وإنهاء خدمتهم.</p>
@@ -138,7 +138,7 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
           <section className="space-y-4">
             <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
               <div className="w-2.5 h-7 rounded-full bg-gold" />
-              <h2 className="text-xl sm:text-3xl font-black text-[#240738] dark:text-gold">شروط ومتطلبات تقديم الطلب</h2>
+              <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-gold">شروط ومتطلبات تقديم الطلب</h2>
             </div>
             <ul className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#14031c] border border-gold/25 space-y-4 text-sm sm:text-lg text-gray-800 dark:text-gray-200 leading-loose">
               {[
