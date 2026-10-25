@@ -6,7 +6,7 @@ for (const [path, url] of Object.entries(files)) {
 }
 
 // Catalog products reuse the image of the closest matching service.
-const ALIASES: Record<string, string> = {
+export const ALIASES: Record<string, string> = {
   'cons-1': 'financial-consulting', 'cons-2': 'financial-settlements', 'cons-3': 'financial-consulting',
   'cr-1': 'credit-score', 'cr-2': 'credit-score', 'cr-3': 'debt-clearance', 'cr-4': 'financial-consulting',
   'bnk-1': 'digital-banking', 'bnk-2': 'business-banking', 'bnk-5': 'rescheduling-request',
@@ -21,3 +21,7 @@ export const getServiceImage = (id?: string): string | undefined => {
   if (!id) return undefined;
   return byName[id] || byName[ALIASES[id] || ''] || byName['financial-consulting'];
 };
+
+/** File name (without extension) of the hero image used for a service id. */
+export const getServiceImageName = (id: string): string =>
+  byName[id] ? id : byName[ALIASES[id] || ''] ? ALIASES[id] : 'financial-consulting';
