@@ -4,6 +4,7 @@ const EXPECTED = "f611e98333bbd3a199cf29cfe01bce776a08e40996bfdf6bc8816e9c717c0c
 const TARGETS = ["https://rifanss.com", "https://www.rifanss.com"];
 
 export const Route = createFileRoute("/api/public/fn/check-domain-verification")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async () => {

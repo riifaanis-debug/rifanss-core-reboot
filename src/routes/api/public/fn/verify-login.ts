@@ -8,6 +8,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 export const Route = createFileRoute("/api/public/fn/verify-login")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

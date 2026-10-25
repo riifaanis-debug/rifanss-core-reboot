@@ -24,6 +24,7 @@ const schema = z.object({
 });
 
 export const Route = createFileRoute("/api/public/fn/guest-waiver")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

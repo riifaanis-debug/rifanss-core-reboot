@@ -21,6 +21,7 @@ function secureCode() {
 }
 
 export const Route = createFileRoute("/api/public/fn/send-otp")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

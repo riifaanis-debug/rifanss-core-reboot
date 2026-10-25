@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { currentRouteKey } from '@/lib/routes';
 import { 
   FileText, 
   Sparkles, 
@@ -106,7 +107,7 @@ export const ElectronicServicesPage: React.FC<ElectronicServicesPageProps> = ({
   // Synchronize route hash with service selection
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash;
+      const hash = currentRouteKey();
       if (hash.startsWith('#/electronic-service/')) {
         const id = hash.replace('#/electronic-service/', '');
         const found = allServices.find(s => s.id === id);
@@ -137,7 +138,9 @@ export const ElectronicServicesPage: React.FC<ElectronicServicesPageProps> = ({
 
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
   }, [allServices, initialServiceId]);
 
   // When service changes, initialize default selected option

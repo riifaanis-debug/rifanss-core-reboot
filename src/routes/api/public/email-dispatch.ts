@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // Processes already-queued email events (queued only by database triggers).
 // Takes no input, returns only counts; safe to call repeatedly.
 export const Route = createFileRoute("/api/public/email-dispatch")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async () => {

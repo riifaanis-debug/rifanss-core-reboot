@@ -30,6 +30,7 @@ const toClient = (u: any) => ({
 });
 
 export const Route = createFileRoute("/api/public/fn/verify-otp")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

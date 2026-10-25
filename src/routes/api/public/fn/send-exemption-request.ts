@@ -104,6 +104,7 @@ const buildHtml = (payload: RequestPayload) => {
 };
 
 export const Route = createFileRoute("/api/public/fn/send-exemption-request")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {
