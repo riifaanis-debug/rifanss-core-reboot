@@ -1,4 +1,5 @@
 import React from 'react';
+import ShareButton from './ShareButton';
 import { 
   FileSearch, 
   Stethoscope, 
@@ -108,6 +109,7 @@ export const HealthDisabilityWaiverPage: React.FC<{ landing?: boolean; onApply?:
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12">
           <section className="pr-4 border-r-4 border-gold space-y-8">
             <h1 className="text-xl sm:text-3xl font-black leading-snug text-[#240738] dark:text-white">تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي</h1>
+            <ShareButton title="تقديم طلب الإعفاء من الالتزامات التمويلية بسبب العجز الصحي" />
             <div className="p-5 sm:p-7 rounded-2xl bg-gradient-to-br from-white to-[#F6F2EA] dark:from-[#14031c] dark:to-[#14031c] border border-gold/30 shadow-sm space-y-4">
               <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-white">هل لديك عارض صحي أو عجز طبي ؟</h2>
               <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300">تسبب في عدم لياقتك الطبية للعمل، مَما أدى إلى إنهاء خدمتك، ولا زال لديك تمويل عقاري أو تمويل شخصي أو تأجيري قائم، وتعذر عليك السداد !</p>

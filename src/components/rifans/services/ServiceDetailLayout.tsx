@@ -1,4 +1,5 @@
 import React from 'react';
+import ShareButton from '../ShareButton';
 import { ArrowLeft, AlertCircle, CheckCircle2, ShieldCheck, HeartHandshake } from 'lucide-react';
 
 export interface DetailTimelineStep {
@@ -123,6 +124,7 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
             <h2 className="text-xl sm:text-3xl font-black leading-snug text-[#240738] dark:text-white m-0">{title}</h2>
             {badge && <span className="text-xs font-bold text-gold mt-2">• {badge}</span>}
           </div>
+          <ShareButton title={title} />
           {shouldShowShortDesc && (
             <p className="text-sm sm:text-lg leading-loose text-gray-600 dark:text-gray-300 m-0">{shortDescription}</p>
           )}
