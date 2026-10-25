@@ -12,6 +12,7 @@ function formatAmount(val: any): string {
 }
 
 export const Route = createFileRoute("/api/public/fn/notify-admin")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

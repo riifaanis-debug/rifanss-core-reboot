@@ -140,6 +140,7 @@ async function createDeal(
 }
 
 export const Route = createFileRoute("/api/public/fn/hubspot-sync")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

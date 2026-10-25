@@ -16,6 +16,7 @@ function validPath(p: string) {
 }
 
 export const Route = createFileRoute("/api/public/uploads/$")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       GET: async ({ params, request }) => {

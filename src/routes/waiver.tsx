@@ -10,6 +10,7 @@ const description = "قدّم طلب الإعفاء من الالتزامات ا
 const img = "https://rifanss.com/og-waiver.jpg";
 
 export const Route = createFileRoute("/waiver")({
+  staticData: { sitemap: true },
   ssr: false,
   head: () => ({
     meta: [

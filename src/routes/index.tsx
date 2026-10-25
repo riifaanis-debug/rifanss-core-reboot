@@ -11,6 +11,7 @@ const socialImage = "https://rifanss.com/og-share.jpg";
 // from this route. It must run client-side only: the app reads
 // window.location.hash during its first render.
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   ssr: false,
   head: () => ({
     meta: [

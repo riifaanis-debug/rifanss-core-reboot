@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/routes";
 // Every clean path (/about, /services/<id>, ...) renders the same app shell;
 // head() gives each URL its own share preview, rendered on the server.
 export const Route = createFileRoute("/$")({
+  staticData: { sitemap: true },
   ssr: false,
   head: ({ params }) => {
     const path = "/" + (params._splat || "");
