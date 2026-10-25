@@ -39,7 +39,7 @@ export function getPageMeta(splat: string): PageMeta {
   }
   if (a === 'fields' && b) {
     const field = BUSINESS_FIELDS_DATA.find((x) => x.id === b);
-    if (field) return mk(field.title, DEFAULT_DESC, og(field.subServices?.[0]?.id || ''));
+    if (field) return mk(field.title, field.intro || DEFAULT_DESC, og(field.subServices?.[0]?.id || ''));
   }
   if ((a === 'section' || a === 'category') && b) {
     const s = getSection(b);
