@@ -85,7 +85,7 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
   const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <div className="flex items-center gap-3 border-b border-gold/30 pb-3">
       <div className="w-2.5 h-7 rounded-full bg-gold shrink-0" />
-      <h2 className="text-xl sm:text-3xl font-black text-[#240738] dark:text-gold m-0">{children}</h2>
+      <h2 className="text-lg sm:text-2xl font-black text-[#240738] dark:text-gold m-0">{children}</h2>
     </div>
   );
   const Card = ({ children }: { children: React.ReactNode }) => (
@@ -111,7 +111,7 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
           <img src={heroImage} alt={title} className="block w-full h-auto max-h-[560px] object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#12021a]/95 via-[#12021a]/30 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-5 sm:p-10 max-w-4xl mx-auto">
-            <h1 className="text-2xl sm:text-5xl font-black leading-tight m-0 bg-gradient-to-l from-[#F3DEA0] via-[#D6B56A] to-[#B99A55] bg-clip-text text-transparent drop-shadow">
+            <h1 className="text-lg sm:text-2xl font-black leading-tight m-0 bg-gradient-to-l from-[#F3DEA0] via-[#D6B56A] to-[#B99A55] bg-clip-text text-transparent drop-shadow">
               {title}
             </h1>
           </div>
@@ -121,7 +121,7 @@ export const ServiceDetailLayout: React.FC<ServiceDetailLayoutProps> = ({
       <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12">
         <section className="pr-4 border-r-4 border-gold space-y-3">
           <div className="flex items-start gap-2 flex-wrap">
-            <h2 className="text-xl sm:text-3xl font-black leading-snug text-[#240738] dark:text-white m-0">{title}</h2>
+            <h2 className="text-lg sm:text-2xl font-black leading-snug text-[#240738] dark:text-white m-0">{title}</h2>
             {badge && <span className="text-xs font-bold text-gold mt-2">• {badge}</span>}
           </div>
           <ShareButton title={title} />
