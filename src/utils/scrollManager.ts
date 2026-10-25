@@ -1,3 +1,4 @@
+import { navigate } from '../lib/routes';
 /**
  * Central Scroll & Navigation Manager for Rifans Financial
  * Ensures 100% reliable scroll-to-top on route changes across all devices
@@ -164,7 +165,7 @@ export const navigateTo = (pathOrAnchor: string, e?: React.MouseEvent) => {
     } else {
       // Element is on the LandingPage, but user is currently on another page
       setPendingSection(sectionId);
-      window.location.hash = '#/';
+      navigate('/');
       return;
     }
   }
@@ -172,7 +173,7 @@ export const navigateTo = (pathOrAnchor: string, e?: React.MouseEvent) => {
   // Standard full-page navigation:
   // Instantly reset scroll to top BEFORE route transition happens
   forceScrollToTop();
-  window.location.hash = pathOrAnchor || '#/';
+  navigate(pathOrAnchor || '/');
 };
 
 /**
@@ -230,7 +231,7 @@ export const initGlobalScrollRestoration = () => {
           // Section on landing page from another page
           event.preventDefault();
           setPendingSection(sectionId);
-          window.location.hash = '#/';
+          navigate('/');
           return;
         }
       }
@@ -238,6 +239,10 @@ export const initGlobalScrollRestoration = () => {
       // Page link (e.g. "#/about", "#/services", "#/")
       // Force scroll reset immediately so the page never opens from the bottom
       forceScrollToTop();
+      if (href.startsWith('#/') && !event.defaultPrevented) {
+        event.preventDefault();
+        navigate(href);
+      }
     }
   };
 
