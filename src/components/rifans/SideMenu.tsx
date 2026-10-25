@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, User, LogIn, LogOut, LayoutDashboard, Shield, Mail } from 'lucide-react';
+import { X, User, LogIn, LogOut, LayoutDashboard, Shield, Mail, ChevronDown } from 'lucide-react';
 import Logo from './Logo';
 import { navigateTo } from '../../utils/scrollManager';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,14 +12,15 @@ interface SideMenuProps {
 interface MenuItem {
   label: string;
   href: string;
-  highlight?: boolean;
 }
 
-const menuItems: MenuItem[] = [
+const topItems: MenuItem[] = [
   { label: 'الصفحة الرئيسية', href: '#/' },
-  { label: 'مجالات أعمالنا', href: '#business-fields' },
   { label: 'من نحن', href: '#/about' },
   { label: 'اتصل بنا', href: '#/contact' },
+];
+
+const fieldItems: MenuItem[] = [
   { label: 'الخدمات المالية', href: '#/business-field/financial' },
   { label: 'الخدمات المصرفية', href: '#/business-field/banking' },
   { label: 'الخدمات العقارية', href: '#/business-field/real-estate' },
@@ -86,11 +87,13 @@ const socialLinks = [
 
 const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
   const [shouldRender, setShouldRender] = useState(isOpen);
+  const [fieldsOpen, setFieldsOpen] = useState(false);
   const { user, logout } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
+      setFieldsOpen(false);
       document.body.style.overflow = 'hidden';
     } else {
       const timer = setTimeout(() => setShouldRender(false), 300);
@@ -184,19 +187,45 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
 
         {/* Menu Navigation Links - Reduced Vertical Gaps */}
         <div className="flex-1 overflow-y-auto py-1 scrollbar-hide">
-            {menuItems.map((item, idx) => (
-                <a 
-                  key={idx} 
-                  href={item.href} 
+            {topItems.map((item, idx) => (
+              <React.Fragment key={idx}>
+                <a
+                  href={item.href}
                   onClick={(e) => handleLinkClick(item.href, e)}
-                  className={`block px-5 py-2 text-[13.5px] font-bold transition-all text-right border-r-4
-                    ${item.highlight 
-                      ? 'text-gold bg-gold/5 border-gold font-black' 
-                      : 'text-brand dark:text-white hover:bg-gold/5 border-transparent hover:border-gold/30'
-                    }`}
+                  className="block px-5 py-2 text-[13.5px] font-bold transition-all text-right border-r-4 text-brand dark:text-white hover:bg-gold/5 border-transparent hover:border-gold/30"
                 >
-                    {item.label}
+                  {item.label}
                 </a>
+                {idx === 0 && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setFieldsOpen((v) => !v)}
+                      aria-expanded={fieldsOpen}
+                      className="w-full flex items-center justify-between px-5 py-2 text-[13.5px] font-bold text-right border-r-4 text-brand dark:text-white hover:bg-gold/5 border-transparent hover:border-gold/30 transition-all"
+                    >
+                      <span>مجالات أعمالنا</span>
+                      <ChevronDown size={16} className={`text-gold transition-transform duration-300 ${fieldsOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    <div className={`grid transition-all duration-300 ${fieldsOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden">
+                        <div className="mr-7 border-r-2 border-gold/40 my-1">
+                          {fieldItems.map((f, i) => (
+                            <a
+                              key={i}
+                              href={f.href}
+                              onClick={(e) => handleLinkClick(f.href, e)}
+                              className="block pr-4 pl-5 py-1.5 text-[12.5px] font-semibold text-right text-brand/80 dark:text-white/80 hover:text-gold transition-colors"
+                            >
+                              {f.label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
         </div>
 
