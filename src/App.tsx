@@ -28,6 +28,25 @@ import PromissoryNotePage from './components/rifans/PromissoryNotePage';
 import ClientCard from './components/rifans/ClientCard';
 import ProfileCompletionModal from './components/rifans/ProfileCompletionModal';
 import DomainVerificationCheck from './components/rifans/DomainVerificationCheck';
+import { legacyToClean, cleanToLegacy } from './lib/routes';
+
+// Reads the clean URL, converting any legacy '#/...' hash (old shared links, old buttons) to a clean path.
+const readRoute = (): string => {
+  const { pathname, search, hash } = window.location;
+  if (hash.startsWith('#/') || hash === '#') {
+    const clean = legacyToClean(hash);
+    window.history.replaceState(window.history.state, '', clean);
+    return cleanToLegacy(clean);
+  }
+  const legacy = cleanToLegacy(pathname + search);
+  if (!legacy) return hash;
+  if (hash && /^#[a-z]/i.test(hash)) {
+    // In-page section anchor requested from another page: go home with the anchor.
+    window.history.replaceState(window.history.state, '', '/' + hash);
+    return hash;
+  }
+  return legacy;
+};
 import BusinessFields from './components/rifans/BusinessFields';
 import MostRequestedServices from './components/rifans/MostRequestedServices';
 import Vision2030Section from './components/rifans/Vision2030Section';
@@ -103,7 +122,7 @@ const AppContent: React.FC = () => {
       root.style.backgroundColor = '';
     };
   }, []);
-  const [route, setRoute] = useState(window.location.hash);
+  const [route, setRoute] = useState(readRoute);
   const [showAuth, setShowAuth] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
   const [waivePrefill, setWaivePrefill] = useState<any>(null);
@@ -136,7 +155,7 @@ const AppContent: React.FC = () => {
   // Sync route on hashchange / popstate
   useEffect(() => {
     const handleHashChange = () => {
-      const currentHash = window.location.hash || '#/';
+      const currentHash = readRoute() || '#/';
       setRoute(currentHash);
       const sectionId = extractSectionId(currentHash);
       if (!sectionId) {
